@@ -1,0 +1,13 @@
+package com.reid_connect.reid_connect;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ReidConnectApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ReidConnectApplication.class, args);
+	}
+
+}
