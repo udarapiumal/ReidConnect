@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ReidConnect",
-    "slug": "ReidConnect",
+    "name": "frontend",
+    "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "reidconnect",
+    "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
