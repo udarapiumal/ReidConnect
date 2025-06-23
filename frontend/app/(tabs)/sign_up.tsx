@@ -1,6 +1,7 @@
-import {Text, View, StyleSheet, TextInput, TouchableOpacity, Button} from "react-native";
+import {Text, View, StyleSheet, TextInput} from "react-native";
 import {useState} from "react";
 import {Picker} from "@react-native-picker/picker";
+import {ProgressStep, ProgressSteps} from "react-native-progress-steps";
 
 export default function SignUp(){
     const [name,setName]=useState('');
@@ -48,79 +49,103 @@ export default function SignUp(){
 
 
 
-    return(
-        <View style={styles.container}>
-            <Text style={styles.title}>Sign Up</Text>
-            <TextInput
-                style={styles.input}
-            placeholder="Enter Your Name:"
-            value={name}
-            onChangeText={text => setName(text)}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Enter Your Age:"
-                value={age}
-                keyboardType={"numeric"}
-                onChangeText={text => setAge(text)}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Enter Your E-mail:"
-                value={email}
-                keyboardType={"email-address"}
-                onChangeText={text => setEmail(text)}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Enter Your Contact Number:"
-                value={contact_number}
-                keyboardType={"numeric"}
-                onChangeText={text => setContact_number(text)}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Enter Your Address:"
-                value={address}
-                onChangeText={text => setAddress(text)}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Enter Your NIC:"
-                value={nic}
-                keyboardType={"numeric"}
-                onChangeText={text => setNic(text)}
-            />
-            <Picker
-                style={styles.input}
-                selectedValue={academic_year}
-                onValueChange={(itemValue) => setAcademic_year(itemValue)}
-            >
-                <Picker.Item label="Select Academic Year" value="" />
-                <Picker.Item label="1st Year" value="1" />
-                <Picker.Item label="2nd Year" value="2" />
-                <Picker.Item label="3rd Year" value="3" />
-                <Picker.Item label="4th Year" value="4" />
-            </Picker>
-            <TextInput
-                style={styles.input}
-                placeholder="Password:"
-                value={password}
-                secureTextEntry
-                onChangeText={text => setPassword(text)}
-            />
-            <Button color="#c0392b" onPress={handleSubmit} title="Submit"></Button>
-            <Text style={styles.alt}>Already have an account?<TouchableOpacity>Log in</TouchableOpacity></Text>
+    return (
+        <ProgressSteps
+            completedStepIconColor="#e74c3c"
+            activeStepIconBorderColor="#c0392b"
+            activeLabelColor="#c0392b"
+            labelColor="#999"
+            progressBarColor="#e74c3c"
 
-        </View>
+
+
+        >
+            <ProgressStep label="Step 1" >
+                <Text style={styles.title}>Sign Up</Text>
+                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Your Name:"
+                        value={name}
+                        onChangeText={text => setName(text)}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Your Age:"
+                        value={age}
+                        keyboardType={"numeric"}
+                        onChangeText={text => setAge(text)}
+                    />
+                </View>
+            </ProgressStep>
+            <ProgressStep label="Step 2" >
+                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Your E-mail:"
+                        value={email}
+                        keyboardType={"email-address"}
+                        onChangeText={text => setEmail(text)}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password:"
+                        value={password}
+                        secureTextEntry
+                        onChangeText={text => setPassword(text)}
+                    />
+
+                </View>
+            </ProgressStep>
+            <ProgressStep label="Step 3" >
+                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Your Contact Number:"
+                        value={contact_number}
+                        keyboardType={"numeric"}
+                        onChangeText={text => setContact_number(text)}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Your Address:"
+                        value={address}
+                        onChangeText={text => setAddress(text)}
+                    />
+
+                </View>
+            </ProgressStep>
+            <ProgressStep label="Step 4" onSubmit={handleSubmit} >
+                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Your NIC:"
+                        value={nic}
+                        keyboardType={"numeric"}
+                        onChangeText={text => setNic(text)}
+                    />
+                    <Picker
+                        style={styles.input}
+                        selectedValue={academic_year}
+                        onValueChange={(itemValue) => setAcademic_year(itemValue)}
+                    >
+                        <Picker.Item label="Select Academic Year" value="" />
+                        <Picker.Item label="1st Year" value="1" />
+                        <Picker.Item label="2nd Year" value="2" />
+                        <Picker.Item label="3rd Year" value="3" />
+                        <Picker.Item label="4th Year" value="4" />
+                    </Picker>
+                </View>
+            </ProgressStep>
+        </ProgressSteps>
     );
 }
-const styles=StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: '#f9f9f9',
     },
     title: {
         fontSize: 28,
@@ -130,16 +155,33 @@ const styles=StyleSheet.create({
         color: '#333',
     },
     input: {
+        width: '100%',
         height: 50,
+        borderWidth: 1.5,
         borderColor: '#ccc',
-        borderWidth: 1,
         borderRadius: 10,
         paddingHorizontal: 15,
         marginBottom: 15,
         backgroundColor: '#fff',
         fontSize: 16,
+        color: '#333',
     },
-    alt:{
-        padding:50
-    }
-})
+    inputFocused: {
+        borderColor: '#007bff', // Blue border on focus
+    },
+    placeholderTextColor: {
+        color: '#aaa',
+    },
+    Button: {
+        backgroundColor: '#c0392b',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+        marginHorizontal: 10,
+    },
+    ButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+});
