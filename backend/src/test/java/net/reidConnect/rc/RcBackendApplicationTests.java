@@ -1,10 +1,10 @@
-package com.reid_connect.reid_connect;
+package net.reidConnect.rc;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ReidConnectApplicationTests {
+class RcBackendApplicationTests {
 
 	@Test
 	void contextLoads() {
