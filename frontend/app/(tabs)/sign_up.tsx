@@ -2,52 +2,114 @@ import {Text, View, StyleSheet, TextInput} from "react-native";
 import {useState} from "react";
 import {Picker} from "@react-native-picker/picker";
 import {ProgressStep, ProgressSteps} from "react-native-progress-steps";
+import axios, { AxiosError } from "axios";
 
 export default function SignUp(){
     const [name,setName]=useState('');
     const [age,setAge]=useState('');
     const [email,setEmail]=useState('');
     const [contact_number,setContact_number]=useState('');
-    const [address,setAddress]=useState('');
-    const [nic,setNic]=useState('');
     const [academic_year,setAcademic_year]=useState('');
     const [password,setPassword]=useState('');
 
-    const handleSubmit=()=>{
-        const nameRegex=/^[a-zA-Z ]{2,30}$/;
-        const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const handleSubmit = async () => {
+        const nameRegex = /^[a-zA-Z ]{2,30}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        const contactRegex = /^[0-9]{10}$/;
 
         if (!nameRegex.test(name)) {
-            alert('Name must be 2–30 letters only.');
+            alert("Name must be 2–30 letters only.");
             return;
         }
         if (!emailRegex.test(email)) {
-            alert('Enter a valid email address.');
+            alert("Enter a valid email address.");
             return;
         }
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-
         if (!passwordRegex.test(password)) {
-            alert('Password must contain:\n- Min 8 characters\n- Upper & lower case letters\n- A number\n- A special character');
+            alert(
+                "Password must contain:\n- Min 8 characters\n- Upper & lower case letters\n- A number\n- A special character"
+            );
             return;
         }
-        const contactRegex = /^[0-9]{10}$/;
-
         if (!contactRegex.test(contact_number)) {
-            alert('Contact number must be exactly 10 digits.');
+            alert("Contact number must be exactly 10 digits.");
             return;
         }
-
         const ageNum = parseInt(age, 10);
         if (isNaN(ageNum) || ageNum < 18 || ageNum > 50) {
-            alert('Age must be a number between 18 and 50.');
+            alert("Age must be a number between 18 and 50.");
             return;
         }
-        alert('Form submitted successfully!');
 
-    }
+        try {
+            const res = await axios.post("http://192.168.1.5:8080/auth/signup", {
+                username: name,
+                email: email,
+                password: password,
+                contactNumber: contact_number,
+                academicYear: academic_year,
+                age: ageNum,
+            });
 
+            alert("Verification code sent to email. Please verify your account.");
 
+            // TODO: Navigate to verification screen or show input field for code entry
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                if (err.response?.data) {
+                    alert("Signup failed: " + JSON.stringify(err.response.data));
+                } else {
+                    alert("Signup failed: No response data");
+                }
+            } else {
+                alert("Signup failed. Try again later.");
+            }
+            console.error(err);
+        }
+    };
+
+    const [verificationCode, setVerificationCode] = useState('');
+
+    const handleVerify = async () => {
+        try {
+            const res = await axios.post('http://192.168.1.5:8080/auth/verify', {
+                email,
+                verificationCode
+            });
+            alert('Account verified successfully!');
+            // You can navigate to login screen here
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                if (err.response?.data) {
+                    alert('Verification failed: ' + JSON.stringify(err.response.data));
+                } else {
+                    alert('Verification failed: No response data');
+                }
+            } else {
+                alert('Verification failed. Try again later.');
+            }
+            console.error(err);
+        }
+    };
+
+    const handleResend = async () => {
+        try {
+            await axios.post('http://192.168.1.5:8080/auth/resend?email=' + email);
+            alert('Verification code resent!');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                if (err.response?.data) {
+                    alert('Could not resend code: ' + JSON.stringify(err.response.data));
+                } else {
+                    alert('Could not resend code: No response data');
+                }
+            } else {
+                alert('Could not resend code. Try again later.');
+            }
+            console.error(err);
+        }
+    };
 
     return (
         <ProgressSteps
@@ -56,9 +118,6 @@ export default function SignUp(){
             activeLabelColor="#c0392b"
             labelColor="#999"
             progressBarColor="#e74c3c"
-
-
-
         >
             <ProgressStep label="Step 1" >
                 <Text style={styles.title}>Sign Up</Text>
@@ -106,24 +165,13 @@ export default function SignUp(){
                         keyboardType={"numeric"}
                         onChangeText={text => setContact_number(text)}
                     />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Your Address:"
-                        value={address}
-                        onChangeText={text => setAddress(text)}
-                    />
+
 
                 </View>
             </ProgressStep>
             <ProgressStep label="Step 4" onSubmit={handleSubmit} >
                 <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Your NIC:"
-                        value={nic}
-                        keyboardType={"numeric"}
-                        onChangeText={text => setNic(text)}
-                    />
+
                     <Picker
                         style={styles.input}
                         selectedValue={academic_year}
@@ -135,6 +183,19 @@ export default function SignUp(){
                         <Picker.Item label="3rd Year" value="3" />
                         <Picker.Item label="4th Year" value="4" />
                     </Picker>
+                </View>
+            </ProgressStep>
+            <ProgressStep  label="Verify" onSubmit={handleVerify} >
+                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter Verification Code"
+                        value={verificationCode}
+                        onChangeText={setVerificationCode}
+                    />
+                    <Text style={{ color: '#007BFF', marginTop: 10 }} onPress={handleResend}>
+                        Resend Verification Code
+                    </Text>
                 </View>
             </ProgressStep>
         </ProgressSteps>
