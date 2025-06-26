@@ -40,28 +40,28 @@ public class AuthenticationService {
     }
 
     public User signup(RegisterUserDto input) {
+        // Create and save User
         User user = new User(input.getUsername(), input.getEmail(), passwordEncoder.encode(input.getPassword()));
         user.setVerificationCode(generateVerificationCode());
-        user.setVerificationExpiration(LocalDateTime.now().plusMinutes(15)); // Changed to plusMinutes
+        user.setVerificationExpiration(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
-        sendVerificationEmail(user);
-        User savedUser = userRepository.save(user); // save user first
+        User savedUser = userRepository.save(user);
 
-        // Now save student info linked to this user
+        // Create and save Student
         Student student = new Student();
         student.setStudentName(input.getUsername());
         student.setContactNumber(input.getContactNumber());
         student.setAcademicYear(input.getAcademicYear());
         student.setAge(input.getAge());
-        student.setUser(savedUser);  // establish the relationship
+        student.setUser(savedUser);
+        studentRepository.save(student);
 
-        studentRepository.save(student);  // save student
 
+        // Send verification email
         sendVerificationEmail(savedUser);
 
         return savedUser;
     }
-
     public User authenticate(LoginUserDto input) {
         User user = userRepository.findByEmail(input.getEmail()) // Fixed method name to findByEmail
                 .orElseThrow(() -> new RuntimeException("User not found"));

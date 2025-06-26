@@ -1,91 +1,86 @@
-import {Text, View, StyleSheet, TextInput} from "react-native";
-import {useState} from "react";
-import {Picker} from "@react-native-picker/picker";
-import {ProgressStep, ProgressSteps} from "react-native-progress-steps";
-import axios, { AxiosError } from "axios";
+import { Text, View, StyleSheet, TextInput } from "react-native";
+import { useState, useEffect } from "react";
+import { Picker } from "@react-native-picker/picker";
+import { ProgressStep, ProgressSteps } from "react-native-progress-steps";
+import axios from "axios";
 
-export default function SignUp(){
-    const [name,setName]=useState('');
-    const [age,setAge]=useState('');
-    const [email,setEmail]=useState('');
-    const [contact_number,setContact_number]=useState('');
-    const [academic_year,setAcademic_year]=useState('');
-    const [password,setPassword]=useState('');
+export default function SignUp() {
+    const [name, setName] = useState('');
+    const [age, setAge] = useState('');
+    const [email, setEmail] = useState('');
+    const [contact_number, setContact_number] = useState('');
+    const [academic_year, setAcademic_year] = useState('');
+    const [password, setPassword] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
 
-    const handleSubmit = async () => {
+    // Step validation state
+    const [step1Error, setStep1Error] = useState(true);
+    const [step2Error, setStep2Error] = useState(true);
+    const [step3Error, setStep3Error] = useState(true);
+
+    // Validation functions
+    const validateStep1 = () => {
         const nameRegex = /^[a-zA-Z ]{2,30}$/;
+        const ageNum = parseInt(age, 10);
+        setStep1Error(!(nameRegex.test(name) && !isNaN(ageNum) && ageNum >= 18 && ageNum <= 50));
+    };
+
+    const validateStep2 = () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        setStep2Error(!(emailRegex.test(email) && passwordRegex.test(password)));
+    };
+
+    const validateStep3 = () => {
         const contactRegex = /^[0-9]{10}$/;
+        setStep3Error(!contactRegex.test(contact_number));
+    };
 
-        if (!nameRegex.test(name)) {
-            alert("Name must be 2–30 letters only.");
-            return;
-        }
-        if (!emailRegex.test(email)) {
-            alert("Enter a valid email address.");
-            return;
-        }
-        if (!passwordRegex.test(password)) {
-            alert(
-                "Password must contain:\n- Min 8 characters\n- Upper & lower case letters\n- A number\n- A special character"
-            );
-            return;
-        }
-        if (!contactRegex.test(contact_number)) {
-            alert("Contact number must be exactly 10 digits.");
-            return;
-        }
-        const ageNum = parseInt(age, 10);
-        if (isNaN(ageNum) || ageNum < 18 || ageNum > 50) {
-            alert("Age must be a number between 18 and 50.");
-            return;
-        }
+    useEffect(() => {
+        validateStep1();
+    }, [name, age]);
 
+    useEffect(() => {
+        validateStep2();
+    }, [email, password]);
+
+    useEffect(() => {
+        validateStep3();
+    }, [contact_number]);
+
+    const handleSubmit = async () => {
         try {
-            const res = await axios.post("http://192.168.1.5:8080/auth/signup", {
+            const res = await axios.post("http://localhost:8080/auth/signup", {
                 username: name,
                 email: email,
                 password: password,
                 contactNumber: contact_number,
                 academicYear: academic_year,
-                age: ageNum,
+                age: parseInt(age, 10),
             });
-
+            console.log("Signup response:", res);
             alert("Verification code sent to email. Please verify your account.");
-
-            // TODO: Navigate to verification screen or show input field for code entry
-        } catch (err: unknown) {
+        } catch (err) {
             if (axios.isAxiosError(err)) {
-                if (err.response?.data) {
-                    alert("Signup failed: " + JSON.stringify(err.response.data));
-                } else {
-                    alert("Signup failed: No response data");
-                }
+                console.error("Axios error response:", err.response);
+                alert("Signup failed: " + JSON.stringify(err.response?.data || err.message));
             } else {
                 alert("Signup failed. Try again later.");
+                console.error("Unknown error:", err);
             }
-            console.error(err);
         }
     };
 
-    const [verificationCode, setVerificationCode] = useState('');
-
     const handleVerify = async () => {
         try {
-            const res = await axios.post('http://192.168.1.5:8080/auth/verify', {
+            const res = await axios.post("http://192.168.56.1:8080/auth/verify", {
                 email,
                 verificationCode
             });
             alert('Account verified successfully!');
-            // You can navigate to login screen here
-        } catch (err: unknown) {
+        } catch (err) {
             if (axios.isAxiosError(err)) {
-                if (err.response?.data) {
-                    alert('Verification failed: ' + JSON.stringify(err.response.data));
-                } else {
-                    alert('Verification failed: No response data');
-                }
+                alert('Verification failed: ' + JSON.stringify(err.response?.data || err.message));
             } else {
                 alert('Verification failed. Try again later.');
             }
@@ -97,13 +92,9 @@ export default function SignUp(){
         try {
             await axios.post('http://192.168.1.5:8080/auth/resend?email=' + email);
             alert('Verification code resent!');
-        } catch (err: unknown) {
+        } catch (err) {
             if (axios.isAxiosError(err)) {
-                if (err.response?.data) {
-                    alert('Could not resend code: ' + JSON.stringify(err.response.data));
-                } else {
-                    alert('Could not resend code: No response data');
-                }
+                alert('Could not resend code: ' + JSON.stringify(err.response?.data || err.message));
             } else {
                 alert('Could not resend code. Try again later.');
             }
@@ -119,59 +110,55 @@ export default function SignUp(){
             labelColor="#999"
             progressBarColor="#e74c3c"
         >
-            <ProgressStep label="Step 1" >
+            <ProgressStep label="Step 1" errors={step1Error}>
                 <Text style={styles.title}>Sign Up</Text>
-                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                <View style={styles.step}>
                     <TextInput
                         style={styles.input}
                         placeholder="Enter Your Name:"
                         value={name}
-                        onChangeText={text => setName(text)}
+                        onChangeText={(text) => setName(text)}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder="Enter Your Age:"
                         value={age}
-                        keyboardType={"numeric"}
-                        onChangeText={text => setAge(text)}
+                        keyboardType="numeric"
+                        onChangeText={(text) => setAge(text)}
                     />
                 </View>
             </ProgressStep>
-            <ProgressStep label="Step 2" >
-                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+            <ProgressStep label="Step 2" errors={step2Error}>
+                <View style={styles.step}>
                     <TextInput
                         style={styles.input}
                         placeholder="Enter Your E-mail:"
                         value={email}
-                        keyboardType={"email-address"}
-                        onChangeText={text => setEmail(text)}
+                        keyboardType="email-address"
+                        onChangeText={(text) => setEmail(text)}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder="Password:"
                         value={password}
                         secureTextEntry
-                        onChangeText={text => setPassword(text)}
+                        onChangeText={(text) => setPassword(text)}
                     />
-
                 </View>
             </ProgressStep>
-            <ProgressStep label="Step 3" >
-                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+            <ProgressStep label="Step 3" errors={step3Error}>
+                <View style={styles.step}>
                     <TextInput
                         style={styles.input}
                         placeholder="Enter Your Contact Number:"
                         value={contact_number}
-                        keyboardType={"numeric"}
-                        onChangeText={text => setContact_number(text)}
+                        keyboardType="numeric"
+                        onChangeText={(text) => setContact_number(text)}
                     />
-
-
                 </View>
             </ProgressStep>
-            <ProgressStep label="Step 4" onSubmit={handleSubmit} >
-                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
-
+            <ProgressStep label="Step 4" onNext={handleSubmit}>
+                <View style={styles.step}>
                     <Picker
                         style={styles.input}
                         selectedValue={academic_year}
@@ -185,8 +172,8 @@ export default function SignUp(){
                     </Picker>
                 </View>
             </ProgressStep>
-            <ProgressStep  label="Verify" onSubmit={handleVerify} >
-                <View style={{ alignItems: 'center', justifyContent: 'center', height: 300 }}>
+            <ProgressStep label="Verify" onSubmit={handleVerify}>
+                <View style={styles.step}>
                     <TextInput
                         style={styles.input}
                         placeholder="Enter Verification Code"
@@ -201,6 +188,7 @@ export default function SignUp(){
         </ProgressSteps>
     );
 }
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -215,6 +203,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#333',
     },
+    step: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 300
+    },
     input: {
         width: '100%',
         height: 50,
@@ -226,23 +219,5 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         fontSize: 16,
         color: '#333',
-    },
-    inputFocused: {
-        borderColor: '#007bff', // Blue border on focus
-    },
-    placeholderTextColor: {
-        color: '#aaa',
-    },
-    Button: {
-        backgroundColor: '#c0392b',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 10,
-        marginHorizontal: 10,
-    },
-    ButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    }
 });
