@@ -1,10 +1,13 @@
-import { Text, View, StyleSheet, TextInput } from "react-native";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Text, View, StyleSheet, TextInput, Alert } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { ProgressStep, ProgressSteps } from "react-native-progress-steps";
 import axios from "axios";
+import { useRouter } from "expo-router";
 
 export default function SignUp() {
+    const router = useRouter();
+
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
     const [email, setEmail] = useState('');
@@ -26,7 +29,7 @@ export default function SignUp() {
     };
 
     const validateStep2 = () => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^\d{4}[a-z]{2}\d{3}@stu\.ucsc\.cmb\.ac\.lk$/;
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
         setStep2Error(!(emailRegex.test(email) && passwordRegex.test(password)));
     };
@@ -59,13 +62,13 @@ export default function SignUp() {
                 age: parseInt(age, 10),
             });
             console.log("Signup response:", res);
-            alert("Verification code sent to email. Please verify your account.");
+            Alert.alert("Success", "Verification code sent to email. Please verify your account.");
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 console.error("Axios error response:", err.response);
-                alert("Signup failed: " + JSON.stringify(err.response?.data || err.message));
+                Alert.alert("Signup failed", JSON.stringify(err.response?.data || err.message));
             } else {
-                alert("Signup failed. Try again later.");
+                Alert.alert("Signup failed", "Try again later.");
                 console.error("Unknown error:", err);
             }
         }
@@ -77,12 +80,13 @@ export default function SignUp() {
                 email,
                 verificationCode
             });
-            alert('Account verified successfully!');
+            Alert.alert('Success', 'Account verified successfully!');
+            router.push('/Login'); // Redirect to login page
         } catch (err) {
             if (axios.isAxiosError(err)) {
-                alert('Verification failed: ' + JSON.stringify(err.response?.data || err.message));
+                Alert.alert('Verification failed', JSON.stringify(err.response?.data || err.message));
             } else {
-                alert('Verification failed. Try again later.');
+                Alert.alert('Verification failed', 'Try again later.');
             }
             console.error(err);
         }
@@ -91,12 +95,12 @@ export default function SignUp() {
     const handleResend = async () => {
         try {
             await axios.post('http://192.168.1.5:8080/auth/resend?email=' + email);
-            alert('Verification code resent!');
+            Alert.alert('Success', 'Verification code resent!');
         } catch (err) {
             if (axios.isAxiosError(err)) {
-                alert('Could not resend code: ' + JSON.stringify(err.response?.data || err.message));
+                Alert.alert('Could not resend code', JSON.stringify(err.response?.data || err.message));
             } else {
-                alert('Could not resend code. Try again later.');
+                Alert.alert('Could not resend code', 'Try again later.');
             }
             console.error(err);
         }
@@ -117,14 +121,14 @@ export default function SignUp() {
                         style={styles.input}
                         placeholder="Enter Your Name:"
                         value={name}
-                        onChangeText={(text) => setName(text)}
+                        onChangeText={setName}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder="Enter Your Age:"
                         value={age}
                         keyboardType="numeric"
-                        onChangeText={(text) => setAge(text)}
+                        onChangeText={setAge}
                     />
                 </View>
             </ProgressStep>
@@ -135,14 +139,14 @@ export default function SignUp() {
                         placeholder="Enter Your E-mail:"
                         value={email}
                         keyboardType="email-address"
-                        onChangeText={(text) => setEmail(text)}
+                        onChangeText={setEmail}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder="Password:"
                         value={password}
                         secureTextEntry
-                        onChangeText={(text) => setPassword(text)}
+                        onChangeText={setPassword}
                     />
                 </View>
             </ProgressStep>
@@ -153,7 +157,7 @@ export default function SignUp() {
                         placeholder="Enter Your Contact Number:"
                         value={contact_number}
                         keyboardType="numeric"
-                        onChangeText={(text) => setContact_number(text)}
+                        onChangeText={setContact_number}
                     />
                 </View>
             </ProgressStep>
@@ -206,7 +210,7 @@ const styles = StyleSheet.create({
     step: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 300
+        height: 300,
     },
     input: {
         width: '100%',
@@ -219,5 +223,5 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         fontSize: 16,
         color: '#333',
-    }
+    },
 });
