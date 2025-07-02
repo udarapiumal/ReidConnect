@@ -1,0 +1,21 @@
+# Ignore node modules
+**/node_modules/
+
+# Ignore IDE folders
+.idea/
+.vscode/
+
+# Ignore build and dist folders
+**/build/
+**/dist/
+
+# Ignore environment and log files
+*.env
+*.log
+
+# macOS-specific
+.DS_Store
+
+# Windows-specific
+Thumbs.db
+
