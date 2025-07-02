@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, TextInput, Button, Text, StyleSheet, Alert } from "react-native";
 import axios from "axios";
+import {router} from "expo-router";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -11,21 +12,44 @@ export default function Login() {
             Alert.alert("Error", "Please enter email and password");
             return;
         }
+
         try {
             console.log("Sending login request...");
             const res = await axios.post("http://localhost:8080/auth/login", { email, password });
             console.log("Login response:", res.data);
-            Alert.alert("Success", "Login successful!");
+
+            // Check for token in response
+            if (res.data && res.data.token) {
+                // Store the token for future use
+                const { token, expiresIn } = res.data;
+
+                // You can store in AsyncStorage or SecureStore here
+                console.log("Token received:", token);
+                console.log("Expires in:", expiresIn, "milliseconds");
+
+                Alert.alert("Success", "Login successful!");
+                router.replace('/');
+
+                // Navigate to next screen or update app state
+                // navigation.navigate('Home');
+
+            } else {
+                Alert.alert("Error", "Login failed - no token received");
+            }
+
         } catch (err) {
             console.log("Login error:", err);
             if (axios.isAxiosError(err)) {
-                Alert.alert("Login failed", JSON.stringify(err.response?.data || err.message));
+                if (err.response?.status === 401) {
+                    Alert.alert("Login Failed", "Invalid email or password");
+                } else {
+                    Alert.alert("Login Failed", err.response?.data?.message || err.message);
+                }
             } else {
-                Alert.alert("Login failed", "Try again later.");
+                Alert.alert("Login Failed", "An unexpected error occurred");
             }
         }
     };
-
 
     return (
         <View style={styles.container}>
