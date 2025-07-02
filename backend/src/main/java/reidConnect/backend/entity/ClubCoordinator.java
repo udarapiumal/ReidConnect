@@ -19,16 +19,23 @@ public class ClubCoordinator {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_Name")
-    private String userName;
+    @Column(name = "club_name", nullable = false, unique = true)
+    private String club_name;
 
-    @Column(name = "registration_number", nullable = false, unique = true)
-    private String registrationNumber;
+    @Column(name = "website", nullable = false, unique = true)
+    private String website;
 
-    @Column(name = "index_number", nullable = false, unique = true)
-    private String indexNumber;
+    @Column(name = "profile_picture")
+    private String profile_picture;
 
-    @Column(name = "email_address", nullable = false, unique = true)
-    private String email;
+    @Column(name = "sub_count")
+    private Integer sub_count;
+
+    @Column(name = "bio")
+    private String bio;
+
+    @OneToOne(optional = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
+    private User user;
 
 }

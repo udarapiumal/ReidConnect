@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import reidConnect.backend.entity.User;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -87,4 +88,19 @@ public class JwtService {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+    public String generateTokenFromUser(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", user.getId());
+        claims.put("email", user.getEmail());
+        claims.put("role", user.getRole());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(String.valueOf(user.getId())) // sub = user ID
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
 }

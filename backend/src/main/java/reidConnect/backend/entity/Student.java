@@ -26,7 +26,7 @@ public class Student {
     @Column(name = "student_name", nullable = false)
     private String studentName;
 
-    @ManyToOne(optional = false)
+    @OneToOne(optional = false)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 }

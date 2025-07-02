@@ -13,8 +13,10 @@ import lombok.Setter;
 
 public class ClubCoordinatorDto {
     private Long id;
-    private String userName;
-    private String registrationNumber;
-    private String indexNumber;
-    private String email;
+    private String clubName;
+    private Long user_id;
+    private String website;
+    private String profilePicture;
+    private String bio;
+    private Integer sub_count;
 }

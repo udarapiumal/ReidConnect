@@ -1,10 +1,15 @@
-import React, { useState } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
+import { useRouter } from "expo-router";
+import { jwtDecode } from "jwt-decode";
+import React, { useState } from "react";
+import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const router = useRouter();
+
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -15,7 +20,26 @@ export default function Login() {
             console.log("Sending login request...");
             const res = await axios.post("http://localhost:8080/auth/login", { email, password });
             console.log("Login response:", res.data);
+            const { token, role } = res.data;
             Alert.alert("Success", "Login successful!");
+
+            // ✅ Save token securely
+            await AsyncStorage.setItem("token", token);
+
+            // Decode token to check role
+            const decoded: any = jwtDecode(token);
+
+            // ✅ Redirect based on embedded role
+            switch (decoded.role) {
+                case "student":
+                    router.push("/student/dashboard");
+                    break;
+                case "club":
+                    router.push("/club/dashboard");
+                    break;
+                default:
+                    Alert.alert("Error", "Unknown role");
+            }
         } catch (err) {
             console.log("Login error:", err);
             if (axios.isAxiosError(err)) {
