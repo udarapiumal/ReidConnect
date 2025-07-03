@@ -1,5 +1,58 @@
 # Welcome to your Expo app 👋
+# EventHorizon
 
+A mobile event discovery and community application built with React Native and Expo.
+
+## Features
+
+- **Event Discovery**: Browse featured events and find upcoming activities near you
+- **Community Feed**: Connect with local clubs and community organizations
+- **Calendar View**: Track your schedule and manage event tickets
+- **Profile Dashboard**: Manage your saved events and tickets
+
+## Tech Stack
+
+- React Native with Expo
+- TypeScript
+- React Navigation (expo-router)
+- Feather Icons
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js
+- npm or yarn
+- Expo CLI
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm start
+   ```
+
+## Project Structure
+
+- `app/`: Expo Router configuration and screens
+  - `(tabs)/`: Tab-based navigation screens
+- `components/`: Reusable UI components
+- `constants/`: App constants like colors and themes
+- `hooks/`: Custom React hooks
+- `assets/`: Images, fonts, and other static assets
+
+## Screenshots
+
+*Coming soon*
+
+## License
+
+MIT
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
