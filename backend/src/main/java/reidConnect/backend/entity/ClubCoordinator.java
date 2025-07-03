@@ -34,7 +34,7 @@ public class ClubCoordinator {
     @Column(name = "bio")
     private String bio;
 
-    @OneToOne(optional = false)
+    @OneToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
 

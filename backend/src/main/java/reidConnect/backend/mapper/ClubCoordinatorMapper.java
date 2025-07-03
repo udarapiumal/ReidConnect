@@ -9,7 +9,7 @@ public class ClubCoordinatorMapper {
     public static ClubCoordinatorDto mapToClubCoordinatorDto(ClubCoordinator clubCoordinator) {
         return new ClubCoordinatorDto(
                 clubCoordinator.getId(),
-                clubCoordinator.getClub_name(), 
+                clubCoordinator.getClub_name(),
                 clubCoordinator.getUser().getId(),
                 clubCoordinator.getWebsite(),
                 clubCoordinator.getProfile_picture(),
@@ -24,7 +24,7 @@ public class ClubCoordinatorMapper {
                 clubCoordinatorDto.getClubName(),
                 clubCoordinatorDto.getWebsite(),
                 clubCoordinatorDto.getProfilePicture(),
-                clubCoordinatorDto.getSub_count(),
+                clubCoordinatorDto.getSubCount(),
                 clubCoordinatorDto.getBio(),
                 user
         );

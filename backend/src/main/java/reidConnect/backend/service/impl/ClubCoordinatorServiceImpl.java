@@ -24,8 +24,8 @@ public class ClubCoordinatorServiceImpl implements ClubCoordinatorService {
     @Override
     public ClubCoordinatorDto createClubCoordinator(ClubCoordinatorDto clubCoordinatorDto) {
         //Fetch User entity from userId
-        User user = userRepository.findById(clubCoordinatorDto.getUser_id())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + clubCoordinatorDto.getUser_id()));
+        User user = userRepository.findById(clubCoordinatorDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + clubCoordinatorDto.getUserId()));
 
         //Pass User entity into mapper
         ClubCoordinator clubCoordinator = ClubCoordinatorMapper.mapToClubCoordinator(clubCoordinatorDto, user);
@@ -38,6 +38,13 @@ public class ClubCoordinatorServiceImpl implements ClubCoordinatorService {
         ClubCoordinator clubCoordinator = clubCoordinatorRepository.findById(clubCoordinatorId)
                 .orElseThrow(() -> new ResourceNotFoundException("ClubCoordinator not found for this id :: " + clubCoordinatorId));
 
+        return ClubCoordinatorMapper.mapToClubCoordinatorDto(clubCoordinator);
+    }
+
+    @Override
+    public ClubCoordinatorDto getByUserId(Long userId) {
+        ClubCoordinator clubCoordinator = clubCoordinatorRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Club Coordinator not found for user ID: " + userId));
         return ClubCoordinatorMapper.mapToClubCoordinatorDto(clubCoordinator);
     }
 
@@ -59,12 +66,12 @@ public class ClubCoordinatorServiceImpl implements ClubCoordinatorService {
         clubCoordinator.setWebsite(updatedClubCoordinatorDto.getWebsite());
         clubCoordinator.setProfile_picture(updatedClubCoordinatorDto.getProfilePicture());
         clubCoordinator.setBio(updatedClubCoordinatorDto.getBio());
-        clubCoordinator.setSub_count(updatedClubCoordinatorDto.getSub_count());
+        clubCoordinator.setSub_count(updatedClubCoordinatorDto.getSubCount());
 
-        // Update user if changed (optional)
-        if (!clubCoordinator.getUser().getId().equals(updatedClubCoordinatorDto.getUser_id())) {
-            User user = userRepository.findById(updatedClubCoordinatorDto.getUser_id())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + updatedClubCoordinatorDto.getUser_id()));
+        // Update the user if changed (optional)
+        if (!clubCoordinator.getUser().getId().equals(updatedClubCoordinatorDto.getUserId())) {
+            User user = userRepository.findById(updatedClubCoordinatorDto.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + updatedClubCoordinatorDto.getUserId()));
             clubCoordinator.setUser(user);
         }
 

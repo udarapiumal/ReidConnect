@@ -1,6 +1,7 @@
 package reidConnect.backend.controller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import reidConnect.backend.dto.ClubCoordinatorDto;
 import reidConnect.backend.service.ClubCoordinatorService;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ public class ClubCoordinatorController {
     private ClubCoordinatorService clubCoordinatorService;
 
     //Build Add ClubCoordinator REST API
+    @PreAuthorize("hasRole('CLUB')")
     @PostMapping
     public ResponseEntity<ClubCoordinatorDto> createClubCoordinator(@RequestBody ClubCoordinatorDto clubCoordinatorDto) {
         ClubCoordinatorDto savedClubCoordinator = clubCoordinatorService.createClubCoordinator(clubCoordinatorDto);
@@ -24,13 +26,24 @@ public class ClubCoordinatorController {
     }
 
     //Build Get ClubCoordinator REST API
+    @PreAuthorize("hasRole('CLUB')")
     @GetMapping("{id}")
     public ResponseEntity<ClubCoordinatorDto> getClubCoordinatorById(@PathVariable("id") Long clubCoordinatorId) {
         ClubCoordinatorDto clubCoordinatorDto = clubCoordinatorService.getClubCoordinatorById(clubCoordinatorId);
         return ResponseEntity.ok(clubCoordinatorDto);
     }
 
+    //Build Get ClubCoordinator by user_id REST API
+    @PreAuthorize("hasRole('CLUB')")
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<ClubCoordinatorDto> getClubCoordinatorByUserId(@PathVariable("userId") Long userId) {
+        ClubCoordinatorDto clubCoordinatorDto = clubCoordinatorService.getByUserId(userId);
+        return ResponseEntity.ok(clubCoordinatorDto);
+    }
+
+
     //Build Get All ClubCoordinators REST API
+    @PreAuthorize("hasRole('CLUB')")
     @GetMapping
     public ResponseEntity<Iterable<ClubCoordinatorDto>> getAllClubCoordinators() {
         List<ClubCoordinatorDto> clubCoordinators = clubCoordinatorService.getAllClubCoordinators();
@@ -38,6 +51,7 @@ public class ClubCoordinatorController {
     }
 
     //Build Update ClubCoordinator REST API
+    @PreAuthorize("hasRole('CLUB')")
     @PutMapping("{id}")
     public ResponseEntity<ClubCoordinatorDto> updateClubCoordinator(@PathVariable("id") Long clubCoordinatorId,
                                                                     @RequestBody ClubCoordinatorDto updatedClubCoordinator) {
@@ -46,6 +60,7 @@ public class ClubCoordinatorController {
     }
 
     //Build Delete ClubCoordinator REST API
+    @PreAuthorize("hasRole('CLUB')")
     @DeleteMapping("{id}")
     public ResponseEntity<String> deleteClubCoordinatorById(@PathVariable("id") Long clubCoordinatorId) {
         clubCoordinatorService.deleteClubCoordinatorById(clubCoordinatorId);

@@ -9,6 +9,8 @@ public interface ClubCoordinatorService {
 
     ClubCoordinatorDto getClubCoordinatorById(Long clubCoordinatorId);
 
+    ClubCoordinatorDto getByUserId(Long userId);
+
     List<ClubCoordinatorDto> getAllClubCoordinators();
 
     ClubCoordinatorDto updateClubCoordinator(Long clubCoordinatorId, ClubCoordinatorDto updatedClubCoordinator);
