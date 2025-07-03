@@ -1,0 +1,59 @@
+# === Global ===
+.DS_Store
+Thumbs.db
+*.log
+*.env
+*.env.*.local
+
+# === Git ===
+*.swp
+*.swo
+
+# === Node (frontend) ===
+node_modules/
+.expo/
+web-build/
+dist/
+coverage/
+.vscode/
+expo-env.d.ts
+
+# === Java (backend) ===
+backend/target/
+backend/.idea/
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/.vscode/
+*.iml
+
+# === IntelliJ IDEA ===
+*.iws
+*.ipr
+*.iml
+.idea/
+
+# === Build Tools ===
+**/build/
+**/dist/
+
+# === OS Specific ===
+ehthumbs.db
+Icon?
+.Spotlight-V100
+.Trashes
+
+# === Logs ===
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === VS Code ===
+.vscode/
+
+# === Temporary Files ===
+*.tmp
+*.bak
+*.swp
+*.swo
