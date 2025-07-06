@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 
-public class ClubCoordinatorDto {
+public class ClubDto {
     private Long id;
     private String clubName;
     private Long userId;

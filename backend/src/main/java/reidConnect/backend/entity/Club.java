@@ -11,9 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "club_coordinators")
+@Table(name = "club")
 
-public class ClubCoordinator {
+public class Club {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

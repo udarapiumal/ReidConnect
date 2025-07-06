@@ -37,7 +37,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
         setUser(decoded);
 
         const res = await axios.get(
-          `http://localhost:8080/api/club-coordinators/by-user/${decoded.id}`,
+          `http://localhost:8080/api/club/by-user/${decoded.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
