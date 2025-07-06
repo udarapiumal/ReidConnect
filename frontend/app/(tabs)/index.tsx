@@ -88,16 +88,16 @@ const upcomingEvents: EventData[] = [
 
 export default function HomePage() {
   return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <ThemedView style={styles.container}>
         <ScrollView
-            style={styles.scrollView}
             showsVerticalScrollIndicator={false}>
+         <SafeAreaView edges={['top']}>
 
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <ThemedText style={styles.welcomeText}>Good afternoon 👋</ThemedText>
-              <ThemedText style={styles.userName}>Shenal</ThemedText>
+              <ThemedText type="defaultSemiBold" style={styles.welcomeText}>Good afternoon 👋</ThemedText>
+              <ThemedText type="title" style={styles.userName}>Shenal</ThemedText>
             </View>
             <View style={styles.headerButtons}>
               <TouchableOpacity style={styles.iconButton}>
@@ -112,7 +112,7 @@ export default function HomePage() {
 
           {/* Featured Events */}
           <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Upcomming Events</ThemedText>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Events</ThemedText>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -123,10 +123,10 @@ export default function HomePage() {
             </ScrollView>
           </View>
 
-          {/* Community Buzz */}
+          {/* Community Feed */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>Community Feed</ThemedText>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>Community Feed</ThemedText>
               <TouchableOpacity>
                 <ThemedText style={styles.seeAllButton}>See All</ThemedText>
               </TouchableOpacity>
@@ -138,7 +138,7 @@ export default function HomePage() {
 
           {/* Upcoming Events */}
           <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Upcoming Near You</ThemedText>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Near You</ThemedText>
             {upcomingEvents.map(event => (
                 <EventCard key={event.id} event={event} size="small" />
             ))}
@@ -146,15 +146,15 @@ export default function HomePage() {
 
           {/* Bottom padding */}
           <View style={styles.bottomPadding} />
+          </SafeAreaView>
         </ScrollView>
-      </SafeAreaView>
+      </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   scrollView: {
     flex: 1,
@@ -169,14 +169,10 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 16,
-    fontWeight: '600',
     marginBottom: 3,
-    color: '#6c757d',
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#343a40',
   },
   headerButtons: {
     flexDirection: 'row',
@@ -206,7 +202,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#343a40',
     paddingHorizontal: 20,
   },
   seeAllButton: {

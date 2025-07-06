@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 type EventSize = 'large' | 'small';
 
@@ -24,6 +25,12 @@ type EventCardProps = {
 };
 
 export function EventCard({ event, size = 'large', onPress }: EventCardProps) {
+  const cardBackgroundColor = useThemeColor({}, 'background');
+  const shadowColor = useThemeColor({}, 'text');
+  const placeholderColor = useThemeColor({}, 'tabIconDefault');
+  const primaryColor = useThemeColor({}, 'tint');
+  const secondaryTextColor = useThemeColor({}, 'icon');
+
   return (
     <TouchableOpacity
       style={[styles.container, size === 'small' ? styles.smallContainer : styles.largeContainer]}
@@ -34,19 +41,19 @@ export function EventCard({ event, size = 'large', onPress }: EventCardProps) {
         style={[styles.image, size === 'small' ? styles.smallImage : styles.largeImage]}
         contentFit="cover"
       />
-      <ThemedView style={styles.detailsContainer}>
-        <ThemedText style={styles.category}>{event.category}</ThemedText>
+      <ThemedView style={[styles.detailsContainer, { backgroundColor: 'transparent' }]}>
+        <ThemedText style={[styles.category, { color: primaryColor }]}>{event.category}</ThemedText>
         <ThemedText style={[styles.title, size === 'small' ? styles.smallTitle : styles.largeTitle]}>
           {event.title}
         </ThemedText>
         <View style={styles.metaContainer}>
           <View style={styles.metaItem}>
-            <Feather name="map-pin" size={14} color="#888" />
-            <ThemedText style={styles.metaText}>{event.location}</ThemedText>
+            <Feather name="map-pin" size={14} color={secondaryTextColor} />
+            <ThemedText style={[styles.metaText, { color: secondaryTextColor }]}>{event.location}</ThemedText>
           </View>
           <View style={styles.metaItem}>
-            <Feather name="calendar" size={14} color="#888" />
-            <ThemedText style={styles.metaText}>{event.date}</ThemedText>
+            <Feather name="calendar" size={14} color={secondaryTextColor} />
+            <ThemedText style={[styles.metaText, { color: secondaryTextColor }]}>{event.date}</ThemedText>
           </View>
         </View>
       </ThemedView>
@@ -58,8 +65,6 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -75,7 +80,6 @@ const styles = StyleSheet.create({
     height: 100,
   },
   image: {
-    backgroundColor: '#eee',
   },
   largeImage: {
     height: 150,
@@ -92,7 +96,6 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6200ee',
     marginBottom: 4,
     textTransform: 'uppercase',
   },
@@ -117,6 +120,5 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: '#888',
   },
 });
