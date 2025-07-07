@@ -1,16 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { useClub } from "../../context/ClubContext";
+
+const { width } = Dimensions.get('window');
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -55,18 +59,34 @@ export default function ProfilePage() {
       </View>
 
       <ScrollView style={styles.scrollView}>
-        {/* Profile Picture Section */}
-        <View style={styles.profilePictureSection}>
-          <View style={styles.profilePictureContainer}>
-            <View style={styles.profilePicture}>
-              <Text style={styles.profilePictureText}>C</Text>
-            </View>
-            <TouchableOpacity style={styles.cameraButton}>
-              <Text style={styles.cameraIcon}>📷</Text>
-            </TouchableOpacity>
+        {/* Cover Image with Centered Profile Picture */}
+        <View style={styles.coverSection}>
+          <View style={styles.coverImageContainer}>
+            <Image
+              source={require("../../../assets/clubImages/profilePictures/rota_cover.jpg")}
+              style={styles.coverImage}
+              resizeMode="cover"
+            />
           </View>
-          <TouchableOpacity style={styles.editProfilePicture}>
-            <Text style={styles.editIcon}>📷</Text>
+          
+          {/* Profile Picture centered on cover */}
+          <View style={styles.profilePictureSection}>
+            <View style={styles.profilePictureContainer}>
+              <View style={styles.profilePicture}>
+                <Image 
+                  source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
+                  style={styles.profilePictureImage} 
+                />
+              </View>
+              <TouchableOpacity style={styles.cameraButton}>
+                <Ionicons name="camera" size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Edit Cover Photo Button */}
+          <TouchableOpacity style={styles.editCoverButton}>
+            <Ionicons name="camera" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -91,28 +111,30 @@ export default function ProfilePage() {
                 style={styles.editButton}
                 onPress={() => setIsEditing(!isEditing)}
               >
-                <Text style={styles.editButtonIcon}>✏️</Text>
+                <Ionicons name="pencil" size={16} color="#fff" />
               </TouchableOpacity>
+
             </View>
           </View>
 
           {/* Channel URL Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Channel URL</Text>
+            <Text style={styles.fieldLabel}>Website URL</Text>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldValue}>{website}</Text>
               <TouchableOpacity 
                 style={styles.editButton}
-                onPress={copyToClipboard}
+                onPress={() => setIsEditing(!isEditing)}
               >
-                <Text style={styles.editButtonIcon}>✏️</Text>
+                <Ionicons name="pencil" size={16} color="#fff" />
               </TouchableOpacity>
+
             </View>
           </View>
 
           {/* bio Field */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>bio</Text>
+            <Text style={styles.fieldLabel}>Bio</Text>
             <View style={styles.fieldRow}>
               {isEditing ? (
                 <TextInput
@@ -132,29 +154,12 @@ export default function ProfilePage() {
                 style={styles.editButton}
                 onPress={() => setIsEditing(!isEditing)}
               >
-                <Text style={styles.editButtonIcon}>✏️</Text>
+                <Ionicons name="pencil" size={16} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Privacy Settings */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Privacy</Text>
-            <View style={styles.privacyContainer}>
-              <View style={styles.privacyRow}>
-                <Text style={styles.privacyText}>Keep all my subscriptions private</Text>
-                <Switch
-                  value={isPrivate}
-                  onValueChange={setIsPrivate}
-                  trackColor={{ false: "#333", true: "#4CAF50" }}
-                  thumbColor={isPrivate ? "#fff" : "#f4f3f4"}
-                />
-              </View>
-              <Text style={styles.privacyNote}>
-                ⓘ Changes made to your name and profile picture are visible only on YouTube and not other Google services. Learn more
-              </Text>
-            </View>
-          </View>
+          
         </View>
 
         {/* Edit Buttons */}
@@ -176,7 +181,7 @@ export default function ProfilePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F0F0F",
+    backgroundColor: "#151718",
   },
   header: {
     flexDirection: "row",
@@ -215,11 +220,29 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  profilePictureSection: {
-    alignItems: "center",
-    paddingVertical: 24,
-    backgroundColor: "#1a1a1a",
+  coverSection: {
     position: "relative",
+    width: "100%",
+    height: 200, // Maintain aspect ratio for 820x462
+    backgroundColor: "#222",
+  },
+  coverImageContainer: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#222",
+  },
+  coverImage: {
+    width: "100%",
+    height: "100%",
+  },
+  profilePictureSection: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
   },
   profilePictureContainer: {
     position: "relative",
@@ -227,12 +250,18 @@ const styles = StyleSheet.create({
   profilePicture: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: 80,
     backgroundColor: "#333",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#555",
+    borderWidth: 4,
+    borderColor: "#fff",
+    overflow: "hidden",
+  },
+  profilePictureImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 50,
   },
   profilePictureText: {
     color: "#fff",
@@ -250,16 +279,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#000",
+    borderColor: "#fff",
   },
   cameraIcon: {
     fontSize: 16,
   },
-  editProfilePicture: {
+  editCoverButton: {
     position: "absolute",
     top: 16,
     right: 16,
-    backgroundColor: "#333",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     borderRadius: 20,
     width: 40,
     height: 40,
@@ -271,7 +300,8 @@ const styles = StyleSheet.create({
   },
   profileFields: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 32,
+    backgroundColor: "#151718",
   },
   fieldContainer: {
     marginBottom: 24,
@@ -368,5 +398,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#333",
   },
-
 });

@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import React from "react";
 import {
     ActivityIndicator,
@@ -18,30 +19,60 @@ export default function ClubDashboardTab() {
     const renderAnalyticsCards = () => (
         <View style={styles.analyticsContainer}>
             <View style={styles.analyticsCard}>
-                <Text style={styles.analyticsLabel}>Views</Text>
-                <Text style={styles.analyticsValue}>415 ↓</Text>
+                <Text style={styles.analyticsLabel}>New Subscribers</Text>
+                <Text style={styles.analyticsValue}>15</Text>
             </View>
             <View style={styles.analyticsCard}>
-                <Text style={styles.analyticsLabel}>Watch time (hours)</Text>
-                <Text style={styles.analyticsValue}>7.4 ↓</Text>
+                <Text style={styles.analyticsLabel}>Events created</Text>
+                <Text style={styles.analyticsValue}>3</Text>
+            </View>
+            <View style={styles.analyticsCard}>
+                <Text style={styles.analyticsLabel}>Posts published</Text>
+                <Text style={styles.analyticsValue}>15</Text>
             </View>
         </View>
     );
 
-    const renderVideoItem = ({ title, duration, views, likes, comments }) => (
+    const renderVideoItem = ({ thumbnail, title, duration, likes, comments }) => (
         <View style={styles.videoItem}>
             <View style={styles.videoThumbnail}>
                 <View style={styles.thumbnailPlaceholder}>
-                    <Text style={styles.thumbnailText}>🎹</Text>
+                        <Image source={thumbnail} style={{ width: 72, height: 48,  borderRadius: 5 }} />
                 </View>
             </View>
             <View style={styles.videoInfo}>
                 <Text style={styles.videoTitle} numberOfLines={2}>{title}</Text>
                 <Text style={styles.videoMeta}>First {duration}</Text>
                 <View style={styles.videoStats}>
-                    <Text style={styles.statText}>📊 {views}</Text>
-                    <Text style={styles.statText}>👍 {likes}</Text>
-                    <Text style={styles.statText}>💬 {comments}</Text>
+                     <View style={styles.icon}>
+                        <Feather name="thumbs-up" size={16} color="#555" />
+                        <Text style={styles.statText}>{likes}</Text>
+                    </View>
+                    <View style={styles.icon}>
+                        <Feather name="message-circle" size={16} color="#555" />
+                        <Text style={styles.statText}>{comments}</Text>
+                    </View>
+                </View>
+            </View>
+        </View>
+    );
+
+    const renderCommentItem = ({ thumbnail, title, commenterPic ,commenterName, commentTime, commentText }) => (
+        <View style={styles.commentItem}>
+            <View style={styles.commentHeader}>
+                <View style={styles.commentThumbnail}>
+                    <Image source={thumbnail} style={{ width: 40, height: 40, borderRadius: 4 }} />
+                </View>
+                <View style={styles.commentContent}>
+                    <Text style={styles.commentTitle} numberOfLines={1}>{title}</Text>
+                    <View style={styles.commentMeta}>
+                        <View style={styles.commenterAvatar}>
+                            <Image source={commenterPic} style={{ width: 25, height: 25,  borderRadius: 25 }} />
+                        </View>
+                        <Text style={styles.commenterName}>@{commenterName}</Text>
+                        <Text style={styles.commentTime}>• {commentTime}</Text>
+                    </View>
+                    <Text style={styles.commentText}>{commentText}</Text>
                 </View>
             </View>
         </View>
@@ -60,13 +91,16 @@ export default function ClubDashboardTab() {
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <View style={styles.logoContainer}>
-                        <Image source={require("../../../assets/images/ucsc-logo.png")} style={{ width: 50, height: 50 }} />
+                        
                         <Text style={styles.logoText}>Reid Connect</Text>
                     </View>
                 </View>
                 <View style={styles.headerRight}>
                     <TouchableOpacity style={styles.createButton}>
-                        <Text style={styles.createButtonText}>+ Create</Text>
+                       <Image
+                            source={require('../../../assets/images/plus.png')} 
+                            style={styles.bellIcon}
+                        />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.bellButton}>
@@ -79,9 +113,8 @@ export default function ClubDashboardTab() {
                         </View>
                     </TouchableOpacity>
 
-
                     <TouchableOpacity style={styles.profileButton}>
-                        <Image source={require("../../../assets/clubImages/profilePictures/1.jpeg")} style={{ width: 50, height: 50 }} />
+                        <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 50, height: 50 }} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -89,7 +122,7 @@ export default function ClubDashboardTab() {
             {/* Club Info Header */}
             <View style={styles.clubInfo}>
                 <View style={styles.clubAvatar}>
-                    <Text style={styles.avatarText}>🎹</Text>
+                    <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 56, height: 56, borderRadius: 28 }} />
                 </View>
                 <View style={styles.clubDetails}>
                     <Text style={styles.clubName}>
@@ -118,33 +151,52 @@ export default function ClubDashboardTab() {
                 </View>
 
                 {renderVideoItem({
-                    title: "Can you hear the music piano cover 🎹...",
-                    duration: "333 days, 2 hours",
-                    views: "567",
-                    likes: "27",
-                    comments: "2"
+                    thumbnail : require("../../../assets/clubImages/postImages/1.jpg"),
+                    title: "More than a Club— a call to lead,serve and grow! 📢🙌",
+                    duration: "3 days, 2 hours",
+                    likes: " 27",
+                    comments: " 2"
                 })}
 
-                <View style={styles.commentsSection}>
-                    <Text style={styles.commentsTitle}>Comments</Text>
-                    <Text style={styles.commentsCount}>2</Text>
-                    <Text style={styles.noComments}>No unresponded comments</Text>
+                {renderVideoItem({
+                    thumbnail : require("../../../assets/clubImages/postImages/2.jpg"),
+                    title: "Presenting the Powerhouse! 🌟",
+                    duration: "4 days, 15 hours",
+                    likes: " 50",
+                    comments: " 4"
+                })}
+
+                {renderVideoItem({
+                    thumbnail : require("../../../assets/clubImages/postImages/3.jpg"),
+                    title: "Unveiling the Visionaries! ✨ Meet the Executive Committee of the Rotaract Club of UCSC",
+                    duration: "9 days, 3 hours",
+                    likes: " 18",
+                    comments: " 1"
+                })}
+            </View>
+
+            {/* Latest Comments Section */}
+            <View style={styles.contentSection}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Latest comments</Text>
                 </View>
 
-                {renderVideoItem({
-                    title: "A clip of the interstellar theme played o...",
-                    duration: "534 days, 15 hours",
-                    views: "631",
-                    likes: "50",
-                    comments: "4"
+                {renderCommentItem({
+                    thumbnail: require("../../../assets/clubImages/postImages/3.jpg"),
+                    commenterPic: require("../../../assets/clubImages/postImages/5.png"),
+                    title: "Unveiling the Visionaries! ✨ Meet the Executive Committee of the Rotaract Club of UCSC",
+                    commenterName: "Chathura354",
+                    commentTime: "2 days ago",
+                    commentText: "Congratulations everyone!"
                 })}
 
-                {renderVideoItem({
-                    title: "Etha Ran Wiman (අහා රන් විමන්) - Pri...",
-                    duration: "549 days, 3 hours",
-                    views: "245",
-                    likes: "18",
-                    comments: "1"
+                {renderCommentItem({
+                    thumbnail: require("../../../assets/clubImages/postImages/1.jpg"),
+                    commenterPic: require("../../../assets/clubImages/postImages/6.png"),
+                    title: "More than a Club— a call to lead,serve and grow! 📢🙌",
+                    commenterName: "ShenalRD",
+                    commentTime: "4 hours ago",
+                    commentText: "Can't wait "
                 })}
             </View>
         </ScrollView>
@@ -154,7 +206,7 @@ export default function ClubDashboardTab() {
 const styles = StyleSheet.create({
     dashboardContent: {
         flex: 1,
-        backgroundColor: "#0f0f0f"
+        backgroundColor: "#151718"
     },
      // Header Styles
     header: {
@@ -163,7 +215,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: "#0f0f0f",
+        backgroundColor: "##151718",
         borderBottomWidth: 1,
         borderBottomColor: "#272727",
     },
@@ -183,17 +235,26 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
     },
-    createButton: {
-        backgroundColor: '#272727',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        marginRight: 16,
+    icon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 12,
     },
-    createButtonText: {
-        color: 'white',
-        fontWeight: '600',
-        fontSize: 16,
+    videoStats: {
+        flexDirection: 'row',
+        marginTop: 4,
+    },
+    statText: {
+        marginLeft: 4,
+        fontSize: 12,
+        color: '#555',
+    },
+
+    createButton: {
+        width: 28,       
+        height: 28,      
+        marginRight: 10,
+        resizeMode: 'contain', 
     },
     bellButton: {
         position: 'relative',
@@ -209,7 +270,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -4,
         right: -8,
-        backgroundColor: '#ff2f5f',
+        backgroundColor: '#CF1005',
         borderRadius: 8,
         paddingHorizontal: 4,
         paddingVertical: 1,
@@ -256,7 +317,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
-        backgroundColor: "#0f0f0f",
+        backgroundColor: "#151718",
         borderBottomWidth: 1,
         borderBottomColor: "#272727",
     },
@@ -397,5 +458,62 @@ const styles = StyleSheet.create({
     noComments: {
         color: "#aaaaaa",
         fontSize: 14,
+    },
+    // New Comment Item Styles
+    commentItem: {
+        backgroundColor: "#1a1a1a",
+        padding: 16,
+        borderRadius: 8,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#272727",
+    },
+    commentHeader: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+    },
+    commentThumbnail: {
+        marginRight: 12,
+    },
+    commentContent: {
+        flex: 1,
+    },
+    commentTitle: {
+        color: "#ffffff",
+        fontSize: 14,
+        fontWeight: "500",
+        marginBottom: 8,
+    },
+    commentMeta: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    commenterAvatar: {
+        width: 25,
+        height: 25,
+        borderRadius: 25,
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 6,
+    },
+    commenterInitial: {
+        color: "#ffffff",
+        fontSize: 8,
+        fontWeight: "bold",
+    },
+    commenterName: {
+        color: "#aaaaaa",
+        fontSize: 12,
+        marginRight: 4,
+    },
+    commentTime: {
+        color: "#aaaaaa",
+        fontSize: 12,
+    },
+    commentText: {
+        color: "#ffffff",
+        fontSize: 14,
+        lineHeight: 20,
     },
 });

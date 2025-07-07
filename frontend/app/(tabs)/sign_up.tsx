@@ -53,7 +53,7 @@ export default function SignUp() {
 
     const handleSubmit = async () => {
         try {
-            const res = await axios.post("http://localhost:8080/auth/signup", {
+            const res = await axios.post("http:// 10.149.164.83:8080/auth/signup", {
                 username: name,
                 email: email,
                 password: password,
@@ -107,13 +107,16 @@ export default function SignUp() {
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.container}>
             <ProgressSteps
-                completedStepIconColor="#e74c3c"
+                completedStepIconColor="#FF0033"
                 activeStepIconBorderColor="#c0392b"
                 activeLabelColor="#c0392b"
-                labelColor="#999"
-                progressBarColor="#e74c3c"
+                labelColor="#888"
+                progressBarColor="#FF0033"
+                completedStepNumColor="#ffffff"
+                activeStepNumColor="#ffffff"
+                disabledStepNumColor="#121212"
             >
                 <ProgressStep label="Step 1" errors={step1Error}>
                     <Text style={styles.title}>Sign Up</Text>
@@ -121,12 +124,14 @@ export default function SignUp() {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Your Name:"
+                            placeholderTextColor="#888"
                             value={name}
                             onChangeText={setName}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Your Age:"
+                            placeholderTextColor="#888"
                             value={age}
                             keyboardType="numeric"
                             onChangeText={setAge}
@@ -138,6 +143,7 @@ export default function SignUp() {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Your E-mail:"
+                            placeholderTextColor="#888"
                             value={email}
                             keyboardType="email-address"
                             onChangeText={setEmail}
@@ -145,6 +151,7 @@ export default function SignUp() {
                         <TextInput
                             style={styles.input}
                             placeholder="Password:"
+                            placeholderTextColor="#888"
                             value={password}
                             secureTextEntry
                             onChangeText={setPassword}
@@ -156,6 +163,7 @@ export default function SignUp() {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Your Contact Number:"
+                            placeholderTextColor="#888"
                             value={contact_number}
                             keyboardType="numeric"
                             onChangeText={setContact_number}
@@ -165,7 +173,7 @@ export default function SignUp() {
                 <ProgressStep label="Step 4" onNext={handleSubmit}>
                     <View style={styles.step}>
                         <Picker
-                            style={styles.input}
+                            style={styles.picker}
                             selectedValue={academic_year}
                             onValueChange={(itemValue) => setAcademic_year(itemValue)}
                         >
@@ -182,41 +190,39 @@ export default function SignUp() {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Verification Code"
+                            placeholderTextColor="#888"
                             value={verificationCode}
                             onChangeText={setVerificationCode}
                         />
-                        <Text style={{ color: '#007BFF', marginTop: 10 }} onPress={handleResend}>
+                        <Text style={styles.resendText} onPress={handleResend}>
                             Resend Verification Code
                         </Text>
                     </View>
                 </ProgressStep>
             </ProgressSteps>
             <View style={styles.loginRedirectContainer}>
-            <Text style={styles.loginText}>
-                Already have an account?{' '}
-                <Text style={styles.loginLink} onPress={() => router.push('/Login')}>
-                    Log in
+                <Text style={styles.loginText}>
+                    Already have an account?{' '}
+                    <Text style={styles.loginLink} onPress={() => router.push('/Login')}>
+                        Log in
+                    </Text>
                 </Text>
-            </Text>
+            </View>
         </View>
-    </View>
-
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#151718',
     },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
         marginBottom: 30,
         textAlign: 'center',
-        color: '#333',
+        color: '#ffffff',
     },
     step: {
         alignItems: 'center',
@@ -227,28 +233,37 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 50,
         borderWidth: 1.5,
-        borderColor: '#ccc',
+        borderColor: '#444',
         borderRadius: 10,
         paddingHorizontal: 15,
         marginBottom: 15,
-        backgroundColor: '#fff',
+        backgroundColor: '#1A1A1A',
         fontSize: 16,
-        color: '#333',
+        color: '#ffffff',
+    },
+    picker: {
+        width: '100%',
+        height: 50,
+        borderRadius: 10,
+        backgroundColor: '#1e1e1e',
+        color: '#ffffff',
+    },
+    resendText: {
+        color: '#007BFF',
+        marginTop: 10,
+        textDecorationLine: 'underline',
     },
     loginRedirectContainer: {
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f9f9f9',
+        alignItems: 'center',
+        padding: 15,
+        backgroundColor: '#121212',
     },
-
     loginText: {
         fontSize: 16,
-        color: '#555',
+        color: '#cccccc',
     },
-
     loginLink: {
-        color: '#e74c3c',
+        color: '#FF0033',
         fontWeight: 'bold',
     },
-
-    });
+});
