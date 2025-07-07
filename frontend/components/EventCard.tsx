@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
+import { Image, ImageSource } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from './ThemedText';
@@ -15,21 +15,25 @@ export type EventData = {
   category: string;
   date: string;
   location: string;
-  image: string;
+  image: string | number | ImageSource | ImageSource[];
+  club?: string;
 };
 
 type EventCardProps = {
   event: EventData;
   size?: EventSize;
   onPress?: () => void;
+  onChangePhoto?: () => void;
 };
 
-export function EventCard({ event, size = 'large', onPress }: EventCardProps) {
+export function EventCard({ event, size = 'large', onPress, onChangePhoto }: EventCardProps) {
   const cardBackgroundColor = useThemeColor({}, 'background');
   const shadowColor = useThemeColor({}, 'text');
   const placeholderColor = useThemeColor({}, 'tabIconDefault');
   const primaryColor = useThemeColor({}, 'tint');
   const secondaryTextColor = useThemeColor({}, 'icon');
+
+  const imageSource = typeof event.image === 'string' ? { uri: event.image } : event.image;
 
   return (
     <TouchableOpacity
@@ -37,11 +41,17 @@ export function EventCard({ event, size = 'large', onPress }: EventCardProps) {
       onPress={onPress}
       activeOpacity={0.8}>
       <Image 
-        source={{ uri: event.image }}
+        source={imageSource}
         style={[styles.image, size === 'small' ? styles.smallImage : styles.largeImage]}
         contentFit="cover"
       />
+      {onChangePhoto && (
+        <TouchableOpacity style={styles.changePhotoButton} onPress={onChangePhoto}>
+          <Feather name="camera" size={18} color="white" />
+        </TouchableOpacity>
+      )}
       <ThemedView style={[styles.detailsContainer, { backgroundColor: 'transparent' }]}>
+        {event.club && <ThemedText style={styles.club}>{event.club}</ThemedText>}
         <ThemedText style={[styles.category, { color: primaryColor }]}>{event.category}</ThemedText>
         <ThemedText style={[styles.title, size === 'small' ? styles.smallTitle : styles.largeTitle]}>
           {event.title}
@@ -89,9 +99,22 @@ const styles = StyleSheet.create({
     width: 100,
     height: '100%',
   },
+  changePhotoButton: {
+    position: 'absolute',
+    top: 8,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 6,
+    borderRadius: 20,
+  },
   detailsContainer: {
     padding: 12,
     flex: 1,
+  },
+  club: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
   category: {
     fontSize: 12,

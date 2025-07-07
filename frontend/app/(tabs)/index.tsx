@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Platform, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
@@ -8,24 +7,27 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { EventCard, EventData } from '@/components/EventCard';
 import { PostCard, PostData } from '@/components/PostCard';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Mock data
 const featuredEvents: EventData[] = [
   {
     id: '1',
-    title: 'Summer Music Festival',
-    category: 'Music',
-    date: 'Jul 15, 2025',
-    location: 'Central Park',
-    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=2070&auto=format&fit=crop',
+    title: 'Mind Matters - Phase 2',
+    category: 'Wellness',
+    date: 'Today, 10:30 AM',
+    location: 'Google Meet',
+    image: require('@/assets/images/event1.png'),
+    club: 'Rotaract Club of UOC',
   },
   {
     id: '2',
-    title: 'Tech Conference 2025',
-    category: 'Technology',
-    date: 'Aug 10, 2025',
-    location: 'Convention Center',
-    image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=2070&auto=format&fit=crop',
+    title: "ROTA අවුරුදු '25",
+    category: 'Cultural',
+    date: 'Apr 14, 2025',
+    location: 'University of Colombo',
+    image: require('@/assets/images/event2.png'),
+    club: 'Rotaract Club of UOC',
   },
   {
     id: '3',
@@ -40,22 +42,23 @@ const featuredEvents: EventData[] = [
 const communityPosts: PostData[] = [
   {
     id: '1',
-    club: 'Photography Club',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop',
-    time: '2 hours ago',
-    text: 'Join us this weekend for our photo walk through the botanical gardens! All skill levels welcome.',
-    image: 'https://images.unsplash.com/photo-1560800655-58a01bfde4f7?q=80&w=2070&auto=format&fit=crop',
-    likes: 24,
-    comments: 5,
+    club: 'Gavel Club of University of Colombo',
+    avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=1974&auto=format&fit=crop',
+    time: '1 day ago',
+    text: 'New blog post out now! "Why you should live away from home at least once in your life".',
+    image: require('@/assets/images/event2.png'),
+    likes: 52,
+    comments: 11,
   },
   {
     id: '2',
-    club: 'Running Group',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=987&auto=format&fit=crop',
-    time: '5 hours ago',
-    text: 'New 5K route added to our weekend meetup options! Check it out on our website.',
-    likes: 18,
-    comments: 3,
+    club: 'Hiking Adventures',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=988&auto=format&fit=crop',
+    time: '3 days ago',
+    text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
+    image: 'https://web.facebook.com/photo/?fbid=1286606236803625&set=a.491433232987600',
+    likes: 67,
+    comments: 15,
   },
 ];
 
@@ -87,6 +90,9 @@ const upcomingEvents: EventData[] = [
 ];
 
 export default function HomePage() {
+  const iconColor = useThemeColor({}, 'icon');
+  const tint = useThemeColor({}, 'tint');
+
   return (
       <ThemedView style={styles.container}>
         <ScrollView
@@ -96,15 +102,15 @@ export default function HomePage() {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <ThemedText type="defaultSemiBold" style={styles.welcomeText}>Good afternoon 👋</ThemedText>
-              <ThemedText type="title" style={styles.userName}>Shenal</ThemedText>
+              <ThemedText type="title" style={styles.logo}>ReidConnect</ThemedText>
+              <ThemedText type="defaultSemiBold" style={styles.welcomeText}>Good afternoon, Shenal 👋</ThemedText>
             </View>
             <View style={styles.headerButtons}>
               <TouchableOpacity style={styles.iconButton}>
-                <Feather name="search" size={24} color="#333" />
+                <Feather name="search" size={24} color={iconColor} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconButton}>
-                <Feather name="bell" size={24} color="#333" />
+                <Feather name="bell" size={24} color={iconColor} />
                 <View style={styles.notificationDot} />
               </TouchableOpacity>
             </View>
@@ -128,7 +134,7 @@ export default function HomePage() {
             <View style={styles.sectionHeader}>
               <ThemedText type="subtitle" style={styles.sectionTitle}>Community Feed</ThemedText>
               <TouchableOpacity>
-                <ThemedText style={styles.seeAllButton}>See All</ThemedText>
+                <ThemedText style={[styles.seeAllButton, { color: tint }]}>See All</ThemedText>
               </TouchableOpacity>
             </View>
             {communityPosts.map(post => (
@@ -167,9 +173,13 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  logo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
   welcomeText: {
     fontSize: 16,
-    marginBottom: 3,
   },
   userName: {
     fontSize: 24,
@@ -206,8 +216,7 @@ const styles = StyleSheet.create({
   },
   seeAllButton: {
     fontSize: 14,
-    color: '#007bff',
-    fontWeight: '600',
+    fontWeight: '800',
   },
   featuredEventsContainer: {
     paddingHorizontal: 20,

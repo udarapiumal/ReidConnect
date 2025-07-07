@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type PostData = {
   id: string;
@@ -23,46 +24,61 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, onPress }: PostCardProps) {
+  const shadowColor = useThemeColor({}, 'text');
+  const secondaryTextColor = useThemeColor({}, 'icon');
+  const borderColor = useThemeColor({}, 'border');
+  const placeholderColor = useThemeColor({}, 'tabIconDefault');
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { shadowColor: shadowColor }]}>
       <View style={styles.header}>
-        <Image 
+        <Image
           source={{ uri: post.avatar }}
-          style={styles.avatar}
+          style={[styles.avatar, { backgroundColor: placeholderColor }]}
           contentFit="cover"
         />
         <View style={styles.headerText}>
           <ThemedText style={styles.clubName}>{post.club}</ThemedText>
-          <ThemedText style={styles.time}>{post.time}</ThemedText>
+          <ThemedText style={[styles.time, { color: secondaryTextColor }]}>
+            {post.time}
+          </ThemedText>
         </View>
         <TouchableOpacity>
-          <Feather name="more-vertical" size={20} color="#888" />
+          <Feather name="more-vertical" size={20} color={secondaryTextColor} />
         </TouchableOpacity>
       </View>
 
       <ThemedText style={styles.content}>{post.text}</ThemedText>
 
       {post.image && (
-        <Image 
+        <Image
           source={{ uri: post.image }}
-          style={styles.contentImage}
+          style={[styles.contentImage, { backgroundColor: placeholderColor }]}
           contentFit="cover"
         />
       )}
 
-      <View style={styles.actions}>
+      <View style={[styles.actions, { borderTopColor: borderColor }]}>
         <TouchableOpacity style={styles.actionButton}>
-          <Feather name="thumbs-up" size={18} color="#888" />
-          <ThemedText style={styles.actionText}>{post.likes}</ThemedText>
+          <Feather name="thumbs-up" size={18} color={secondaryTextColor} />
+          <ThemedText style={[styles.actionText, { color: secondaryTextColor }]}>
+            {post.likes}
+          </ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton}>
-          <Feather name="message-circle" size={18} color="#888" />
-          <ThemedText style={styles.actionText}>{post.comments}</ThemedText>
+          <Feather
+            name="message-circle"
+            size={18}
+            color={secondaryTextColor}
+          />
+          <ThemedText style={[styles.actionText, { color: secondaryTextColor }]}>
+            {post.comments}
+          </ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton}>
-          <Feather name="share-2" size={18} color="#888" />
+          <Feather name="share-2" size={18} color={secondaryTextColor} />
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -73,8 +89,6 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -82,7 +96,6 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 16,
     padding: 16,
-    color: '#000',
   },
   header: {
     flexDirection: 'row',
@@ -94,7 +107,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 12,
-    backgroundColor: '#eee',
   },
   headerText: {
     flex: 1,
@@ -105,7 +117,6 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 12,
-    color: '#888',
   },
   content: {
     fontSize: 15,
@@ -117,12 +128,10 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
     marginBottom: 12,
-    backgroundColor: '#eee',
   },
   actions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
     paddingTop: 12,
   },
   actionButton: {
@@ -135,6 +144,5 @@ const styles = StyleSheet.create({
   actionText: {
     marginLeft: 4,
     fontSize: 14,
-    color: '#888',
   },
 });

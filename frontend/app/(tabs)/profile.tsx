@@ -5,7 +5,6 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { EventData } from '@/components/EventCard';
 
 // Mock data
@@ -74,10 +73,11 @@ type TicketItemProps = {
 };
 
 const TicketItem = ({ event, onPress }: TicketItemProps) => {
+  const imageSource = typeof event.image === 'string' ? { uri: event.image } : event.image;
   return (
     <TouchableOpacity style={styles.ticketItem} onPress={onPress}>
       <Image 
-        source={{ uri: event.image }}
+        source={imageSource}
         style={styles.ticketImage}
         contentFit="cover"
       />
