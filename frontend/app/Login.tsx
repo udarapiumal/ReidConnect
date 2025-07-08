@@ -31,7 +31,7 @@ export default function Login() {
 
         try {
             console.log("Sending login request...");
-            const res = await axios.post("http://10.149.164.83:8080/auth/login", { email, password });
+            const res = await axios.post("http://10.21.84.107:8080/auth/login", { email, password });
             console.log("Login response:", res.data);
             const { token, role } = res.data;
             Alert.alert("Success", "Login successful!");
@@ -45,7 +45,7 @@ export default function Login() {
             // ✅ Redirect based on embedded role
             switch (decoded.role) {
                 case "student":
-                    router.push("/student/dashboard");
+                    router.push("/student/");
                     break;
                 case "club":
                     router.push("/club/dashboard");
