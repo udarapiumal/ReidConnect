@@ -16,12 +16,10 @@ export default function SignUp() {
     const [password, setPassword] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
 
-    // Step validation state
     const [step1Error, setStep1Error] = useState(true);
     const [step2Error, setStep2Error] = useState(true);
     const [step3Error, setStep3Error] = useState(true);
 
-    // Validation functions
     const validateStep1 = () => {
         const nameRegex = /^[a-zA-Z ]{2,30}$/;
         const ageNum = parseInt(age, 10);
@@ -39,21 +37,13 @@ export default function SignUp() {
         setStep3Error(!contactRegex.test(contact_number));
     };
 
-    useEffect(() => {
-        validateStep1();
-    }, [name, age]);
-
-    useEffect(() => {
-        validateStep2();
-    }, [email, password]);
-
-    useEffect(() => {
-        validateStep3();
-    }, [contact_number]);
+    useEffect(() => { validateStep1(); }, [name, age]);
+    useEffect(() => { validateStep2(); }, [email, password]);
+    useEffect(() => { validateStep3(); }, [contact_number]);
 
     const handleSubmit = async () => {
         try {
-            const res = await axios.post("http:// 10.149.164.83:8080/auth/signup", {
+            const res = await axios.post("http://10.149.164.83:8080/auth/signup", {
                 username: name,
                 email: email,
                 password: password,
@@ -76,12 +66,12 @@ export default function SignUp() {
 
     const handleVerify = async () => {
         try {
-            const res = await axios.post("http://192.168.56.1:8080/auth/verify", {
+            const res = await axios.post("http://10.149.164.83:8080/auth/verify", {
                 email,
                 verificationCode
             });
             Alert.alert('Success', 'Account verified successfully!');
-            router.push('/Login'); // Redirect to login page
+            router.push('/Login');
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 Alert.alert('Verification failed', JSON.stringify(err.response?.data || err.message));
@@ -94,7 +84,7 @@ export default function SignUp() {
 
     const handleResend = async () => {
         try {
-            await axios.post('http://192.168.1.5:8080/auth/resend?email=' + email);
+            await axios.post('http://10.149.164.83:8080/auth/resend?email=' + email);
             Alert.alert('Success', 'Verification code resent!');
         } catch (err) {
             if (axios.isAxiosError(err)) {
