@@ -1,7 +1,5 @@
 package reidConnect.backend.service;
-
 import reidConnect.backend.dto.ClubDto;
-
 import java.util.List;
 
 public interface ClubService {
