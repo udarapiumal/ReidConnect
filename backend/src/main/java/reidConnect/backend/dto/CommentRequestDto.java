@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,4 +16,5 @@ public class CommentRequestDto {
     private Long studentId;
     private String content;
     private Long parentCommentId; // null if top-level
+
 }

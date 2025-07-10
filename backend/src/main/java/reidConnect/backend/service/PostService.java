@@ -1,10 +1,9 @@
 package reidConnect.backend.service;
 
+import java.util.List;
 import reidConnect.backend.dto.PostCreateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.PostUpdateDto;
-
-import java.util.List;
 
 public interface PostService {
 
