@@ -18,6 +18,7 @@ interface ClubContextType {
   user: UserType | null;
   clubDetails: any;
   loading: boolean;
+  token: string | null;
 }
 
 const ClubContext = createContext<ClubContextType | null>(null);
@@ -26,6 +27,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserType | null>(null);
   const [clubDetails, setClubDetails] = useState<any>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,9 +37,10 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
 
         const decoded = jwtDecode<UserType>(token);
         setUser(decoded);
+        setToken(token);
 
         const res = await axios.get(
-          `http://localhost:8080/api/club/by-user/${decoded.id}`,
+          `http://192.168.1.5:8080/api/club/by-user/${decoded.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -56,7 +59,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
   }, []);
 
   return (
-    <ClubContext.Provider value={{ user, clubDetails, loading }}>
+    <ClubContext.Provider value={{ user, clubDetails, loading, token }}>
       {children}
     </ClubContext.Provider>
   );

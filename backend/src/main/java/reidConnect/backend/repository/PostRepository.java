@@ -9,4 +9,10 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post, Long>
 {
     List<Post> findByClub_Id(Long clubId);
+
+    // Find all posts by club ID in descending order
+    List<Post> findAllByClub_IdOrderByCreatedAtDesc(Long clubId);
+
+    // Find top 3 most recent posts for a club
+    List<Post> findTop3ByClub_IdOrderByCreatedAtDesc(Long clubId);
 }

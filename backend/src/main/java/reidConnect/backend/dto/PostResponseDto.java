@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -15,7 +16,8 @@ import java.util.List;
 public class PostResponseDto {
     private Long id;
     private Long clubId;
-    private String title;
+    private LocalDateTime createdAt;
     private String description;
     private List<String> mediaPaths;
+
 }

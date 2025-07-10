@@ -13,7 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 
 public class PostUpdateDto {
-    private String title;
     private String description;
     private List<String> mediaPaths;
 }

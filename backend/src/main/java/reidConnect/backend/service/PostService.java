@@ -17,4 +17,15 @@ public interface PostService {
     void deletePost(Long id);
 
     List<PostResponseDto> getAllPosts();
+
+    List<PostResponseDto> getPostsByClubId(Long clubId);
+
+    List<PostResponseDto> getLatestThreePostsByClubId(Long clubId);
+
+    void likePost(Long postId, Long userId);
+
+    void unlikePost(Long postId, Long userId);
+
+    long getLikeCount(Long postId);
+
 }

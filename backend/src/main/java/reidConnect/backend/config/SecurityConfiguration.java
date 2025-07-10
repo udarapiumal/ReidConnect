@@ -36,8 +36,10 @@ public class SecurityConfiguration {
                 )
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/**", "/test").permitAll()
+                        .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
                         .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/comments/**").authenticated()
+                        .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -60,7 +62,8 @@ public class SecurityConfiguration {
                 "http://localhost:8080",
                 "http://localhost:8081",
                 "http://localhost:8082",
-                "http:// 10.149.164.83:8081",
+                "http://10.149.164.83:8081",
+                "exp://192.168.1.5:8081",
                 "exp://192.168.1.4:8081",
                 "exp://10.149.164.83:8081"
         ));

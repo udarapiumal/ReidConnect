@@ -31,12 +31,13 @@ export default function Login() {
 
         try {
             console.log("Sending login request...");
-            const res = await axios.post("http://localhost:8080/auth/login", { email, password });
+            const res = await axios.post("http://192.168.1.5:8080/auth/login", { email, password });
             console.log("Login response:", res.data);
             const { token, role } = res.data;
             Alert.alert("Success", "Login successful!");
 
             // ✅ Save token securely
+            await AsyncStorage.setItem("token", token);
             await AsyncStorage.setItem("token", token);
 
             // Decode token to check role

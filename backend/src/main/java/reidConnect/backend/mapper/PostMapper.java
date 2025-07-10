@@ -12,11 +12,14 @@ import java.util.List;
 public class PostMapper {
 
     public static Post mapToPost(PostCreateDto dto, Club club) {
-        return new Post(null, club, dto.getTitle(), dto.getDescription());
+        Post post = new Post();
+        post.setClub(club);
+        post.setDescription(dto.getDescription());
+        return post;
     }
 
+
     public static Post updatePostFromDto(PostUpdateDto dto, Post post) {
-        post.setTitle(dto.getTitle());
         post.setDescription(dto.getDescription());
         return post;
     }
@@ -29,7 +32,7 @@ public class PostMapper {
         return new PostResponseDto(
                 post.getId(),
                 post.getClub().getId(),
-                post.getTitle(),
+                post.getCreatedAt(),
                 post.getDescription(),
                 paths
         );

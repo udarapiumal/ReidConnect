@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -8,7 +9,6 @@ import {
   Dimensions,
   FlatList,
   Image,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -17,14 +17,15 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClub } from '../../context/ClubContext';
 
 const { width, height } = Dimensions.get('window');
 
-export default function CreatePostScreen({ navigation }) {
+export default function CreatePostScreen() {
+  const navigation = useNavigation();
   const [step, setStep] = useState(1);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { clubDetails } = useClub();
@@ -47,6 +48,7 @@ export default function CreatePostScreen({ navigation }) {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         aspect: [1, 1],
+        base64: false,
       });
 
       if (!result.canceled && result.assets) {
@@ -84,7 +86,6 @@ const handleSharePost = async () => {
 
     const formData = new FormData();
     formData.append("clubId", clubDetails.id.toString());
-    formData.append("title", title);
     formData.append("description", description);
 
     console.log("🖼 Selected images count:", selectedImages.length);
@@ -102,7 +103,8 @@ const handleSharePost = async () => {
     // ✅ Debug: Try to log FormData (might not work in React Native)
     console.log("📤 Attempting to send FormData with", selectedImages.length, "files");
 
-    const response = await fetch("http://localhost:8080/api/posts", {
+
+    const response = await fetch("http://192.168.1.5:8080/api/posts", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -125,7 +127,6 @@ const handleSharePost = async () => {
     Alert.alert("✅ Success", "Post created successfully!");
     
     // Reset form and navigate back
-    setTitle('');
     setDescription('');
     setSelectedImages([]);
     setStep(1);
@@ -239,19 +240,6 @@ const handleSharePost = async () => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Title *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter post title..."
-              value={title}
-              onChangeText={setTitle}
-              placeholderTextColor="#666"
-              maxLength={100}
-            />
-            <Text style={styles.charCount}>{title.length}/100</Text>
-          </View>
-
-          <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Description</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -302,6 +290,10 @@ const handleSharePost = async () => {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+        flex: 1,
+        backgroundColor: "#151718",
+    },
   container: { 
     flex: 1, 
     backgroundColor: '#0a0a0a' 

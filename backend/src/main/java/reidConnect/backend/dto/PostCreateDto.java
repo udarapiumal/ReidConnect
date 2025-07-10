@@ -14,7 +14,6 @@ import java.util.List;
 
 public class PostCreateDto {
     private Long clubId;
-    private String title;
     private String description;
     private List<String> mediaPaths; // paths like ["img1.jpg", "img2.png"]
 }

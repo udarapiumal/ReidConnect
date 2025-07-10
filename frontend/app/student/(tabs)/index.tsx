@@ -1,12 +1,12 @@
-import { Platform, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
-import React from 'react';
 import { Feather } from '@expo/vector-icons';
+import React from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { EventCard, EventData } from '@/components/EventCard';
 import { PostCard, PostData } from '@/components/PostCard';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Mock data

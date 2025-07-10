@@ -34,14 +34,12 @@ public class PostController {
     @PreAuthorize("hasRole('CLUB')")
     public ResponseEntity<String> createPost(
             @RequestParam("clubId") Long clubId,
-            @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam(value = "media", required = false) List<MultipartFile> mediaFiles) {
 
         try {
             System.out.println("📥 Received POST request to /api/posts");
             System.out.println("📝 Club ID: " + clubId);
-            System.out.println("📝 Title: " + title);
             System.out.println("📝 Description: " + description);
             System.out.println("📁 Media files count: " + (mediaFiles != null ? mediaFiles.size() : 0));
 
@@ -80,7 +78,6 @@ public class PostController {
             // 2. Build DTO and send to service
             PostCreateDto dto = new PostCreateDto();
             dto.setClubId(clubId);
-            dto.setTitle(title);
             dto.setDescription(description);
             dto.setMediaPaths(savedFileNames); // set string paths
 
@@ -113,6 +110,23 @@ public class PostController {
         return ResponseEntity.ok(post);
     }
 
+    // Get all posts by club ID
+    @PreAuthorize("hasRole('CLUB')")
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<PostResponseDto>> getPostsByClubId(@PathVariable Long clubId) {
+        List<PostResponseDto> posts = postService.getPostsByClubId(clubId);
+        return ResponseEntity.ok(posts);
+    }
+
+    // Get the latest 3 posts by club ID
+    @PreAuthorize("hasRole('CLUB')")
+    @GetMapping("/club/{clubId}/latest")
+    public ResponseEntity<List<PostResponseDto>> getLatestThreePostsByClubId(@PathVariable Long clubId) {
+        List<PostResponseDto> posts = postService.getLatestThreePostsByClubId(clubId);
+        return ResponseEntity.ok(posts);
+    }
+
+
     //Update a post by ID
     @PreAuthorize("hasRole('CLUB')")
     @PutMapping("/{id}")
@@ -128,5 +142,35 @@ public class PostController {
         postService.deletePost(id);
         return ResponseEntity.ok("Post deleted successfully.");
     }
+
+    // Add a like to a post
+    @PreAuthorize("hasRole('STUDENT') or hasRole('CLUB')")
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<String> likePost(
+            @PathVariable Long postId,
+            @RequestParam Long studentId) {
+        postService.likePost(postId, studentId);
+        return ResponseEntity.ok("Post liked successfully.");
+    }
+
+    // Remove a like (unlike) a post
+    @PreAuthorize("hasRole('STUDENT')")
+    @DeleteMapping("/{postId}/like")
+    public ResponseEntity<String> unlikePost(
+            @PathVariable Long postId,
+            @RequestParam Long studentId) {
+        postService.unlikePost(postId, studentId);
+        return ResponseEntity.ok("Post unliked successfully.");
+    }
+
+    // Get total like count for a post
+    @PreAuthorize("hasRole('STUDENT') or hasRole('CLUB')")
+    @GetMapping("/{postId}/likes/count")
+    public ResponseEntity<Long> getLikeCount(@PathVariable Long postId) {
+        long count = postService.getLikeCount(postId);
+        return ResponseEntity.ok(count);
+    }
+
+
 }
 

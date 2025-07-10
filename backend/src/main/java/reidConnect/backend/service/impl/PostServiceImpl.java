@@ -6,13 +6,9 @@ import org.springframework.transaction.annotation.Transactional;
 import reidConnect.backend.dto.PostCreateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.PostUpdateDto;
-import reidConnect.backend.entity.Club;
-import reidConnect.backend.entity.Post;
-import reidConnect.backend.entity.Post_Media;
+import reidConnect.backend.entity.*;
 import reidConnect.backend.mapper.PostMapper;
-import reidConnect.backend.repository.ClubRepository;
-import reidConnect.backend.repository.PostMediaRepository;
-import reidConnect.backend.repository.PostRepository;
+import reidConnect.backend.repository.*;
 import reidConnect.backend.service.PostService;
 
 import java.util.List;
@@ -24,6 +20,8 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
     private final ClubRepository clubRepository;
+    private final PostLikeRepository PostLikeRepository;
+    private final StudentRepository StudentRepository;
 
     @Override
     @Transactional
@@ -51,6 +49,71 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public List<PostResponseDto> getPostsByClubId(Long clubId) {
+        List<Post> posts = postRepository.findAllByClub_IdOrderByCreatedAtDesc(clubId);
+
+        return posts.stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+    }
+
+    @Override
+
+    public List<PostResponseDto> getLatestThreePostsByClubId(Long clubId) {
+        List<Post> posts = postRepository.findTop3ByClub_IdOrderByCreatedAtDesc(clubId);
+
+        return posts.stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+    }
+
+    @Override
+    public void likePost(Long postId, Long studentId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        Student student = StudentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean alreadyLiked = PostLikeRepository.findByPostAndStudent(post, student).isPresent();
+        if (alreadyLiked) {
+            throw new RuntimeException("User has already liked this post");
+        }
+
+        PostLike like = new PostLike();
+        like.setPost(post);
+        like.setStudent(student);
+        PostLikeRepository.save(like);
+    }
+
+    @Override
+    public void unlikePost(Long postId, Long studentId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        Student student = StudentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        PostLike like = PostLikeRepository.findByPostAndStudent(post, student)
+                .orElseThrow(() -> new RuntimeException("Like not found"));
+
+        PostLikeRepository.delete(like);
+    }
+
+    @Override
+    public long getLikeCount(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        return PostLikeRepository.countByPost(post);
+    }
+
+
+
+    @Override
     public PostResponseDto getPostById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
@@ -67,7 +130,6 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
         // Update fields
-        post.setTitle(dto.getTitle());
         post.setDescription(dto.getDescription());
         postRepository.save(post);
 
