@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClub } from "../../context/ClubContext";
 
 const { width } = Dimensions.get('window');
@@ -50,135 +51,141 @@ export default function ProfilePage() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile settings</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profile settings</Text>
+        </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* Cover Image with Centered Profile Picture */}
-        <View style={styles.coverSection}>
-          <View style={styles.coverImageContainer}>
-            <Image
-              source={require("../../../assets/clubImages/profilePictures/rota_cover.jpg")}
-              style={styles.coverImage}
-              resizeMode="cover"
-            />
-          </View>
-          
-          {/* Profile Picture centered on cover */}
-          <View style={styles.profilePictureSection}>
-            <View style={styles.profilePictureContainer}>
-              <View style={styles.profilePicture}>
-                <Image 
-                  source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                  style={styles.profilePictureImage} 
-                />
+        <ScrollView style={styles.scrollView}>
+          {/* Cover Image with Centered Profile Picture */}
+          <View style={styles.coverSection}>
+            <View style={styles.coverImageContainer}>
+              <Image
+                source={require("../../../assets/clubImages/profilePictures/rota_cover.jpg")}
+                style={styles.coverImage}
+                resizeMode="cover"
+              />
+            </View>
+            
+            {/* Profile Picture centered on cover */}
+            <View style={styles.profilePictureSection}>
+              <View style={styles.profilePictureContainer}>
+                <View style={styles.profilePicture}>
+                  <Image 
+                    source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
+                    style={styles.profilePictureImage} 
+                  />
+                </View>
+                <TouchableOpacity style={styles.cameraButton}>
+                  <Ionicons name="camera" size={16} color="#fff" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.cameraButton}>
-                <Ionicons name="camera" size={16} color="#fff" />
-              </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Edit Cover Photo Button */}
-          <TouchableOpacity style={styles.editCoverButton}>
-            <Ionicons name="camera" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile Fields */}
-        <View style={styles.profileFields}>
-          {/* Name Field */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Name</Text>
-            <View style={styles.fieldRow}>
-              {isEditing ? (
-                <TextInput
-                  style={[styles.fieldValue, styles.editableField]}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Enter name"
-                  placeholderTextColor="#666"
-                />
-              ) : (
-                <Text style={styles.fieldValue}>{name}</Text>
-              )}
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => setIsEditing(!isEditing)}
-              >
-                <Ionicons name="pencil" size={16} color="#fff" />
-              </TouchableOpacity>
-
-            </View>
-          </View>
-
-          {/* Channel URL Field */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Website URL</Text>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldValue}>{website}</Text>
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => setIsEditing(!isEditing)}
-              >
-                <Ionicons name="pencil" size={16} color="#fff" />
-              </TouchableOpacity>
-
-            </View>
-          </View>
-
-          {/* bio Field */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Bio</Text>
-            <View style={styles.fieldRow}>
-              {isEditing ? (
-                <TextInput
-                  style={[styles.fieldValue, styles.editableField]}
-                  value={bio}
-                  onChangeText={setbio}
-                  placeholder="Add a bio"
-                  placeholderTextColor="#666"
-                  multiline
-                />
-              ) : (
-                <Text style={[styles.fieldValue, styles.bioText]}>
-                  {bio}
-                </Text>
-              )}
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => setIsEditing(!isEditing)}
-              >
-                <Ionicons name="pencil" size={16} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          
-        </View>
-
-        {/* Edit Buttons */}
-        {isEditing && (
-          <View style={styles.editingButtons}>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+            {/* Edit Cover Photo Button */}
+            <TouchableOpacity style={styles.editCoverButton}>
+              <Ionicons name="camera" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
-    </View>
+
+          {/* Profile Fields */}
+          <View style={styles.profileFields}>
+            {/* Name Field */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Name</Text>
+              <View style={styles.fieldRow}>
+                {isEditing ? (
+                  <TextInput
+                    style={[styles.fieldValue, styles.editableField]}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Enter name"
+                    placeholderTextColor="#666"
+                  />
+                ) : (
+                  <Text style={styles.fieldValue}>{name}</Text>
+                )}
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => setIsEditing(!isEditing)}
+                >
+                  <Ionicons name="pencil" size={16} color="#fff" />
+                </TouchableOpacity>
+
+              </View>
+            </View>
+
+            {/* Channel URL Field */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Website URL</Text>
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldValue}>{website}</Text>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => setIsEditing(!isEditing)}
+                >
+                  <Ionicons name="pencil" size={16} color="#fff" />
+                </TouchableOpacity>
+
+              </View>
+            </View>
+
+            {/* bio Field */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Bio</Text>
+              <View style={styles.fieldRow}>
+                {isEditing ? (
+                  <TextInput
+                    style={[styles.fieldValue, styles.editableField]}
+                    value={bio}
+                    onChangeText={setbio}
+                    placeholder="Add a bio"
+                    placeholderTextColor="#666"
+                    multiline
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, styles.bioText]}>
+                    {bio}
+                  </Text>
+                )}
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => setIsEditing(!isEditing)}
+                >
+                  <Ionicons name="pencil" size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            
+          </View>
+
+          {/* Edit Buttons */}
+          {isEditing && (
+            <View style={styles.editingButtons}>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+        flex: 1,
+        backgroundColor: "#151718",
+    },
   container: {
     flex: 1,
     backgroundColor: "#151718",
@@ -188,7 +195,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 40,
     paddingBottom: 16,
     backgroundColor: "0F0F0F",
   },

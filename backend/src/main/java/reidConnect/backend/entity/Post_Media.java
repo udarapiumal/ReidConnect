@@ -24,7 +24,7 @@ public class Post_Media {
     private Post post;
 
     @Column(name = "media_path", nullable = false)
-    private String title;
+    private String media_path;
 
 }
 

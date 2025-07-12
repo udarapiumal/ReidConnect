@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { BASE_URL } from '../../constants/config';
 
 interface UserType extends JwtPayload {
   id: string;
@@ -18,6 +19,7 @@ interface ClubContextType {
   user: UserType | null;
   clubDetails: any;
   loading: boolean;
+  token: string | null;
 }
 
 const ClubContext = createContext<ClubContextType | null>(null);
@@ -26,6 +28,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserType | null>(null);
   const [clubDetails, setClubDetails] = useState<any>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,9 +38,10 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
 
         const decoded = jwtDecode<UserType>(token);
         setUser(decoded);
+        setToken(token);
 
         const res = await axios.get(
-          `http://192.168.57.109:8080/api/club/by-user/${decoded.id}`,
+          `${BASE_URL}/api/club/by-user/${decoded.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -56,7 +60,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
   }, []);
 
   return (
-    <ClubContext.Provider value={{ user, clubDetails, loading }}>
+    <ClubContext.Provider value={{ user, clubDetails, loading, token }}>
       {children}
     </ClubContext.Provider>
   );

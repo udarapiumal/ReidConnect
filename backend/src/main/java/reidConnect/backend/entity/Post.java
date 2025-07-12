@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -23,10 +26,11 @@ public class Post {
     @JoinColumn(name = "club_id", referencedColumnName = "id", nullable = false)
     private Club club;
 
-    @Column(name = "title", nullable = false)
-    private String title;
-
-    @Column(name = "description")
+    @Column(name = "description", length = 500)
     private String description;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
 }

@@ -1,7 +1,9 @@
 import { Feather } from '@expo/vector-icons';
-import React from "react";
+import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
     Dimensions,
     Image,
     ScrollView,
@@ -10,11 +12,35 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
 import { useClub } from "../../context/ClubContext";
 const { width } = Dimensions.get('window');
+const router = useRouter();
+const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const createdAt = new Date(timestamp);
+    const diffMs = now - createdAt;
+
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = totalMinutes % 60;
+
+    let result = '';
+    if (days > 0) result += `${days} day${days !== 1 ? 's' : ''} `;
+    if (hours > 0) result += `${hours} hour${hours !== 1 ? 's' : ''} `;
+    if (minutes > 0 || (!days && !hours)) result += `${minutes} minute${minutes !== 1 ? 's' : ''} `;
+
+    return result.trim() + ' ago';
+};
+
+
 
 export default function ClubDashboardTab() {
-    const { user, clubDetails, loading } = useClub();
+    const { user,token, clubDetails, loading } = useClub();
+    const [latestPosts, setLatestPosts] = useState([]);
 
     const renderAnalyticsCards = () => (
         <View style={styles.analyticsContainer}>
@@ -37,14 +63,14 @@ export default function ClubDashboardTab() {
         <View style={styles.videoItem}>
             <View style={styles.videoThumbnail}>
                 <View style={styles.thumbnailPlaceholder}>
-                        <Image source={thumbnail} style={{ width: 72, height: 48,  borderRadius: 5 }} />
+                    <Image source={thumbnail} style={{ width: 72, height: 48, borderRadius: 5 }} />
                 </View>
             </View>
             <View style={styles.videoInfo}>
                 <Text style={styles.videoTitle} numberOfLines={2}>{title}</Text>
                 <Text style={styles.videoMeta}>First {duration}</Text>
                 <View style={styles.videoStats}>
-                     <View style={styles.icon}>
+                    <View style={styles.icon}>
                         <Feather name="thumbs-up" size={16} color="#555" />
                         <Text style={styles.statText}>{likes}</Text>
                     </View>
@@ -57,7 +83,7 @@ export default function ClubDashboardTab() {
         </View>
     );
 
-    const renderCommentItem = ({ thumbnail, title, commenterPic ,commenterName, commentTime, commentText }) => (
+    const renderCommentItem = ({ thumbnail, title, commenterPic, commenterName, commentTime, commentText }) => (
         <View style={styles.commentItem}>
             <View style={styles.commentHeader}>
                 <View style={styles.commentThumbnail}>
@@ -67,7 +93,7 @@ export default function ClubDashboardTab() {
                     <Text style={styles.commentTitle} numberOfLines={1}>{title}</Text>
                     <View style={styles.commentMeta}>
                         <View style={styles.commenterAvatar}>
-                            <Image source={commenterPic} style={{ width: 25, height: 25,  borderRadius: 25 }} />
+                            <Image source={commenterPic} style={{ width: 25, height: 25, borderRadius: 25 }} />
                         </View>
                         <Text style={styles.commenterName}>@{commenterName}</Text>
                         <Text style={styles.commentTime}>• {commentTime}</Text>
@@ -78,146 +104,166 @@ export default function ClubDashboardTab() {
         </View>
     );
 
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#FF0033" />
-            </View>
-        );
-    }
+    useFocusEffect(
+        useCallback(() => {
+            if (loading) return;
+
+        console.log("clubDetails after loading:", clubDetails);
+        console.log("user after loading:", user);
+        console.log("token: ", token);
+
+        if (!clubDetails?.id || !token) {
+            console.warn("Missing clubDetails or user token");
+            return;
+        }
+
+        console.log("Sending the API call to get latest posts");
+
+        axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/latest`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        })
+            .then(res => {
+                setLatestPosts(res.data);
+                console.log("Latest posts response:", res.data);
+            })
+            .catch(err => {
+                console.error("Error fetching latest posts", err);
+            });
+    }, [loading, clubDetails, user])
+    );
 
     return (
-        <ScrollView style={styles.dashboardContent}>
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <View style={styles.logoContainer}>
-                        
-                        <Text style={styles.logoText}>Reid Connect</Text>
+        <SafeAreaView style={styles.safeArea}>
+            <ScrollView style={styles.dashboardContent}>
+                <View style={styles.header}>
+                    <View style={styles.headerLeft}>
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logoText}>Reid Connect</Text>
+                        </View>
+                    </View>
+                    <View style={styles.headerRight}>
+                        <TouchableOpacity style={styles.createButton}>
+                            <Image
+                                source={require('../../../assets/images/plus.png')}
+                                style={styles.bellIcon}
+                            />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.bellButton}>
+                            <Image
+                                source={require('../../../assets/images/bell-icon.png')}
+                                style={styles.bellIcon}
+                            />
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>9+</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.profileButton}>
+                            <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 50, height: 50 }} />
+                        </TouchableOpacity>
                     </View>
                 </View>
-                <View style={styles.headerRight}>
-                    <TouchableOpacity style={styles.createButton}>
-                       <Image
-                            source={require('../../../assets/images/plus.png')} 
-                            style={styles.bellIcon}
-                        />
-                    </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.bellButton}>
-                        <Image
-                            source={require('../../../assets/images/bell-icon.png')} 
-                            style={styles.bellIcon}
-                        />
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>9+</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.profileButton}>
-                        <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 50, height: 50 }} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Club Info Header */}
-            <View style={styles.clubInfo}>
-                <View style={styles.clubAvatar}>
-                    <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 56, height: 56, borderRadius: 28 }} />
-                </View>
-                <View style={styles.clubDetails}>
-                    <Text style={styles.clubName}>
-                        {clubDetails?.clubName || 'Loading...'}
-                    </Text>
-                    <Text style={styles.subscriberCount}>
-                        {clubDetails?.subCount || '0'}
-                    </Text>
-                    <Text style={styles.subscriberLabel}>Total subscribers</Text>
-                </View>
-            </View>
-
-            {/* Analytics Section */}
-            <View style={styles.analyticsSection}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Channel analytics</Text>
-                    <Text style={styles.sectionSubtitle}>Last 28 days</Text>
-                </View>
-                {renderAnalyticsCards()}
-            </View>
-
-            {/* Latest Content */}
-            <View style={styles.contentSection}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Latest published content</Text>
+                {/* Club Info Header */}
+                <View style={styles.clubInfo}>
+                    <View style={styles.clubAvatar}>
+                        <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 56, height: 56, borderRadius: 28 }} />
+                    </View>
+                    <View style={styles.clubDetails}>
+                        <Text style={styles.clubName}>
+                            {clubDetails?.clubName || 'Loading...'}
+                        </Text>
+                        <Text style={styles.subscriberCount}>
+                            {clubDetails?.subCount || '0'}
+                        </Text>
+                        <Text style={styles.subscriberLabel}>Total subscribers</Text>
+                    </View>
                 </View>
 
-                {renderVideoItem({
-                    thumbnail : require("../../../assets/clubImages/postImages/1.jpg"),
-                    title: "More than a Club— a call to lead,serve and grow! 📢🙌",
-                    duration: "3 days, 2 hours",
-                    likes: " 27",
-                    comments: " 2"
-                })}
-
-                {renderVideoItem({
-                    thumbnail : require("../../../assets/clubImages/postImages/2.jpg"),
-                    title: "Presenting the Powerhouse! 🌟",
-                    duration: "4 days, 15 hours",
-                    likes: " 50",
-                    comments: " 4"
-                })}
-
-                {renderVideoItem({
-                    thumbnail : require("../../../assets/clubImages/postImages/3.jpg"),
-                    title: "Unveiling the Visionaries! ✨ Meet the Executive Committee of the Rotaract Club of UCSC",
-                    duration: "9 days, 3 hours",
-                    likes: " 18",
-                    comments: " 1"
-                })}
-            </View>
-
-            {/* Latest Comments Section */}
-            <View style={styles.contentSection}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Latest comments</Text>
+                {/* Analytics Section */}
+                <View style={styles.analyticsSection}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Channel analytics</Text>
+                        <Text style={styles.sectionSubtitle}>Last 28 days</Text>
+                    </View>
+                    {renderAnalyticsCards()}
                 </View>
 
-                {renderCommentItem({
-                    thumbnail: require("../../../assets/clubImages/postImages/3.jpg"),
-                    commenterPic: require("../../../assets/clubImages/postImages/5.png"),
-                    title: "Unveiling the Visionaries! ✨ Meet the Executive Committee of the Rotaract Club of UCSC",
-                    commenterName: "Chathura354",
-                    commentTime: "2 days ago",
-                    commentText: "Congratulations everyone!"
-                })}
+                {/* Latest Content */}
+                <View style={styles.contentSection}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Latest published content</Text>
+                    </View>
 
-                {renderCommentItem({
-                    thumbnail: require("../../../assets/clubImages/postImages/1.jpg"),
-                    commenterPic: require("../../../assets/clubImages/postImages/6.png"),
-                    title: "More than a Club— a call to lead,serve and grow! 📢🙌",
-                    commenterName: "ShenalRD",
-                    commentTime: "4 hours ago",
-                    commentText: "Can't wait "
-                })}
-            </View>
-        </ScrollView>
+                    {latestPosts.map((post) => (
+                        <TouchableOpacity key={post.id} onPress={() => router.push(`/club/post/${post.id}`)}>
+                            {renderVideoItem({
+                                thumbnail: {
+                                    uri: post.mediaPaths?.[0]
+                                        ? post.mediaPaths[0].startsWith('uploads/')
+                                        ? `${BASE_URL}/${post.mediaPaths[0]}`
+                                        : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+                                        : '${BASE_URL}/uploads/placeholder.jpg',
+                                },
+
+                                title: post.description || "No description",
+                                duration: formatTimeAgo(post.createdAt) || "Some time ago",
+                                likes:  0,
+                                comments: 0
+                            })}
+                        </TouchableOpacity>
+                    ))}
+
+                </View>
+
+                {/* Latest Comments Section */}
+                <View style={styles.contentSection}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Latest comments</Text>
+                    </View>
+
+                    {renderCommentItem({
+                        thumbnail: require("../../../assets/clubImages/postImages/3.jpg"),
+                        commenterPic: require("../../../assets/clubImages/postImages/5.png"),
+                        title: "Unveiling the Visionaries! ✨ Meet the Executive Committee of the Rotaract Club of UCSC",
+                        commenterName: "Chathura354",
+                        commentTime: "2 days ago",
+                        commentText: "Congratulations everyone!"
+                    })}
+
+                    {renderCommentItem({
+                        thumbnail: require("../../../assets/clubImages/postImages/1.jpg"),
+                        commenterPic: require("../../../assets/clubImages/postImages/6.png"),
+                        title: "More than a Club— a call to lead,serve and grow! 📢🙌",
+                        commenterName: "ShenalRD",
+                        commentTime: "4 hours ago",
+                        commentText: "Can't wait "
+                    })}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#151718",
+    },
     dashboardContent: {
         flex: 1,
-        backgroundColor: "#151718"
+        backgroundColor: "#151718",
     },
-     // Header Styles
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: "##151718",
-        borderBottomWidth: 1,
-        borderBottomColor: "#272727",
+        backgroundColor: "#151718",
     },
     headerLeft: {
         flex: 1,
@@ -249,23 +295,21 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#555',
     },
-
     createButton: {
-        width: 28,       
-        height: 28,      
+        width: 28,
+        height: 28,
         marginRight: 10,
-        resizeMode: 'contain', 
+        resizeMode: 'contain',
     },
     bellButton: {
         position: 'relative',
         marginRight: 16,
     },
-   bellIcon: {
-        width: 28,       
-        height: 28,      
-        resizeMode: 'contain', 
+    bellIcon: {
+        width: 28,
+        height: 28,
+        resizeMode: 'contain',
     },
-
     badge: {
         position: 'absolute',
         top: -4,
@@ -290,22 +334,9 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     profileImage: {
-        width: 50, // example size
+        width: 50,
         height: 50,
         borderRadius: 25,
-    },
-
-    headerButton: {
-        padding: 8,
-        marginHorizontal: 4,
-    },
-    headerButtonText: {
-        color: "#ffffff",
-        fontSize: 18,
-    },
-    profileButtonText: {
-        color: "#ffffff",
-        fontSize: 16,
     },
     loadingContainer: {
         flex: 1,
@@ -395,11 +426,13 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     videoItem: {
+        backgroundColor: "#1a1a1a",
         flexDirection: "row",
         marginBottom: 16,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#272727",
+        padding: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#272727",
     },
     videoThumbnail: {
         marginRight: 12,
@@ -437,29 +470,6 @@ const styles = StyleSheet.create({
         color: "#aaaaaa",
         fontSize: 12,
     },
-    commentsSection: {
-        backgroundColor: "#1a1a1a",
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    commentsTitle: {
-        color: "#ffffff",
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 4,
-    },
-    commentsCount: {
-        color: "#ffffff",
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 8,
-    },
-    noComments: {
-        color: "#aaaaaa",
-        fontSize: 14,
-    },
-    // New Comment Item Styles
     commentItem: {
         backgroundColor: "#1a1a1a",
         padding: 16,
