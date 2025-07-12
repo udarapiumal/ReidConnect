@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { Image, ImageSource } from 'expo-image';
-import { Feather } from '@expo/vector-icons';
+import { Feather, AntDesign } from '@expo/vector-icons';
 
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
-type EventSize = 'large' | 'small';
+type EventSize = 'large' | 'small' | 'very_large';
 
 export type EventData = {
   id: string;
@@ -27,6 +27,7 @@ type EventCardProps = {
 };
 
 export function EventCard({ event, size = 'large', onPress, onChangePhoto }: EventCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
   const cardBackgroundColor = useThemeColor({}, 'background');
   const shadowColor = useThemeColor({}, 'text');
   const placeholderColor = useThemeColor({}, 'tabIconDefault');
@@ -35,14 +36,56 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
 
   const imageSource = typeof event.image === 'string' ? { uri: event.image } : event.image;
 
+  const handleLikePress = () => {
+    setIsLiked(!isLiked);
+    // You can also call a function passed via props here
+    // e.g., onLikePress?.();
+  };
+
+  const getContainerStyle = () => {
+    switch (size) {
+      case 'small':
+        return styles.smallContainer;
+      case 'very_large':
+        return styles.veryLargeContainer;
+      case 'large':
+      default:
+        return styles.largeContainer;
+    }
+  };
+
+  const getImageStyle = () => {
+    switch (size) {
+      case 'small':
+        return styles.smallImage;
+      case 'very_large':
+        return styles.veryLargeImage;
+      case 'large':
+      default:
+        return styles.largeImage;
+    }
+  };
+
+  const getTitleStyle = () => {
+    switch (size) {
+      case 'small':
+        return styles.smallTitle;
+      case 'very_large':
+        return styles.veryLargeTitle;
+      case 'large':
+      default:
+        return styles.largeTitle;
+    }
+  };
+
   return (
     <TouchableOpacity
-      style={[styles.container, size === 'small' ? styles.smallContainer : styles.largeContainer]}
+      style={[styles.container, getContainerStyle()]}
       onPress={onPress}
       activeOpacity={0.8}>
-      <Image 
+      <Image
         source={imageSource}
-        style={[styles.image, size === 'small' ? styles.smallImage : styles.largeImage]}
+        style={[styles.image, getImageStyle()]}
         contentFit="cover"
       />
       {onChangePhoto && (
@@ -51,9 +94,18 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
         </TouchableOpacity>
       )}
       <ThemedView style={[styles.detailsContainer, { backgroundColor: 'transparent' }]}>
-        {event.club && <ThemedText style={styles.club}>{event.club}</ThemedText>}
+        <View style={styles.headerContainer}>
+          {event.club && <ThemedText style={styles.club}>{event.club}</ThemedText>}
+          <TouchableOpacity onPress={handleLikePress} style={styles.heartIcon}>
+            <AntDesign
+              name={isLiked ? 'star' : 'staro'}
+              size={22}
+              color={isLiked ? 'gold' : 'white'}
+            />
+          </TouchableOpacity>
+        </View>
         <ThemedText style={[styles.category, { color: primaryColor }]}>{event.category}</ThemedText>
-        <ThemedText style={[styles.title, size === 'small' ? styles.smallTitle : styles.largeTitle]}>
+        <ThemedText style={[styles.title, getTitleStyle()]}>
           {event.title}
         </ThemedText>
         <View style={styles.metaContainer}>
@@ -89,6 +141,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 100,
   },
+  veryLargeContainer: {
+    width: 400,
+    marginHorizontal: 8,
+  },
   image: {
   },
   largeImage: {
@@ -98,6 +154,10 @@ const styles = StyleSheet.create({
   smallImage: {
     width: 100,
     height: '100%',
+  },
+  veryLargeImage: {
+    height: 250,
+    width: '100%',
   },
   changePhotoButton: {
     position: 'absolute',
@@ -111,10 +171,20 @@ const styles = StyleSheet.create({
     padding: 12,
     flex: 1,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
   club: {
     fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 4,
+    flex: 1, // Allow club name to take available space
+  },
+  heartIcon: {
+    padding: 6,
+    color: 'white',
   },
   category: {
     fontSize: 12,
@@ -131,6 +201,9 @@ const styles = StyleSheet.create({
   },
   smallTitle: {
     fontSize: 16,
+  },
+  veryLargeTitle: {
+    fontSize: 24,
   },
   metaContainer: {
     flexDirection: 'column',

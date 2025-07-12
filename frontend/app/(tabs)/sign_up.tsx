@@ -43,7 +43,7 @@ export default function SignUp() {
 
     const handleSubmit = async () => {
         try {
-            const res = await axios.post("http://10.21.84.107:8080/auth/signup", {
+            const res = await axios.post("http://192.168.235.254:8080/auth/signup", {
                 username: name,
                 email: email,
                 password: password,
@@ -66,7 +66,7 @@ export default function SignUp() {
 
     const handleVerify = async () => {
         try {
-            const res = await axios.post("http://10.21.84.107:8080/auth/verify", {
+            const res = await axios.post("http://192.168.235.254:8080/auth/verify", {
                 email,
                 verificationCode
             });
@@ -84,7 +84,7 @@ export default function SignUp() {
 
     const handleResend = async () => {
         try {
-            await axios.post('http://10.21.84.107:8080/auth/resend?email=' + email);
+            await axios.post('http://192.168.235.254:8080/auth/resend?email=' + email);
             Alert.alert('Success', 'Verification code resent!');
         } catch (err) {
             if (axios.isAxiosError(err)) {

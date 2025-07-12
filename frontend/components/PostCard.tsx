@@ -10,10 +10,10 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 export type PostData = {
   id: string;
   club: string;
-  avatar: string;
+  avatar: string | number;
   time: string;
   text: string;
-  image?: string;
+  image?: string | number;
   likes: number;
   comments: number;
 };
@@ -26,14 +26,24 @@ type PostCardProps = {
 export function PostCard({ post, onPress }: PostCardProps) {
   const shadowColor = useThemeColor({}, 'text');
   const secondaryTextColor = useThemeColor({}, 'icon');
-  const borderColor = useThemeColor({}, 'border');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
   const placeholderColor = useThemeColor({}, 'tabIconDefault');
+
+  // Handle different image source types
+  const getImageSource = (image: string | number | undefined) => {
+    if (typeof image === 'string') {
+      return { uri: image };
+    } else if (typeof image === 'number') {
+      return image; // This is a require() result
+    }
+    return undefined;
+  };
 
   return (
     <ThemedView style={[styles.container, { shadowColor: shadowColor }]}>
       <View style={styles.header}>
         <Image
-          source={{ uri: post.avatar }}
+          source={getImageSource(post.avatar)}
           style={[styles.avatar, { backgroundColor: placeholderColor }]}
           contentFit="cover"
         />
@@ -52,7 +62,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
 
       {post.image && (
         <Image
-          source={{ uri: post.image }}
+          source={getImageSource(post.image)}
           style={[styles.contentImage, { backgroundColor: placeholderColor }]}
           contentFit="cover"
         />

@@ -1,7 +1,16 @@
+// page structure
+// featured events
+// your next event
+// upcoming events this week
+// community feed
+// for you
+//
+
 import { Platform, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -35,7 +44,8 @@ const featuredEvents: EventData[] = [
     category: 'Food',
     date: 'Jul 22, 2025',
     location: 'Downtown Plaza',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop',
+    image: require('@/assets/images/event2.png'),
+    club: 'Rotaract Club of UOC',
   },
 ];
 
@@ -43,7 +53,7 @@ const communityPosts: PostData[] = [
   {
     id: '1',
     club: 'Gavel Club of University of Colombo',
-    avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=1974&auto=format&fit=crop',
+    avatar: require('@/assets/images/event1.png'),
     time: '1 day ago',
     text: 'New blog post out now! "Why you should live away from home at least once in your life".',
     image: require('@/assets/images/event2.png'),
@@ -53,10 +63,10 @@ const communityPosts: PostData[] = [
   {
     id: '2',
     club: 'Hiking Adventures',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=988&auto=format&fit=crop',
+    avatar: require('@/assets/images/event2.png'),
     time: '3 days ago',
     text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
-    image: 'https://web.facebook.com/photo/?fbid=1286606236803625&set=a.491433232987600',
+    image: require('@/assets/images/event1.png'),
     likes: 67,
     comments: 15,
   },
@@ -69,7 +79,7 @@ const upcomingEvents: EventData[] = [
     category: 'Fitness',
     date: 'Tomorrow, 8:00 AM',
     location: 'Riverside Park',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2020&auto=format&fit=crop',
+    image: require('@/assets/images/event1.png'),
   },
   {
     id: '5',
@@ -77,7 +87,7 @@ const upcomingEvents: EventData[] = [
     category: 'Arts',
     date: 'Jul 8, 7:00 PM',
     location: 'Art House Cinema',
-    image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=2070&auto=format&fit=crop',
+    image: require('@/assets/images/event2.png'),
   },
   {
     id: '6',
@@ -85,13 +95,26 @@ const upcomingEvents: EventData[] = [
     category: 'Food',
     date: 'Saturday, 9:00 AM',
     location: 'Town Square',
-    image: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=2070&auto=format&fit=crop',
+    image: require('@/assets/images/event1.png'),
   },
 ];
 
 export default function HomePage() {
   const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
+  const router = useRouter();
+
+  const handleEventPress = (eventId: string) => {
+    router.push(`/student/pages/EventPage?id=${eventId}`);
+  };
+
+  // const handlePostPress = (postId: string) => {
+  //   router.push(`/student/pages/PostPage?id=${postId}`);
+  // };
+
+  const handleCommunitySeeMorePress = () => {
+    router.push(`/student/community`);
+  };
 
   return (
       <ThemedView style={styles.container}>
@@ -118,13 +141,72 @@ export default function HomePage() {
 
           {/* Featured Events */}
           <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Events</ThemedText>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Featured Events</ThemedText>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.featuredEventsContainer}>
               {featuredEvents.map(event => (
-                  <EventCard key={event.id} event={event} size="large" />
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      size="large" 
+                      onPress={() => handleEventPress(event.id)}
+                    />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Your Next Event */}
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Your Next Event</ThemedText>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredEventsContainer}>
+              {upcomingEvents.map(event => (
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      size="very_large" 
+                      onPress={() => handleEventPress(event.id)}
+                    />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Upcoming Event */}
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Event</ThemedText>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredEventsContainer}>
+              {upcomingEvents.map(event => (
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      size="very_large" 
+                      onPress={() => handleEventPress(event.id)}
+                    />
+                ))}
+            </ScrollView>
+          </View>
+
+          {/* Popular Event */}
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Popular Event</ThemedText>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredEventsContainer}>
+              {upcomingEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="very_large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
               ))}
             </ScrollView>
           </View>
@@ -133,7 +215,7 @@ export default function HomePage() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <ThemedText type="subtitle" style={styles.sectionTitle}>Community Feed</ThemedText>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleCommunitySeeMorePress}>
                 <ThemedText style={[styles.seeAllButton, { color: tint }]}>See All</ThemedText>
               </TouchableOpacity>
             </View>
@@ -146,7 +228,12 @@ export default function HomePage() {
           <View style={styles.section}>
             <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Near You</ThemedText>
             {upcomingEvents.map(event => (
-                <EventCard key={event.id} event={event} size="small" />
+                <EventCard 
+                  key={event.id} 
+                  event={event} 
+                  size="small" 
+                  onPress={() => handleEventPress(event.id)}
+                />
             ))}
           </View>
 
