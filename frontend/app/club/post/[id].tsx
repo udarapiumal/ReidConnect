@@ -18,6 +18,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
 
 const { width } = Dimensions.get('window');
@@ -58,7 +59,7 @@ export default function PostDetailScreen() {
     setIsLoading(true);
 
     // Fetch post details
-    axios.get(`http://192.168.1.5:8080/api/posts/${id}`, {
+    axios.get(`${BASE_URL}/api/posts/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -73,7 +74,7 @@ export default function PostDetailScreen() {
       });
 
     // Fetch like count
-    axios.get(`http://192.168.1.5:8080/api/posts/${id}/likes/count`, {
+    axios.get(`${BASE_URL}/api/posts/${id}/likes/count`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -86,7 +87,7 @@ export default function PostDetailScreen() {
       });
 
     // Fetch total comment count
-    axios.get(`http://192.168.1.5:8080/api/comments/post/${id}/count`, {
+    axios.get(`${BASE_URL}/api/comments/post/${id}/count`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -99,7 +100,7 @@ export default function PostDetailScreen() {
     });
 
     // Fetch comments (tree)
-    axios.get(`http://192.168.1.5:8080/api/comments/post/${id}`, {
+    axios.get(`${BASE_URL}/api/comments/post/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -131,7 +132,7 @@ export default function PostDetailScreen() {
           onPress: async () => {
             try {
               setIsLoading(true);
-              await axios.delete(`http://192.168.1.5:8080/api/posts/${id}`, {
+              await axios.delete(`${BASE_URL}/api/posts/${id}`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
@@ -158,7 +159,7 @@ export default function PostDetailScreen() {
 
     try {
       setIsLoading(true);
-      await axios.put(`http://192.168.1.5:8080/api/posts/${id}`, {
+      await axios.put(`${BASE_URL}/api/posts/${id}`, {
         description: editDescription
       }, {
         headers: {
@@ -217,8 +218,8 @@ export default function PostDetailScreen() {
               key={index}
               source={{ 
                 uri: path.startsWith('uploads/')
-                  ? `http://192.168.1.5:8080/${path}`
-                  : `http://192.168.1.5:8080/uploads/${path}`
+                  ? `${BASE_URL}/${path}`
+                  : `${BASE_URL}/uploads/${path}`
               }}
               style={styles.postImage}
               resizeMode="cover"
@@ -249,13 +250,13 @@ export default function PostDetailScreen() {
         <View style={styles.commentContainer}>
           <View style={styles.commentAvatar}>
             <Text style={styles.commentAvatarText}>
-              {getInitials(comment.studentName)}
+              {getInitials(comment.userName)}
             </Text>
           </View>
           
           <View style={styles.commentContent}>
             <View style={styles.commentHeader}>
-              <Text style={styles.commentAuthor}>{comment.studentName}</Text>
+              <Text style={styles.commentAuthor}>{comment.userName}</Text>
               <Text style={styles.commentTimestamp}>
                 {formatTimeAgo(comment.createdAt)}
               </Text>

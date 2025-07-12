@@ -24,8 +24,8 @@ public class PostLike {
     private Post post;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "student_id", referencedColumnName = "id")
-    private Student student;
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime likedAt = LocalDateTime.now();

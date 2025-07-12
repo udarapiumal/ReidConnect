@@ -10,5 +10,6 @@ public interface UserRepository extends CrudRepository<User,Long> {
 
     Optional<User> findByVerificationCode(String verificationCode);
 
-
+    @SuppressWarnings("override")
+    Optional<User> findById(Long id);
 }

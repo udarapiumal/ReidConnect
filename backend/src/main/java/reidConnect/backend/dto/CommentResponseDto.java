@@ -17,7 +17,7 @@ import java.util.List;
 public class CommentResponseDto {
     private Long id;
     private String content;
-    private String studentName;
+    private String userName;
     private LocalDateTime createdAt;
     private List<CommentResponseDto> replies;
 }

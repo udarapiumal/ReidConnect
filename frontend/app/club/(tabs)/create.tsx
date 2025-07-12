@@ -18,6 +18,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
 
 const { width, height } = Dimensions.get('window');
@@ -104,7 +105,7 @@ const handleSharePost = async () => {
     console.log("📤 Attempting to send FormData with", selectedImages.length, "files");
 
 
-    const response = await fetch("http://192.168.1.5:8080/api/posts", {
+    const response = await fetch(`${BASE_URL}/api/posts`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

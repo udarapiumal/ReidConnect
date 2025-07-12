@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class CommentRequestDto {
     private Long postId;
-    private Long studentId;
+    private Long userId;
     private String content;
     private Long parentCommentId; // null if top-level
 

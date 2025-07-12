@@ -6,10 +6,10 @@ import reidConnect.backend.dto.CommentRequestDto;
 import reidConnect.backend.dto.CommentResponseDto;
 import reidConnect.backend.entity.Comment;
 import reidConnect.backend.entity.Post;
-import reidConnect.backend.entity.Student;
+import reidConnect.backend.entity.User;
 import reidConnect.backend.repository.CommentRepository;
 import reidConnect.backend.repository.PostRepository;
-import reidConnect.backend.repository.StudentRepository;
+import reidConnect.backend.repository.UserRepository;
 import reidConnect.backend.service.CommentService;
 
 import java.util.List;
@@ -20,19 +20,19 @@ public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final StudentRepository studentRepository;
+    private final UserRepository userRepository;
 
     @Override
     public void addComment(CommentRequestDto dto) {
         Post post = postRepository.findById(dto.getPostId())
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Student student = studentRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Comment comment = new Comment();
         comment.setPost(post);
-        comment.setStudent(student);
+        comment.setUser(user);
         comment.setContent(dto.getContent());
 
         if (dto.getParentCommentId() != null) {
@@ -65,7 +65,7 @@ public class CommentServiceImpl implements CommentService {
         return new CommentResponseDto(
                 comment.getId(),
                 comment.getContent(),
-                comment.getStudent().getStudentName(),
+                comment.getUser().getName(),
                 comment.getCreatedAt(),
                 replyDtos
         );

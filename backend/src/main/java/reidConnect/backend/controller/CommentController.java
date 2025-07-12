@@ -18,7 +18,6 @@ public class CommentController {
     private final CommentService commentService;
 
     // Add a comment or reply
-    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
     public ResponseEntity<String> addComment(@RequestBody CommentRequestDto dto) {
         commentService.addComment(dto);

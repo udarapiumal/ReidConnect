@@ -13,6 +13,7 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
 import { useClub } from "../../context/ClubContext";
 const { width } = Dimensions.get('window');
 const router = useRouter();
@@ -118,7 +119,7 @@ export default function ClubDashboardTab() {
 
         console.log("Sending the API call to get latest posts");
 
-        axios.get(`http://192.168.1.5:8080/api/posts/club/${clubDetails.id}/latest`, {
+        axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/latest`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             }
@@ -203,9 +204,9 @@ export default function ClubDashboardTab() {
                                 thumbnail: {
                                     uri: post.mediaPaths?.[0]
                                         ? post.mediaPaths[0].startsWith('uploads/')
-                                        ? `http://192.168.1.5:8080/${post.mediaPaths[0]}`
-                                        : `http://192.168.1.5:8080/uploads/${post.mediaPaths[0]}`
-                                        : 'http://192.168.1.5:8080/uploads/placeholder.jpg',
+                                        ? `${BASE_URL}/${post.mediaPaths[0]}`
+                                        : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+                                        : '${BASE_URL}/uploads/placeholder.jpg',
                                 },
 
                                 title: post.description || "No description",

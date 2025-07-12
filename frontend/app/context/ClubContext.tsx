@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { BASE_URL } from '../../constants/config';
 
 interface UserType extends JwtPayload {
   id: string;
@@ -40,7 +41,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
         setToken(token);
 
         const res = await axios.get(
-          `http://192.168.1.5:8080/api/club/by-user/${decoded.id}`,
+          `${BASE_URL}/api/club/by-user/${decoded.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

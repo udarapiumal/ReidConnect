@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import { BASE_URL } from '../constants/config';
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -31,8 +32,10 @@ export default function Login() {
 
         try {
             console.log("Sending login request...");
-            const res = await axios.post("http://192.168.1.5:8080/auth/login", { email, password });
+            const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login response:", res.data);
+
+            
             const { token, role } = res.data;
             Alert.alert("Success", "Login successful!");
 

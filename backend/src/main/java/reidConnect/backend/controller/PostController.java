@@ -144,27 +144,24 @@ public class PostController {
     }
 
     // Add a like to a post
-    @PreAuthorize("hasRole('STUDENT') or hasRole('CLUB')")
     @PostMapping("/{postId}/like")
     public ResponseEntity<String> likePost(
             @PathVariable Long postId,
-            @RequestParam Long studentId) {
-        postService.likePost(postId, studentId);
+            @RequestParam Long userId) {
+        postService.likePost(postId, userId);
         return ResponseEntity.ok("Post liked successfully.");
     }
 
     // Remove a like (unlike) a post
-    @PreAuthorize("hasRole('STUDENT')")
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<String> unlikePost(
             @PathVariable Long postId,
-            @RequestParam Long studentId) {
-        postService.unlikePost(postId, studentId);
+            @RequestParam Long userId) {
+        postService.unlikePost(postId, userId);
         return ResponseEntity.ok("Post unliked successfully.");
     }
 
     // Get total like count for a post
-    @PreAuthorize("hasRole('STUDENT') or hasRole('CLUB')")
     @GetMapping("/{postId}/likes/count")
     public ResponseEntity<Long> getLikeCount(@PathVariable Long postId) {
         long count = postService.getLikeCount(postId);

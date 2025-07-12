@@ -21,7 +21,7 @@ public class PostServiceImpl implements PostService {
     private final PostMediaRepository postMediaRepository;
     private final ClubRepository clubRepository;
     private final PostLikeRepository PostLikeRepository;
-    private final StudentRepository StudentRepository;
+    private final UserRepository UserRepository;
 
     @Override
     @Transactional
@@ -74,31 +74,31 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void likePost(Long postId, Long studentId) {
+    public void likePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        Student student = StudentRepository.findById(studentId)
+        User user = UserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        boolean alreadyLiked = PostLikeRepository.findByPostAndStudent(post, student).isPresent();
+        boolean alreadyLiked = PostLikeRepository.findByPostAndUser(post, user).isPresent();
         if (alreadyLiked) {
             throw new RuntimeException("User has already liked this post");
         }
 
         PostLike like = new PostLike();
         like.setPost(post);
-        like.setStudent(student);
+        like.setUser(user);
         PostLikeRepository.save(like);
     }
 
     @Override
-    public void unlikePost(Long postId, Long studentId) {
+    public void unlikePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-        Student student = StudentRepository.findById(studentId)
+        User user = UserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        PostLike like = PostLikeRepository.findByPostAndStudent(post, student)
+        PostLike like = PostLikeRepository.findByPostAndUser(post, user)
                 .orElseThrow(() -> new RuntimeException("Like not found"));
 
         PostLikeRepository.delete(like);

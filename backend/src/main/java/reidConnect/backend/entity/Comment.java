@@ -22,8 +22,8 @@ public class Comment {
     private Post post;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "student_id")
-    private Student student;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(nullable = false, length = 500)
     private String content;
