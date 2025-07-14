@@ -1,70 +1,114 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { PostCard, PostData } from '@/components/PostCard';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { BASE_URL } from '@/constants/config';
+import {jwtDecode} from "jwt-decode";
 
-// Mock data
-const communityPosts: PostData[] = [
-  {
-    id: '1',
-    club: 'Photography Club',
-    avatar: require('@/assets/images/event1.png'),
-    time: '2 hours ago',
-    text: 'Join us this weekend for our photo walk through the botanical gardens! All skill levels welcome.',
-    image: require('@/assets/images/event1.png'),
-    likes: 24,
-    comments: 5,
-  },
-  {
-    id: '2',
-    club: 'Running Group',
-    avatar: require('@/assets/images/event2.png'),
-    time: '5 hours ago',
-    text: 'New 5K route added to our weekend meetup options! Check it out on our website.',
-    likes: 18,
-    comments: 3,
-  },
-  {
-    id: '3',
-    club: 'Book Club',
-    avatar: require('@/assets/images/event1.png'),
-    time: '1 day ago',
-    text: 'Our July book selection is "The Midnight Library" by Matt Haig. Discussion will be on July 28th at the downtown cafe.',
-    likes: 32,
-    comments: 12,
-  },
-  {
-    id: '4',
-    club: 'Tech Meetup',
-    avatar: require('@/assets/images/event2.png'),
-    time: '2 days ago',
-    text: 'Excited to announce our next workshop on AI and Machine Learning basics. RSVP now, space is limited!',
-    image: require('@/assets/images/event1.png'),
-    likes: 45,
-    comments: 8,
-  },
-  {
-    id: '5',
-    club: 'Hiking Adventures',
-    avatar: require('@/assets/images/event1.png'),
-    time: '3 days ago',
-    text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
-    image: require('@/assets/images/event2.png'),
-    likes: 67,
-    comments: 15,
-  },
-];
+// Helper function to format time ago from timestamp
+const formatTimeAgo = (timestamp: string) => {
+  const now = new Date();
+  const createdAt = new Date(timestamp);
+  const diffMs = now.getTime() - createdAt.getTime();
+
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const totalHours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const minutes = totalMinutes % 60;
+
+  let result = '';
+  if (days > 0) result += `${days} day${days !== 1 ? 's' : ''} `;
+  if (hours > 0) result += `${hours} hour${hours !== 1 ? 's' : ''} `;
+  if (minutes > 0 || (!days && !hours)) result += `${minutes} minute${minutes !== 1 ? 's' : ''} `;
+
+  return result.trim() + ' ago';
+};
 
 export default function CommunityPage() {
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+
   const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
   const textColor = useThemeColor({}, 'text');
   const placeholderColor = useThemeColor({ light: '#888', dark: '#aaa' }, 'text');
+  const backgroundColor = useThemeColor({}, 'background');
+
+  // Fetch posts from API
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPosts = async () => {
+        try {
+          setLoading(true);
+          // Get token from AsyncStorage
+          const storedToken = await AsyncStorage.getItem('token');
+          if (!storedToken) {
+            console.warn('No authentication token found');
+            setLoading(false);
+            return;
+          }
+
+          // Debug info
+          try {
+            const decoded = jwtDecode(storedToken);
+            console.log('Token info:', {
+              userId: decoded.id,
+              role: decoded.role,
+              exp: new Date(decoded.exp * 1000).toLocaleString(), // Convert exp to readable date
+              tokenPreview: storedToken.substring(0, 20) + '...'
+            });
+          } catch (decodeError) {
+            console.error('Error decoding token:', decodeError);
+          }
+
+          setToken(storedToken);
+
+          console.log('Requesting from URL:', `${BASE_URL}/api/posts`);
+
+          // Fetch posts from API
+          const response = await axios.get(`${BASE_URL}/api/posts`, {
+            headers: {
+              Authorization: `Bearer ${storedToken}`
+            }
+          });
+
+
+          console.log('Fetched posts:', response.data);
+
+          // Transform API data to PostData format
+          const formattedPosts: PostData[] = response.data.map(post => ({
+            id: post.id,
+            club: post.clubName || 'Unknown Club',
+            avatar: { uri: post.clubAvatar || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732' },
+            time: formatTimeAgo(post.createdAt),
+            text: post.description || 'No description',
+            image: post.mediaPaths && post.mediaPaths.length > 0 
+              ? { uri: `${BASE_URL}/uploads/${post.mediaPaths[0]}` }
+              : require('@/assets/images/event1.png'),
+            likes: post.likes || 0,
+            comments: post.comments || 0,
+          }));
+
+          setPosts(formattedPosts);
+        } catch (error) {
+          console.error('Error fetching posts:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchPosts();
+    }, [])
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -77,9 +121,19 @@ export default function CommunityPage() {
 
           {/* Feed */}
           <View style={styles.feedContainer}>
-            {communityPosts.map(post => (
-              <PostCard key={post.id} post={post} />
-            ))}
+            {loading ? (
+              <View style={[styles.loadingContainer, { backgroundColor }]}>
+                <ThemedText>Loading posts...</ThemedText>
+              </View>
+            ) : posts.length > 0 ? (
+              posts.map(post => (
+                <PostCard key={post.id} post={post} />
+              ))
+            ) : (
+              <View style={[styles.emptyContainer, { backgroundColor }]}>
+                <ThemedText>No posts found</ThemedText>
+              </View>
+            )}
           </View>
 
           {/* Bottom padding */}
@@ -132,8 +186,23 @@ const styles = StyleSheet.create({
   },
   feedContainer: {
     paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   bottomPadding: {
     height: 80,
+  },
+  loadingContainer: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 100,
+  },
+  emptyContainer: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
   },
 });

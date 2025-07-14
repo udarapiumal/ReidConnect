@@ -35,7 +35,6 @@ export default function Login() {
             const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login response:", res.data);
 
-            
             const { token, role } = res.data;
             Alert.alert("Success", "Login successful!");
 
@@ -49,7 +48,7 @@ export default function Login() {
             // ✅ Redirect based on embedded role
             switch (decoded.role) {
                 case "student":
-                    router.push("/student/");
+                    router.push("/student");
                     break;
                 case "club":
                     router.push("/club/dashboard");

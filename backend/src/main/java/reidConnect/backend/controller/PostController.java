@@ -31,7 +31,7 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     public ResponseEntity<String> createPost(
             @RequestParam("clubId") Long clubId,
             @RequestParam("description") String description,
@@ -95,7 +95,7 @@ public class PostController {
 
 
     //Get all posts
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
         List<PostResponseDto> posts = postService.getAllPosts();
@@ -103,7 +103,7 @@ public class PostController {
     }
 
     //Get a post by ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
         PostResponseDto post = postService.getPostById(id);
@@ -111,7 +111,7 @@ public class PostController {
     }
 
     // Get all posts by club ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<PostResponseDto>> getPostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getPostsByClubId(clubId);
@@ -119,7 +119,7 @@ public class PostController {
     }
 
     // Get the latest 3 posts by club ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @GetMapping("/club/{clubId}/latest")
     public ResponseEntity<List<PostResponseDto>> getLatestThreePostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getLatestThreePostsByClubId(clubId);
@@ -128,7 +128,7 @@ public class PostController {
 
 
     //Update a post by ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @PutMapping("/{id}")
     public ResponseEntity<String> updatePost(@PathVariable Long id, @RequestBody PostUpdateDto dto) {
         postService.updatePost(id, dto);
@@ -136,7 +136,7 @@ public class PostController {
     }
 
     //Delete a post by ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePost(@PathVariable Long id) {
         postService.deletePost(id);

@@ -37,7 +37,6 @@ const formatTimeAgo = (timestamp) => {
 };
 
 
-
 export default function ClubDashboardTab() {
     const { user,token, clubDetails, loading } = useClub();
     const [latestPosts, setLatestPosts] = useState([]);
@@ -124,6 +123,7 @@ export default function ClubDashboardTab() {
                 Authorization: `Bearer ${token}`,
             }
         })
+        
             .then(res => {
                 setLatestPosts(res.data);
                 console.log("Latest posts response:", res.data);
@@ -198,25 +198,31 @@ export default function ClubDashboardTab() {
                         <Text style={styles.sectionTitle}>Latest published content</Text>
                     </View>
 
-                    {latestPosts.map((post) => (
-                        <TouchableOpacity key={post.id} onPress={() => router.push(`/club/post/${post.id}`)}>
-                            {renderVideoItem({
-                                thumbnail: {
-                                    uri: post.mediaPaths?.[0]
-                                        ? post.mediaPaths[0].startsWith('uploads/')
-                                        ? `${BASE_URL}/${post.mediaPaths[0]}`
-                                        : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
-                                        : '${BASE_URL}/uploads/placeholder.jpg',
-                                },
-
-                                title: post.description || "No description",
-                                duration: formatTimeAgo(post.createdAt) || "Some time ago",
-                                likes:  0,
-                                comments: 0
-                            })}
-                        </TouchableOpacity>
-                    ))}
-
+                    {latestPosts.map((post) => {
+                        
+                        console.log('Post mediaPaths:', post.mediaPaths);
+                        // let thumbnailUri = post.mediaPaths?.[0]
+                        //     ? post.mediaPaths[0].startsWith('uploads/')
+                        //     ? `${BASE_URL}/${post.mediaPaths[0]}`
+                        //     : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+                        //     : `${BASE_URL}/uploads/placeholder.jpg`;
+                        
+                        // thumbnailUri = `${BASE_URL}/uploads/placeholder.jpg`;
+                        const thumbnailUri = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732'; // Mock photo for testing
+                        console.log('Final thumbnail URI:', thumbnailUri);
+                        
+                        return (
+                            <TouchableOpacity key={post.id} onPress={() => router.push(`/club/post/${post.id}`)}>
+                                {renderVideoItem({
+                                    thumbnail: { uri: thumbnailUri },
+                                    title: post.description || "No description",
+                                    duration: formatTimeAgo(post.createdAt) || "Some time ago",
+                                    likes: 0,
+                                    comments: 0
+                                })}
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
 
                 {/* Latest Comments Section */}

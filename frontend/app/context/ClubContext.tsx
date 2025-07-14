@@ -71,3 +71,5 @@ export const useClub = () => {
   if (!context) throw new Error("useClub must be used within a ClubProvider");
   return context;
 };
+
+export default ClubProvider;

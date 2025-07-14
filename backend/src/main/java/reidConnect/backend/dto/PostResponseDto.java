@@ -16,6 +16,7 @@ import java.util.List;
 public class PostResponseDto {
     private Long id;
     private Long clubId;
+    private String clubName;
     private LocalDateTime createdAt;
     private String description;
     private List<String> mediaPaths;
