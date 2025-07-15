@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
-import AcademicAdminPage from './pages/academic-admin/AcademicAdminPage';
 
 // ...other imports
 
@@ -10,14 +9,9 @@ function AppRoutes() {
     <Router>
       <Routes>
         {/* ...other routes */}
-        <Route
-          path="/academic-admin"
-          element={
-            <ProtectedRoute>
-              <AcademicAdminPage />
-            </ProtectedRoute>
-          }
-        />
+        
+        {/* Academic admin routes completely removed */}
+        
         {/* ...other routes */}
       </Routes>
     </Router>
