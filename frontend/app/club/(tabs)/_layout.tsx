@@ -26,7 +26,7 @@ export default function ClubTabsLayout() {
           let iconName;
           switch (route.name) {
             case 'dashboard': iconName = 'home'; break;
-            case 'calendar': iconName = 'calendar'; break;
+            case 'venue': iconName = 'pin'; break;
             case 'create': iconName = 'add-circle'; break;
             case 'events': iconName = 'megaphone'; break;
             case 'profile': iconName = 'person'; break;
@@ -37,7 +37,7 @@ export default function ClubTabsLayout() {
       })}
     >
       <Tabs.Screen name="dashboard" options={{ title: 'Dashboard' }} />
-      <Tabs.Screen name="calendar" options={{ title: 'Calendar' }} />
+      <Tabs.Screen name="venue" options={{ title: 'Venue' }} />
       <Tabs.Screen name="create" options={{ title: 'Create' }} />
       <Tabs.Screen name="events" options={{ title: 'Events' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />

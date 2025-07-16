@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from "react";
 import {
+    ActivityIndicator,
     Dimensions,
     Image,
     ScrollView,
@@ -15,8 +16,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from "../../context/ClubContext";
+
 const { width } = Dimensions.get('window');
-const router = useRouter();
+
 const formatTimeAgo = (timestamp) => {
     const now = new Date();
     const createdAt = new Date(timestamp);
@@ -36,11 +38,68 @@ const formatTimeAgo = (timestamp) => {
     return result.trim() + ' ago';
 };
 
-
-
 export default function ClubDashboardTab() {
-    const { user,token, clubDetails, loading } = useClub();
+    const { user, token, clubDetails, loading } = useClub();
     const [latestPosts, setLatestPosts] = useState([]);
+    const [postsLoading, setPostsLoading] = useState(false);
+    const router = useRouter();
+
+    const fetchPostStats = async (postId) => {
+        try {
+            const [likesResponse, commentsResponse] = await Promise.all([
+                axios.get(`${BASE_URL}/api/posts/${postId}/likes/count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                axios.get(`${BASE_URL}/api/comments/post/${postId}/count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            ]);
+
+            return {
+                likeCount: likesResponse.data || 0,
+                commentCount: commentsResponse.data || 0
+            };
+        } catch (error) {
+            console.error(`Error fetching stats for post ${postId}:`, error);
+            return { likeCount: 0, commentCount: 0 };
+        }
+    };
+
+    const fetchLatestPostsWithStats = async () => {
+        if (!clubDetails?.id || !token) {
+            console.warn("Missing clubDetails or user token");
+            return;
+        }
+
+        setPostsLoading(true);
+        try {
+            // Fetch posts first
+            const postsResponse = await axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/latest`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const posts = postsResponse.data;
+            
+            // Fetch stats for each post
+            const postsWithStats = await Promise.all(
+                posts.map(async (post) => {
+                    const stats = await fetchPostStats(post.id);
+                    return {
+                        ...post,
+                        likeCount: stats.likeCount,
+                        commentCount: stats.commentCount
+                    };
+                })
+            );
+
+            setLatestPosts(postsWithStats);
+            console.log("Latest posts with stats:", postsWithStats);
+        } catch (error) {
+            console.error("Error fetching latest posts:", error);
+        } finally {
+            setPostsLoading(false);
+        }
+    };
 
     const renderAnalyticsCards = () => (
         <View style={styles.analyticsContainer}>
@@ -54,7 +113,7 @@ export default function ClubDashboardTab() {
             </View>
             <View style={styles.analyticsCard}>
                 <Text style={styles.analyticsLabel}>Posts published</Text>
-                <Text style={styles.analyticsValue}>15</Text>
+                <Text style={styles.analyticsValue}>{latestPosts.length}</Text>
             </View>
         </View>
     );
@@ -63,19 +122,19 @@ export default function ClubDashboardTab() {
         <View style={styles.videoItem}>
             <View style={styles.videoThumbnail}>
                 <View style={styles.thumbnailPlaceholder}>
-                    <Image source={thumbnail} style={{ width: 72, height: 48, borderRadius: 5 }} />
+                    <Image source={thumbnail} style={styles.thumbnailImage} />
                 </View>
             </View>
             <View style={styles.videoInfo}>
                 <Text style={styles.videoTitle} numberOfLines={2}>{title}</Text>
-                <Text style={styles.videoMeta}>First {duration}</Text>
-                <View style={styles.videoStats}>
-                    <View style={styles.icon}>
-                        <Feather name="thumbs-up" size={16} color="#555" />
+                <Text style={styles.videoMeta}>{duration}</Text>
+                <View style={styles.videoStatsContainer}>
+                    <View style={styles.statItem}>
+                        <Feather name="heart" size={16} color="#EF4444" />
                         <Text style={styles.statText}>{likes}</Text>
                     </View>
-                    <View style={styles.icon}>
-                        <Feather name="message-circle" size={16} color="#555" />
+                    <View style={styles.statItem}>
+                        <Feather name="message-circle" size={16} color="#3B82F6" />
                         <Text style={styles.statText}>{comments}</Text>
                     </View>
                 </View>
@@ -87,13 +146,13 @@ export default function ClubDashboardTab() {
         <View style={styles.commentItem}>
             <View style={styles.commentHeader}>
                 <View style={styles.commentThumbnail}>
-                    <Image source={thumbnail} style={{ width: 40, height: 40, borderRadius: 4 }} />
+                    <Image source={thumbnail} style={styles.commentThumbnailImage} />
                 </View>
                 <View style={styles.commentContent}>
                     <Text style={styles.commentTitle} numberOfLines={1}>{title}</Text>
                     <View style={styles.commentMeta}>
                         <View style={styles.commenterAvatar}>
-                            <Image source={commenterPic} style={{ width: 25, height: 25, borderRadius: 25 }} />
+                            <Image source={commenterPic} style={styles.commenterAvatarImage} />
                         </View>
                         <Text style={styles.commenterName}>@{commenterName}</Text>
                         <Text style={styles.commentTime}>• {commentTime}</Text>
@@ -108,30 +167,12 @@ export default function ClubDashboardTab() {
         useCallback(() => {
             if (loading) return;
 
-        console.log("clubDetails after loading:", clubDetails);
-        console.log("user after loading:", user);
-        console.log("token: ", token);
+            console.log("clubDetails after loading:", clubDetails);
+            console.log("user after loading:", user);
+            console.log("token: ", token);
 
-        if (!clubDetails?.id || !token) {
-            console.warn("Missing clubDetails or user token");
-            return;
-        }
-
-        console.log("Sending the API call to get latest posts");
-
-        axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/latest`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            }
-        })
-            .then(res => {
-                setLatestPosts(res.data);
-                console.log("Latest posts response:", res.data);
-            })
-            .catch(err => {
-                console.error("Error fetching latest posts", err);
-            });
-    }, [loading, clubDetails, user])
+            fetchLatestPostsWithStats();
+        }, [loading, clubDetails, user, token])
     );
 
     return (
@@ -162,7 +203,10 @@ export default function ClubDashboardTab() {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.profileButton}>
-                            <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 50, height: 50 }} />
+                            <Image 
+                                source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
+                                style={styles.profileImage} 
+                            />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -170,7 +214,10 @@ export default function ClubDashboardTab() {
                 {/* Club Info Header */}
                 <View style={styles.clubInfo}>
                     <View style={styles.clubAvatar}>
-                        <Image source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} style={{ width: 56, height: 56, borderRadius: 28 }} />
+                        <Image 
+                            source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
+                            style={styles.clubAvatarImage} 
+                        />
                     </View>
                     <View style={styles.clubDetails}>
                         <Text style={styles.clubName}>
@@ -196,27 +243,45 @@ export default function ClubDashboardTab() {
                 <View style={styles.contentSection}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Latest published content</Text>
+                        {postsLoading && (
+                            <ActivityIndicator size="small" color="#007AFF" />
+                        )}
                     </View>
 
-                    {latestPosts.map((post) => (
-                        <TouchableOpacity key={post.id} onPress={() => router.push(`/club/post/${post.id}`)}>
-                            {renderVideoItem({
-                                thumbnail: {
-                                    uri: post.mediaPaths?.[0]
-                                        ? post.mediaPaths[0].startsWith('uploads/')
-                                        ? `${BASE_URL}/${post.mediaPaths[0]}`
-                                        : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
-                                        : '${BASE_URL}/uploads/placeholder.jpg',
-                                },
-
-                                title: post.description || "No description",
-                                duration: formatTimeAgo(post.createdAt) || "Some time ago",
-                                likes:  0,
-                                comments: 0
-                            })}
-                        </TouchableOpacity>
-                    ))}
-
+                    {postsLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#007AFF" />
+                            <Text style={styles.loadingText}>Loading posts...</Text>
+                        </View>
+                    ) : latestPosts.length > 0 ? (
+                        latestPosts.map((post) => (
+                            <TouchableOpacity 
+                                key={post.id} 
+                                onPress={() => router.push(`/club/post/${post.id}`)}
+                                style={styles.postTouchable}
+                            >
+                                {renderVideoItem({
+                                    thumbnail: {
+                                        uri: post.mediaPaths?.[0]
+                                            ? post.mediaPaths[0].startsWith('uploads/')
+                                                ? `${BASE_URL}/${post.mediaPaths[0]}`
+                                                : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+                                            : `${BASE_URL}/uploads/placeholder.jpg`,
+                                    },
+                                    title: post.description || "No description",
+                                    duration: formatTimeAgo(post.createdAt) || "Some time ago",
+                                    likes: post.likeCount || 0,
+                                    comments: post.commentCount || 0
+                                })}
+                            </TouchableOpacity>
+                        ))
+                    ) : (
+                        <View style={styles.noPostsContainer}>
+                            <Feather name="file-text" size={48} color="#6B7280" />
+                            <Text style={styles.noPostsText}>No posts yet</Text>
+                            <Text style={styles.noPostsSubtext}>Create your first post to get started!</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Latest Comments Section */}
@@ -281,20 +346,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
     },
-    icon: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    videoStats: {
-        flexDirection: 'row',
-        marginTop: 4,
-    },
-    statText: {
-        marginLeft: 4,
-        fontSize: 12,
-        color: '#555',
-    },
     createButton: {
         width: 28,
         height: 28,
@@ -334,15 +385,21 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     profileImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#0f0f0f",
+        backgroundColor: "#151718",
+        paddingVertical: 40,
+        gap: 12,
+    },
+    loadingText: {
+        color: "#9CA3AF",
+        fontSize: 16,
     },
     clubInfo: {
         flexDirection: "row",
@@ -360,6 +417,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginRight: 12,
+        overflow: 'hidden',
+    },
+    clubAvatarImage: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
     },
     avatarText: {
         fontSize: 24,
@@ -425,50 +488,90 @@ const styles = StyleSheet.create({
     contentSection: {
         padding: 16,
     },
+    postTouchable: {
+        marginBottom: 12,
+    },
     videoItem: {
         backgroundColor: "#1a1a1a",
         flexDirection: "row",
-        marginBottom: 16,
         padding: 16,
-        borderRadius: 8,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: "#272727",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     videoThumbnail: {
         marginRight: 12,
     },
     thumbnailPlaceholder: {
-        width: 72,
-        height: 48,
-        backgroundColor: "#1a1a1a",
-        borderRadius: 4,
+        width: 80,
+        height: 60,
+        backgroundColor: "#2a2a2a",
+        borderRadius: 8,
         justifyContent: "center",
         alignItems: "center",
+        overflow: 'hidden',
+    },
+    thumbnailImage: {
+        width: 80,
+        height: 60,
+        borderRadius: 8,
     },
     thumbnailText: {
         fontSize: 20,
     },
     videoInfo: {
         flex: 1,
+        justifyContent: 'space-between',
     },
     videoTitle: {
         color: "#ffffff",
         fontSize: 16,
-        fontWeight: "500",
-        marginBottom: 4,
+        fontWeight: "600",
+        marginBottom: 6,
+        lineHeight: 22,
     },
     videoMeta: {
         color: "#aaaaaa",
-        fontSize: 12,
+        fontSize: 13,
         marginBottom: 8,
     },
-    videoStats: {
+    videoStatsContainer: {
         flexDirection: "row",
+        alignItems: "center",
         gap: 16,
     },
+    statItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
     statText: {
-        color: "#aaaaaa",
-        fontSize: 12,
+        color: "#ffffff",
+        fontSize: 14,
+        fontWeight: "500",
+    },
+    noPostsContainer: {
+        alignItems: 'center',
+        paddingVertical: 40,
+        gap: 12,
+    },
+    noPostsText: {
+        color: "#9CA3AF",
+        fontSize: 18,
+        fontWeight: "600",
+    },
+    noPostsSubtext: {
+        color: "#6B7280",
+        fontSize: 14,
+        textAlign: 'center',
     },
     commentItem: {
         backgroundColor: "#1a1a1a",
@@ -484,6 +587,11 @@ const styles = StyleSheet.create({
     },
     commentThumbnail: {
         marginRight: 12,
+    },
+    commentThumbnailImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 4,
     },
     commentContent: {
         flex: 1,
@@ -506,6 +614,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginRight: 6,
+        overflow: 'hidden',
+    },
+    commenterAvatarImage: {
+        width: 25,
+        height: 25,
+        borderRadius: 25,
     },
     commenterInitial: {
         color: "#ffffff",
