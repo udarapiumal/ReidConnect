@@ -21,15 +21,16 @@ const formatTimeAgo = (timestamp: string) => {
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const totalHours = Math.floor(totalMinutes / 60);
   const days = Math.floor(totalHours / 24);
-  const hours = totalHours % 24;
-  const minutes = totalMinutes % 60;
 
-  let result = '';
-  if (days > 0) result += `${days} day${days !== 1 ? 's' : ''} `;
-  if (hours > 0) result += `${hours} hour${hours !== 1 ? 's' : ''} `;
-  if (minutes > 0 || (!days && !hours)) result += `${minutes} minute${minutes !== 1 ? 's' : ''} `;
-
-  return result.trim() + ' ago';
+  if (days > 0) {
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+  
+  if (totalHours > 0) {
+    return `${totalHours} hour${totalHours !== 1 ? 's' : ''} ago`;
+  }
+  
+  return `${totalMinutes} minute${totalMinutes !== 1 ? 's' : ''} ago`;
 };
 
 export default function CommunityPage() {
@@ -85,18 +86,24 @@ export default function CommunityPage() {
           console.log('Fetched posts:', response.data);
 
           // Transform API data to PostData format
-          const formattedPosts: PostData[] = response.data.map(post => ({
-            id: post.id,
-            club: post.clubName || 'Unknown Club',
-            avatar: { uri: post.clubAvatar || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732' },
-            time: formatTimeAgo(post.createdAt),
-            text: post.description || 'No description',
-            image: post.mediaPaths && post.mediaPaths.length > 0 
-              ? { uri: `${BASE_URL}/uploads/${post.mediaPaths[0]}` }
-              : require('@/assets/images/event1.png'),
-            likes: post.likes || 0,
-            comments: post.comments || 0,
-          }));
+          const formattedPosts: PostData[] = response.data.map(post => {
+            const imageUrl = post.mediaPaths && post.mediaPaths.length > 0 
+              ? `${BASE_URL}/api/posts/uploads/${post.mediaPaths[0]}`
+              : null;
+            
+            console.log('Post:', post.id, 'Image URL:', imageUrl, 'Media paths:', post.mediaPaths);
+            
+            return {
+              id: post.id,
+              club: post.clubName || 'Unknown Club',
+              avatar: post.clubAvatar || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732',
+              time: formatTimeAgo(post.createdAt),
+              text: post.description || 'No description',
+              image: imageUrl || require('@/assets/images/event1.png'),
+              likes: post.likes || 0,
+              comments: post.comments || 0,
+            };
+          });
 
           setPosts(formattedPosts);
         } catch (error) {

@@ -37,10 +37,11 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
-                        .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/posts/uploads/**").permitAll() // Allow public access to image serving
                         .requestMatchers("/api/comments/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
+                        .requestMatchers("/api/posts/**").authenticated() // This should come after the specific /uploads/** rule
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

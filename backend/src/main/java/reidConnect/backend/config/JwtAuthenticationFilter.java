@@ -86,6 +86,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.startsWith("/auth/") || 
                path.startsWith("/test") || 
-               path.startsWith("/uploads/");
+               path.startsWith("/uploads/") ||
+               path.startsWith("/api/posts/uploads/"); // Allow public access to image serving
     }
 }

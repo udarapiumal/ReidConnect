@@ -144,6 +144,7 @@ public class PostController {
     }
 
     // Add a like to a post
+    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
     @PostMapping("/{postId}/like")
     public ResponseEntity<String> likePost(
             @PathVariable Long postId,
@@ -168,6 +169,38 @@ public class PostController {
         return ResponseEntity.ok(count);
     }
 
+    // Serve uploaded images - accessible to all users (including students)
+    @GetMapping("/uploads/{filename:.+}")
+    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+        try {
+            Path file = Paths.get("src/main/resources/static/uploads").resolve(filename);
+            Resource resource = new UrlResource(file.toUri());
+            
+            if (resource.exists() || resource.isReadable()) {
+                // Determine content type based on file extension
+                String contentType = "application/octet-stream";
+                if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+                    contentType = "image/jpeg";
+                } else if (filename.toLowerCase().endsWith(".png")) {
+                    contentType = "image/png";
+                } else if (filename.toLowerCase().endsWith(".gif")) {
+                    contentType = "image/gif";
+                } else if (filename.toLowerCase().endsWith(".webp")) {
+                    contentType = "image/webp";
+                }
+                
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, contentType)
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600") // Cache for 1 hour
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error serving image: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
 }
 

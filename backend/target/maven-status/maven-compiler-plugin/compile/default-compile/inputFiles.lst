@@ -1,27 +1,49 @@
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\BackendApplication.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\config\ApplicationConfiguration.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\config\EmailConfiguration.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\config\JwtAuthenticationFilter.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\config\SecurityConfiguration.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\controller\AuthenticationController.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\controller\ClubCoordinatorController.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\controller\UserController.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\dto\ClubCoordinatorDto.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\dto\LoginUserDto.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\dto\RegisterUserDto.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\dto\VerifyUserDto.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\entity\ClubCoordinator.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\entity\Student.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\entity\User.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\exception\ResourceNotFoundException.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\mapper\ClubCoordinatorMapper.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\repository\ClubCoordinatorRepository.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\repository\StudentRepository.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\repository\UserRepository.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\responses\LoginResponse.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\service\AuthenticationService.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\service\ClubCoordinatorService.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\service\EmailService.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\service\impl\ClubCoordinatorServiceImpl.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\service\JwtService.java
-C:\xampp\htdocs\ReidConnect\backend\src\main\java\reidConnect\backend\service\UserService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\BackendApplication.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\config\ApplicationConfiguration.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\config\EmailConfiguration.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\config\JwtAuthenticationFilter.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\config\SecurityConfiguration.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\AuthenticationController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\AuthTestController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\ClubController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\CommentController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\PostController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\StudentController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\controller\UserController.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\ClubDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\CommentRequestDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\CommentResponseDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\LoginUserDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\PostCreateDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\PostResponseDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\PostUpdateDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\RegisterUserDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\dto\VerifyUserDto.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\Club.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\Comment.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\Post.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\Post_Media.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\PostLike.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\Student.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\entity\User.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\exception\ResourceNotFoundException.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\mapper\ClubMapper.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\mapper\PostMapper.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\ClubRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\CommentRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\PostLikeRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\PostMediaRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\PostRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\StudentRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\repository\UserRepository.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\responses\LoginResponse.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\AuthenticationService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\ClubService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\CommentService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\EmailService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\impl\ClubServiceImpl.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\impl\CommentServiceImpl.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\impl\PostServiceImpl.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\JwtService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\PostService.java
+C:\Users\LENOVO\UCSC\3rd Year\Group project C3\ReidConnect\backend\src\main\java\reidConnect\backend\service\UserService.java
