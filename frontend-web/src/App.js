@@ -1,22 +1,28 @@
 import './App.css';
 import Login from './components/Login';
-import LostItemForm from './components/LostandFound';
-import SearchUser from './components/SearchUser';
-import Navbar from './components/Navbar/Navbar'; // Import Navbar
+import LostItemForm from './components/union/LostandFound';
+import SearchUser from './components/union/SearchUser';
+import Sidebar from './components/union/Sidebar'; // Import Navbar
+import AcademicDashboard from './components/academic/Dashboard';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import UnionDashboard from './components/union/Dashboard';
+
 
 // Wrapper to conditionally render Navbar
 function AppWrapper() {
   const location = useLocation();
-  const showNavbar = location.pathname !== '/';
+  const hideSidebarPaths = ['/']; // Add more paths if needed
+  const showSidebar = !hideSidebarPaths.includes(location.pathname);
 
   return (
     <>
-      {showNavbar && <Navbar />}
+      {showSidebar && <Sidebar/>}
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/search" element={<SearchUser />} />
-        <Route path="/LostandFound" element={<LostItemForm />} />
+        <Route path="/union/Profilemanagement" element={<SearchUser />} />
+        <Route path="/union/LostandFound" element={<LostItemForm />} />
+        <Route path="/union/dashboard" element={<UnionDashboard/>} />
+        <Route path="/academic/dashboard" element={<AcademicDashboard />} />
       </Routes>
     </>
   );
