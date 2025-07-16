@@ -1,25 +1,44 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // <-- Add this
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const navigate = useNavigate(); // <-- Add this
+    const navigate = useNavigate();
 
     const handleLogin = async () => {
         if (!email || !password) {
             alert("Please enter email and password");
             return;
         }
+
         try {
-            console.log("Sending login request...");
-            const res = await axios.post("http://localhost:8080/auth/login", { email, password });
-            console.log("Login response:", res.data);
+            const res = await axios.post("http://localhost:8080/auth/login", {
+                email,
+                password,
+            });
+
+            const { token } = res.data;
+            const decoded = jwtDecode(token);
+
+            if (decoded.role !== "union" && decoded.role !== "academic") {
+                alert("Access denied: Unauthorized role");
+                return;
+            }
+
+            // Save token (replace AsyncStorage with localStorage in web)
+            localStorage.setItem("token", token);
             alert("Login successful!");
-            navigate("/search"); // <-- Navigate to SearchUser page
+
+            // Navigate based on role
+            if (decoded.role === "union") {
+                navigate("/union/dashboard");
+            } else if (decoded.role === "academic") {
+                navigate("/academic/dashboard");
+            }
         } catch (err) {
-            console.log("Login error:", err);
             if (axios.isAxiosError(err)) {
                 alert("Login failed: " + (err.response?.data?.message || err.message));
             } else {
@@ -45,7 +64,9 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 style={styles.input}
             />
-            <button onClick={handleLogin} style={styles.button}>Login</button>
+            <button onClick={handleLogin} style={styles.button}>
+                Login
+            </button>
         </div>
     );
 }
