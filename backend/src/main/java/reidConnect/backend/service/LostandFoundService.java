@@ -30,13 +30,16 @@ public class LostandFoundService {
         lostandFound.setPosterName(lostandFoundDto.getPosterName());
         lostandFound.setContactNumber(lostandFoundDto.getContactNumber());
 
-        // Handle image saving
+
         if (lostandFoundDto.getImage() != null && !lostandFoundDto.getImage().isEmpty()) {
             String fileName = UUID.randomUUID() + "_" + lostandFoundDto.getImage().getOriginalFilename();
-            Path filePath = Paths.get("uploads", fileName);
 
             try {
-                Files.createDirectories(filePath.getParent());
+
+                Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads");
+                Files.createDirectories(uploadDir);
+
+                Path filePath = uploadDir.resolve(fileName);
                 lostandFoundDto.getImage().transferTo(filePath.toFile());
                 lostandFound.setImagePath(fileName);
             } catch (IOException e) {
@@ -46,4 +49,5 @@ public class LostandFoundService {
 
         lostandFoundRepository.save(lostandFound);
     }
+
 }

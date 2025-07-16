@@ -29,7 +29,7 @@ function SearchUser() {
       <h2>Search Student by Registration Number</h2>
       <input
         type="text"
-        placeholder="Enter student email"
+        placeholder="Enter student registration number"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         style={{ padding: '8px', width: '300px', marginRight: '10px' }}

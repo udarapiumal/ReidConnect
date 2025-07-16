@@ -6,8 +6,8 @@ import reidConnect.backend.dto.LostandFoundDto;
 import reidConnect.backend.service.LostandFoundService;
 
 import java.util.List;
-
-@RequestMapping("/")
+@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/lost")
 @RestController
 public class LostandFoundController {
     private final LostandFoundService lostandFoundService;

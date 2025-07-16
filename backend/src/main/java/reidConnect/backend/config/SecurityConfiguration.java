@@ -36,6 +36,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test").permitAll()
                         .requestMatchers("/users/search").permitAll()
+                        .requestMatchers("/lost/lost-items").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

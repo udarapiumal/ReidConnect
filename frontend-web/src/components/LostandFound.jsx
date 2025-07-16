@@ -21,12 +21,47 @@ function LostItemForm() {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Submit form logic here (e.g., send to backend)
-    console.log("Form submitted:", formData);
-  };
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
+  const form = new FormData();
+  form.append("itemName", formData.itemName);
+  form.append("category", formData.category);
+  form.append("description", formData.description);
+  form.append("location", formData.location);
+  form.append("dateLost", formData.dateLost);
+  form.append("image", formData.image); // file
+  form.append("posterName", formData.posterName);
+  form.append("contactNumber", formData.contactNumber);
+
+  try {
+    const response = await fetch("http://localhost:8080/lost/lost-items", {
+      method: "POST",
+      body: form,
+    });
+
+    if (response.ok) {
+      alert("Lost item post submitted successfully!");
+      // Optionally reset form
+      setFormData({
+        itemName: "",
+        category: "",
+        description: "",
+        location: "",
+        dateLost: "",
+        image: null,
+        posterName: "",
+        contactNumber: "",
+      });
+    } else {
+      const errorText = await response.text();
+      alert("Error: " + errorText);
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    alert("Failed to submit form.");
+  }
+};
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
       <h2>Post Lost Item</h2>
@@ -143,7 +178,7 @@ const styles = {
   button: {
     padding: "12px",
     fontSize: "16px",
-    backgroundColor: "#007bff",
+    backgroundColor: "#FF0000",
     color: "white",
     border: "none",
     borderRadius: "6px",
