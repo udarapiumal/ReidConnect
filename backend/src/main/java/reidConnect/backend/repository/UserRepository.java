@@ -16,4 +16,6 @@ public interface UserRepository extends CrudRepository<User,Long> {
     Optional<User> findByRegNumberPrefix(@Param("regNumber") String regNumber);
 
 
+    @SuppressWarnings("override")
+    Optional<User> findById(Long id);
 }

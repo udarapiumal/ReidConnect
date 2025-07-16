@@ -1,10 +1,6 @@
-import { Stack } from 'expo-router';
+// app/_layout.tsx
+import { Slot } from 'expo-router';
 
 export default function RootLayout() {
-    return (
-        <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-        </Stack>
-    );
+  return <Slot />;
 }

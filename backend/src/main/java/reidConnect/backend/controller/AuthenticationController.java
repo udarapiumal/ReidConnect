@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")  // Added base path for all endpoints
+@RequestMapping("/auth")  // Added a base path for all endpoints
 public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
@@ -30,9 +30,9 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
-        String jwtToken = jwtService.generateToken(authenticatedUser);
+        String jwtToken = jwtService.generateTokenFromUser(authenticatedUser);
         long expirationTime = jwtService.getExpirationTime();  // Make sure this method exists in JwtService
-        LoginResponse loginResponse = new LoginResponse(jwtToken, expirationTime);
+        LoginResponse loginResponse = new LoginResponse(jwtToken, expirationTime, authenticatedUser.getRole());
         return ResponseEntity.ok(loginResponse);
     }
 

@@ -37,10 +37,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     @Override
     protected void doFilterInternal(
+
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
-            )throws ServletException, IOException {
+    )throws ServletException, IOException {
         final String authheader=request.getHeader("Authorization");
 
         if(authheader==null || !authheader.startsWith("Bearer ")){
@@ -51,16 +52,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String jwt=authheader.substring(7);
             final String userEmail=jwtService.extractUsername(jwt);
 
+            System.out.println("📨 Extracted email from JWT: " + userEmail);
+
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null){
+            if (userEmail != null && authentication == null){
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+                System.out.println("🧍 Loaded UserDetails username: " + userDetails.getUsername());
+
+                boolean tokenExpired = jwtService.isTokenExpired(jwt);
+                System.out.println("📆 Token expired? " + tokenExpired);
+                System.out.println("✅ Username matches token? " + userEmail.equals(userDetails.getUsername()));
 
                 if(jwtService.isTokenValid(jwt,userDetails)){
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("✅ Authenticated user: " + userDetails.getUsername() + " | Authorities: " + userDetails.getAuthorities());
+                } else {
+                    System.out.println("❌ JWT Token is not valid for user.");
                 }
             }
             filterChain.doFilter(request,response);

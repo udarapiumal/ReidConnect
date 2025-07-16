@@ -16,12 +16,10 @@ export default function SignUp() {
     const [password, setPassword] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
 
-    // Step validation state
     const [step1Error, setStep1Error] = useState(true);
     const [step2Error, setStep2Error] = useState(true);
     const [step3Error, setStep3Error] = useState(true);
 
-    // Validation functions
     const validateStep1 = () => {
         const nameRegex = /^[a-zA-Z ]{2,30}$/;
         const ageNum = parseInt(age, 10);
@@ -39,17 +37,9 @@ export default function SignUp() {
         setStep3Error(!contactRegex.test(contact_number));
     };
 
-    useEffect(() => {
-        validateStep1();
-    }, [name, age]);
-
-    useEffect(() => {
-        validateStep2();
-    }, [email, password]);
-
-    useEffect(() => {
-        validateStep3();
-    }, [contact_number]);
+    useEffect(() => { validateStep1(); }, [name, age]);
+    useEffect(() => { validateStep2(); }, [email, password]);
+    useEffect(() => { validateStep3(); }, [contact_number]);
 
     const handleSubmit = async () => {
         try {
@@ -76,12 +66,12 @@ export default function SignUp() {
 
     const handleVerify = async () => {
         try {
-            const res = await axios.post("http://192.168.56.1:8080/auth/verify", {
+            const res = await axios.post("http://10.21.84.107:8080/auth/verify", {
                 email,
                 verificationCode
             });
             Alert.alert('Success', 'Account verified successfully!');
-            router.push('/Login'); // Redirect to login page
+            router.push('/Login');
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 Alert.alert('Verification failed', JSON.stringify(err.response?.data || err.message));
@@ -94,7 +84,7 @@ export default function SignUp() {
 
     const handleResend = async () => {
         try {
-            await axios.post('http://192.168.1.5:8080/auth/resend?email=' + email);
+            await axios.post('http://10.21.84.107:8080/auth/resend?email=' + email);
             Alert.alert('Success', 'Verification code resent!');
         } catch (err) {
             if (axios.isAxiosError(err)) {
@@ -107,105 +97,122 @@ export default function SignUp() {
     };
 
     return (
-        <ProgressSteps
-            completedStepIconColor="#e74c3c"
-            activeStepIconBorderColor="#c0392b"
-            activeLabelColor="#c0392b"
-            labelColor="#999"
-            progressBarColor="#e74c3c"
-        >
-            <ProgressStep label="Step 1" errors={step1Error}>
-                <Text style={styles.title}>Sign Up</Text>
-                <View style={styles.step}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Your Name:"
-                        value={name}
-                        onChangeText={setName}
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Your Age:"
-                        value={age}
-                        keyboardType="numeric"
-                        onChangeText={setAge}
-                    />
-                </View>
-            </ProgressStep>
-            <ProgressStep label="Step 2" errors={step2Error}>
-                <View style={styles.step}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Your E-mail:"
-                        value={email}
-                        keyboardType="email-address"
-                        onChangeText={setEmail}
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Password:"
-                        value={password}
-                        secureTextEntry
-                        onChangeText={setPassword}
-                    />
-                </View>
-            </ProgressStep>
-            <ProgressStep label="Step 3" errors={step3Error}>
-                <View style={styles.step}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Your Contact Number:"
-                        value={contact_number}
-                        keyboardType="numeric"
-                        onChangeText={setContact_number}
-                    />
-                </View>
-            </ProgressStep>
-            <ProgressStep label="Step 4" onNext={handleSubmit}>
-                <View style={styles.step}>
-                    <Picker
-                        style={styles.input}
-                        selectedValue={academic_year}
-                        onValueChange={(itemValue) => setAcademic_year(itemValue)}
-                    >
-                        <Picker.Item label="Select Academic Year" value="" />
-                        <Picker.Item label="1st Year" value="1" />
-                        <Picker.Item label="2nd Year" value="2" />
-                        <Picker.Item label="3rd Year" value="3" />
-                        <Picker.Item label="4th Year" value="4" />
-                    </Picker>
-                </View>
-            </ProgressStep>
-            <ProgressStep label="Verify" onSubmit={handleVerify}>
-                <View style={styles.step}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter Verification Code"
-                        value={verificationCode}
-                        onChangeText={setVerificationCode}
-                    />
-                    <Text style={{ color: '#007BFF', marginTop: 10 }} onPress={handleResend}>
-                        Resend Verification Code
+        <View style={styles.container}>
+            <ProgressSteps
+                completedStepIconColor="#FF0033"
+                activeStepIconBorderColor="#c0392b"
+                activeLabelColor="#c0392b"
+                labelColor="#888"
+                progressBarColor="#FF0033"
+                completedStepNumColor="#ffffff"
+                activeStepNumColor="#ffffff"
+                disabledStepNumColor="#121212"
+            >
+                <ProgressStep label="Step 1" errors={step1Error}>
+                    <Text style={styles.title}>Sign Up</Text>
+                    <View style={styles.step}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Your Name:"
+                            placeholderTextColor="#888"
+                            value={name}
+                            onChangeText={setName}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Your Age:"
+                            placeholderTextColor="#888"
+                            value={age}
+                            keyboardType="numeric"
+                            onChangeText={setAge}
+                        />
+                    </View>
+                </ProgressStep>
+                <ProgressStep label="Step 2" errors={step2Error}>
+                    <View style={styles.step}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Your E-mail:"
+                            placeholderTextColor="#888"
+                            value={email}
+                            keyboardType="email-address"
+                            onChangeText={setEmail}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Password:"
+                            placeholderTextColor="#888"
+                            value={password}
+                            secureTextEntry
+                            onChangeText={setPassword}
+                        />
+                    </View>
+                </ProgressStep>
+                <ProgressStep label="Step 3" errors={step3Error}>
+                    <View style={styles.step}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Your Contact Number:"
+                            placeholderTextColor="#888"
+                            value={contact_number}
+                            keyboardType="numeric"
+                            onChangeText={setContact_number}
+                        />
+                    </View>
+                </ProgressStep>
+                <ProgressStep label="Step 4" onNext={handleSubmit}>
+                    <View style={styles.step}>
+                        <Picker
+                            style={styles.picker}
+                            selectedValue={academic_year}
+                            onValueChange={(itemValue) => setAcademic_year(itemValue)}
+                        >
+                            <Picker.Item label="Select Academic Year" value="" />
+                            <Picker.Item label="1st Year" value="1" />
+                            <Picker.Item label="2nd Year" value="2" />
+                            <Picker.Item label="3rd Year" value="3" />
+                            <Picker.Item label="4th Year" value="4" />
+                        </Picker>
+                    </View>
+                </ProgressStep>
+                <ProgressStep label="Verify" onSubmit={handleVerify}>
+                    <View style={styles.step}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Verification Code"
+                            placeholderTextColor="#888"
+                            value={verificationCode}
+                            onChangeText={setVerificationCode}
+                        />
+                        <Text style={styles.resendText} onPress={handleResend}>
+                            Resend Verification Code
+                        </Text>
+                    </View>
+                </ProgressStep>
+            </ProgressSteps>
+            <View style={styles.loginRedirectContainer}>
+                <Text style={styles.loginText}>
+                    Already have an account?{' '}
+                    <Text style={styles.loginLink} onPress={() => router.push('/Login')}>
+                        Log in
                     </Text>
-                </View>
-            </ProgressStep>
-        </ProgressSteps>
+                </Text>
+            </View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#151718',
     },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
         marginBottom: 30,
         textAlign: 'center',
-        color: '#333',
+        color: '#ffffff',
     },
     step: {
         alignItems: 'center',
@@ -216,12 +223,37 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 50,
         borderWidth: 1.5,
-        borderColor: '#ccc',
+        borderColor: '#444',
         borderRadius: 10,
         paddingHorizontal: 15,
         marginBottom: 15,
-        backgroundColor: '#fff',
+        backgroundColor: '#1A1A1A',
         fontSize: 16,
-        color: '#333',
+        color: '#ffffff',
+    },
+    picker: {
+        width: '100%',
+        height: 50,
+        borderRadius: 10,
+        backgroundColor: '#1e1e1e',
+        color: '#ffffff',
+    },
+    resendText: {
+        color: '#007BFF',
+        marginTop: 10,
+        textDecorationLine: 'underline',
+    },
+    loginRedirectContainer: {
+        alignItems: 'center',
+        padding: 15,
+        backgroundColor: '#121212',
+    },
+    loginText: {
+        fontSize: 16,
+        color: '#cccccc',
+    },
+    loginLink: {
+        color: '#FF0033',
+        fontWeight: 'bold',
     },
 });
