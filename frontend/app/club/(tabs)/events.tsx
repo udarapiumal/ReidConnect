@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import qs from 'qs';
@@ -19,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -96,6 +98,15 @@ export default function CreateEvent() {
   const [loading, setLoading] = useState(false);
   const [conflictModalVisible, setConflictModalVisible] = useState(false);
   const [currentConflict, setCurrentConflict] = useState(null);
+
+  const [allVenues, setAllVenues] = useState([]);
+  const [selectedFaculty, setSelectedFaculty] = useState('');
+  const [filteredVenues, setFilteredVenues] = useState([]);
+  const [selectedVenueId, setSelectedVenueId] = useState(null); // optional
+  const [venueMode, setVenueMode] = useState('dropdown'); // 'dropdown' | 'manual'
+  const [venueName, setVenueName] = useState('');
+
+
   
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -159,6 +170,29 @@ const formatDateForComparison = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+//Fetch All Venues from API on Mount
+  useEffect(() => {
+    axios.get(`${BASE_URL}/api/venues`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(response => setAllVenues(response.data))
+      .catch(error => console.error('Failed to load venues:', error));
+  }, []);
+
+  //Filter Venues by Selected Faculty
+  useEffect(() => {
+  if (selectedFaculty) {
+    const filtered = allVenues.filter(v => v.faculty === selectedFaculty);
+    setFilteredVenues(filtered);
+  } else {
+    setFilteredVenues([]);
+  }
+}, [selectedFaculty, allVenues]);
+
+
+
 // Fixed function to get events for a specific date
 const getEventsForDate = (date) => {
   const dateStr = formatDateForComparison(date);
@@ -198,6 +232,18 @@ const getEventsForTimeSlot = (date, timeSlot) => {
   return eventsForSlot;
 };
 
+const getSlotIdsFromTimes = (timeSlots) => {
+  const timeToId = Object.entries(SLOT_ID_TO_TIME_MAPPING).reduce((acc, [id, time]) => {
+    acc[time] = parseInt(id);
+    return acc;
+  }, {});
+  return timeSlots.map(time => timeToId[time]).filter(Boolean);
+};
+const generateUniqueImageName = () => {
+  return `event_${Date.now()}.jpg`;
+};
+
+
 
   const handleTimeSlotPress = (timeSlot) => {
     if (!selectedDate) return;
@@ -235,36 +281,54 @@ const getEventsForTimeSlot = (date, timeSlot) => {
   };
 
   const handleSubmit = async () => {
-    if (!name || !description || !selectedDate || !selectedTimeSlots.length || !venue) {
+    if (!name || !description || !selectedDate || !selectedTimeSlots.length || !venueName) {
       Alert.alert('❌ Error', 'Please fill all required fields');
       return;
     }
 
     setLoading(true);
     const formData = new FormData();
+
+    formData.append("clubId", clubDetails.id.toString());
     formData.append('name', name);
     formData.append('description', description);
-    formData.append('targetYears', JSON.stringify(targetYears));
-    formData.append('targetFaculties', JSON.stringify(targetFaculties));
+    formData.append('targetYears', targetYears.join(','));
+    formData.append('targetFaculties', targetFaculties.join(','));
     formData.append('date', formatDateForComparison(selectedDate));
-    formData.append('timeSlots', JSON.stringify(selectedTimeSlots));
-    formData.append('venue', venue);
+
+    const slotIds = getSlotIdsFromTimes(selectedTimeSlots); // convert time to slot IDs
+    formData.append("slotIds", slotIds.join(','));
+
+    formData.append("venueName", venueName);
+    if (venueMode === 'dropdown' && selectedVenueId) {
+      formData.append("venueId", selectedVenueId);
+    }
+
     
     if (image) {
       formData.append('image', { 
         uri: image.uri, 
-        name: 'event.jpg', 
+        name:  'photo.jpg', 
         type: 'image/jpeg' 
       });
     }
+    console.log(formData);
 
     try {
-      await axios.post(`${BASE_URL}/api/events`, formData, {
+      const response = await fetch(`${BASE_URL}/api/events`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+          Authorization: `Bearer ${token}`,
         },
+        body: formData,
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+
       Alert.alert('✅ Success', 'Event created successfully!');
       // Reset form
       setStep(1);
@@ -278,11 +342,13 @@ const getEventsForTimeSlot = (date, timeSlot) => {
       setVenue('');
       setCalendarView('month');
     } catch (error) {
+      console.error('Error creating event:', error.response?.data || error.message);
       Alert.alert('❌ Error', 'Failed to create event');
     } finally {
       setLoading(false);
     }
   };
+
 
   const toggleArrayItem = (item, list, setter) => {
     if (list.includes(item)) {
@@ -344,15 +410,82 @@ const getEventsForTimeSlot = (date, timeSlot) => {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Venue *</Text>
-        <TextInput
-          placeholder="Enter venue location"
-          placeholderTextColor="#666"
-          style={styles.input}
-          onChangeText={setVenue}
-          value={venue}
-        />
+        <Text style={styles.label}>Select Venue</Text>
+        <View style={styles.toggleButtons}>
+          <TouchableOpacity
+            style={[styles.toggleButton, venueMode === 'dropdown' && styles.selectedToggle]}
+            onPress={() => setVenueMode('dropdown')}
+          >
+            <Text style={styles.toggleText}>Select From Faculty</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleButton, venueMode === 'manual' && styles.selectedToggle]}
+            onPress={() => {
+              setVenueMode('manual');
+              setSelectedVenueId(null);
+              setSelectedFaculty('');
+              setVenueName('');
+            }}
+          >
+            <Text style={styles.toggleText}>Enter Custom Venue</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {venueMode === 'dropdown' ? (
+        <>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Select Faculty</Text>
+            <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedFaculty}
+              onValueChange={setSelectedFaculty}
+              style={styles.picker}
+            >
+              <Picker.Item label="-- Select Faculty --" value="" />
+              {FACULTIES.map(f => (
+                <Picker.Item key={f} label={f} value={f} />
+              ))}
+            </Picker>
+            </View>
+          </View>
+
+          {filteredVenues.length > 0 && (
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Select Venue</Text>
+              <View style={styles.pickerWrapper}>
+              
+                <Picker
+                  selectedValue={selectedVenueId}
+                  onValueChange={(value) => {
+                    setSelectedVenueId(value);
+                    const selected = filteredVenues.find(v => v.id === value);
+                    setVenueName(selected?.name || '');
+                  }}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="-- Select Venue --" value={null} />
+                  {filteredVenues.map(v => (
+                    <Picker.Item key={v.id} label={`${v.name} (Cap: ${v.capacity})`} value={v.id} />
+                  ))}
+                </Picker>
+                </View>
+              </View>
+
+          )}
+        </>
+      ) : (
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Enter Venue Name</Text>
+          <TextInput
+            placeholder="e.g. Custom Hall"
+            placeholderTextColor="#666"
+            style={styles.input}
+            value={venueName}
+            onChangeText={setVenueName}
+          />
+        </View>
+      )}
 
       <View style={styles.selectionContainer}>
         <Text style={styles.label}>Select Target Faculties *</Text>
@@ -407,9 +540,9 @@ const getEventsForTimeSlot = (date, timeSlot) => {
       </View>
 
       <TouchableOpacity
-        style={[styles.nextButton, (!name || !description || !venue || !targetFaculties.length || !targetYears.length) && styles.disabledButton]}
+        style={[styles.nextButton, (!name || !description || !venueName || !targetFaculties.length || !targetYears.length) && styles.disabledButton]}
         onPress={() => setStep(2)}
-        disabled={!name || !description || !venue || !targetFaculties.length || !targetYears.length}
+        disabled={!name || !description || !venueName || !targetFaculties.length || !targetYears.length}
       >
         <Text style={styles.nextButtonText}>Next</Text>
         <Ionicons name="arrow-forward" size={20} color="#fff" />
@@ -685,7 +818,7 @@ const renderDayView = () => {
         
         <View style={styles.reviewItem}>
           <Text style={styles.reviewLabel}>Venue:</Text>
-          <Text style={styles.reviewValue}>{venue}</Text>
+          <Text style={styles.reviewValue}>{venueName}</Text>
         </View>
         
         <View style={styles.reviewItem}>
@@ -1493,4 +1626,41 @@ dayEventText: {
     fontSize: 16,
     fontWeight: '600',
   },
+  toggleButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  selectedToggle: {
+    backgroundColor: '#007aff',
+    borderColor: '#007aff',
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  pickerWrapper: {
+  borderWidth: 1,
+  borderColor: '#333',
+  borderRadius: 12,
+  backgroundColor: '#1a1a1a',
+  marginTop: 4,
+  overflow: 'hidden', // ensures corners are rounded
+},
+picker: {
+  fontSize: 14,
+  fontWeight: '500',
+  color: '#333', // applies to item text
+},
+
 });

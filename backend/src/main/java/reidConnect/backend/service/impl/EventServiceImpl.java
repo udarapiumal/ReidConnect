@@ -6,6 +6,7 @@ import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
 import reidConnect.backend.entity.*;
+import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.mapper.EventMapper;
@@ -27,6 +28,8 @@ public class EventServiceImpl implements EventService {
     private final SlotRepository slotRepository;
     private final EventYearRepository eventYearRepository;
     private final EventFacultyRepository eventFacultyRepository;
+    private final UserRepository userRepository;
+    private final EventAttendanceRepository attendanceRepository;
 
     public EventServiceImpl(EventRepository eventRepository,
                             EventSlotRepository eventSlotRepository,
@@ -34,7 +37,9 @@ public class EventServiceImpl implements EventService {
                             VenueRepository venueRepository,
                             SlotRepository slotRepository,
                             EventYearRepository eventYearRepository,
-                            EventFacultyRepository eventFacultyRepository) {
+                            EventFacultyRepository eventFacultyRepository,
+                            UserRepository userRepository,
+                            EventAttendanceRepository eventAttendanceRepository) {
         this.eventRepository = eventRepository;
         this.eventSlotRepository = eventSlotRepository;
         this.clubRepository = clubRepository;
@@ -42,6 +47,8 @@ public class EventServiceImpl implements EventService {
         this.slotRepository = slotRepository;
         this.eventYearRepository = eventYearRepository;
         this.eventFacultyRepository = eventFacultyRepository;
+        this.userRepository = userRepository;
+        this.attendanceRepository = eventAttendanceRepository;
     }
 
     @Override
@@ -183,5 +190,49 @@ public class EventServiceImpl implements EventService {
                     return EventMapper.toResponseDto(event, slotIds);
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void markAttendance(Long eventId, Long userId, EventAttendanceStatus status) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // If already marked, do not allow duplicate
+        if (attendanceRepository.findByEventAndUser(event, user).isPresent()) {
+            throw new RuntimeException("Attendance already exists. Use update instead.");
+        }
+
+        EventAttendance attendance = new EventAttendance();
+        attendance.setEvent(event);
+        attendance.setUser(user);
+        attendance.setStatus(status);
+
+        attendanceRepository.save(attendance);
+    }
+
+    @Override
+    public void updateAttendanceStatus(Long eventId, Long userId, EventAttendanceStatus newStatus) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        EventAttendance attendance = attendanceRepository.findByEventAndUser(event, user)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found"));
+
+        attendance.setStatus(newStatus);
+        attendanceRepository.save(attendance);
+    }
+
+    @Override
+    public void removeAttendance(Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        attendanceRepository.deleteByEventAndUser(event, user);
     }
 }

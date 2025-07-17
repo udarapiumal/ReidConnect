@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.service.EventService;
@@ -205,5 +206,38 @@ public class EventController {
         List<EventResponseDto> events = eventService.getEventsByFacultiesAndYears(faculties, years);
         return ResponseEntity.ok(events);
     }
+
+    // Mark Attendance Status by GOING or INTERESTED
+    @PostMapping("/{eventId}/attendance")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<String> markAttendance(
+            @PathVariable Long eventId,
+            @RequestParam Long userId,
+            @RequestParam EventAttendanceStatus status) {
+        eventService.markAttendance(eventId, userId, status);
+        return ResponseEntity.ok("✅ Attendance marked as " + status);
+    }
+
+    // Update Attendance Status by GOING or INTERESTED
+    @PutMapping("/{eventId}/attendance")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<String> updateAttendance(
+            @PathVariable Long eventId,
+            @RequestParam Long userId,
+            @RequestParam EventAttendanceStatus status) {
+        eventService.updateAttendanceStatus(eventId, userId, status);
+        return ResponseEntity.ok("✅ Attendance updated to " + status);
+    }
+
+    // Remove Attendance Status
+    @DeleteMapping("/{eventId}/attendance")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<String> removeAttendance(
+            @PathVariable Long eventId,
+            @RequestParam Long userId) {
+        eventService.removeAttendance(eventId, userId);
+        return ResponseEntity.ok("✅ Attendance removed");
+    }
+
 
 }
