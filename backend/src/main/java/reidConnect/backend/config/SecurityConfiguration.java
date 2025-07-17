@@ -38,7 +38,12 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
                         .requestMatchers("/api/posts/uploads/**").permitAll() // Allow public access to image serving
+                        .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/events/**").authenticated()
+                        .requestMatchers("/api/venues/**").authenticated()
                         .requestMatchers("/api/comments/**").authenticated()
+                        .requestMatchers("/lost/**").authenticated()
+                        .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated() // This should come after the specific /uploads/** rule
@@ -60,11 +65,13 @@ public class SecurityConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:4200",
+                "http://localhost:3000",
                 "http://localhost:8080",
                 "http://localhost:8081",
                 "http://localhost:8082",
                 "http://10.149.164.83:8081",
                 "exp://192.168.1.5:8081",
+                "exp://192.168.1.6:8081",
                 "exp://192.168.1.4:8081",
                 "exp://10.149.164.83:8081"
         ));

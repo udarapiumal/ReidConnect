@@ -38,11 +38,6 @@ public class PostController {
             @RequestParam(value = "media", required = false) List<MultipartFile> mediaFiles) {
 
         try {
-            System.out.println("📥 Received POST request to /api/posts");
-            System.out.println("📝 Club ID: " + clubId);
-            System.out.println("📝 Description: " + description);
-            System.out.println("📁 Media files count: " + (mediaFiles != null ? mediaFiles.size() : 0));
-
             // 1. Save files to /static/uploads/ and collect their paths
             List<String> savedFileNames = new ArrayList<>();
 

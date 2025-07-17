@@ -113,7 +113,7 @@ const handleSharePost = async () => {
       },
       body: formData,
     });
-
+console.log(formData);
     console.log("📡 Response status:", response.status);
     console.log("📡 Response headers:", response.headers);
 

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import { ProgressStep, ProgressSteps } from "react-native-progress-steps";
+import { BASE_URL } from '../../constants/config';
 
 export default function SignUp() {
     const router = useRouter();
@@ -43,7 +44,7 @@ export default function SignUp() {
 
     const handleSubmit = async () => {
         try {
-            const res = await axios.post("http://192.168.235.254:8080/auth/signup", {
+            const res = await axios.post(`${BASE_URL}/auth/signup`, {
                 username: name,
                 email: email,
                 password: password,
@@ -66,7 +67,7 @@ export default function SignUp() {
 
     const handleVerify = async () => {
         try {
-            const res = await axios.post("http://192.168.235.254:8080/auth/verify", {
+            const res = await axios.post(`${BASE_URL}/auth/verify`, {
                 email,
                 verificationCode
             });
@@ -84,7 +85,7 @@ export default function SignUp() {
 
     const handleResend = async () => {
         try {
-            await axios.post('http://192.168.235.254:8080/auth/resend?email=' + email);
+            await axios.post(`${BASE_URL}/auth/resend?email=` + email);
             Alert.alert('Success', 'Verification code resent!');
         } catch (err) {
             if (axios.isAxiosError(err)) {

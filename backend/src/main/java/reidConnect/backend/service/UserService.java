@@ -20,4 +20,8 @@ public class UserService {
         userRepository.findAll().forEach(users::add);
         return users;
     }
+    public User getUserByRegNumber(String regNumber) {
+        return userRepository.findByRegNumberPrefix(regNumber)
+                .orElseThrow(()->new RuntimeException("user not found :" + regNumber));
+    }
 }

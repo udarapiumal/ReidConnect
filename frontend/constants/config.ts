@@ -14,3 +14,4 @@ const getLocalIp = () => {
 const LOCAL_IP = getLocalIp();
 
 export const BASE_URL = `http://${LOCAL_IP}:8080`;
+
