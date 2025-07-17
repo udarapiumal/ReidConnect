@@ -17,6 +17,17 @@ export type EventData = {
   location: string;
   image: string | number | ImageSource | ImageSource[];
   club?: string;
+  going?: number;
+  interested?: number;
+  privacy?: string;
+  description?: string;
+  host?: {
+    name: string;
+    logo: any;
+    pastEvents: number;
+    followers: string;
+    description: string;
+  };
 };
 
 type EventCardProps = {
