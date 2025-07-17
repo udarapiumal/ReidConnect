@@ -19,6 +19,7 @@ export type EventData = {
   club?: string;
   going?: number;
   interested?: number;
+  statusOfUser?: 'going' | 'interested' | 'none'; // Status of the user for this event
   privacy?: string;
   description?: string;
   host?: {

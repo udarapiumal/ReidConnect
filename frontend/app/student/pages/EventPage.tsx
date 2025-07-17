@@ -8,6 +8,8 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import jwt_decode from "jwt-decode";
 
 // This is a placeholder for your actual data fetching logic from your database
 const Events: EventData[] = [
@@ -81,6 +83,8 @@ export default function EventDetailPage() {
   const [relatedEvents, setRelatedEvents] = useState<EventData[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const router = useRouter();
+  const [interestStatus, setInterestStatus] = useState<'none' | 'interested' | 'going'>('none');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const colorScheme = useColorScheme() ?? 'dark';
   const colors = Colors[colorScheme];
 
@@ -94,6 +98,15 @@ export default function EventDetailPage() {
     if (foundEvent) {
       setEvent(foundEvent);
       
+      // Set initial interest status of a student
+      if (foundEvent.statusOfUser === 'going') {
+        setInterestStatus('going');
+      } else if (foundEvent.statusOfUser === 'interested') {
+        setInterestStatus('interested');
+      } else {
+        setInterestStatus('none');
+      }
+
       // Get related events (same category, excluding current event)
       const related = allEvents.filter(e => 
         e.id !== id && 
@@ -105,6 +118,18 @@ export default function EventDetailPage() {
     
     setLoading(false);
   }, [id]);
+
+  const handleInterestPress = async (status: 'interested' | 'going') => {
+    if (!event || isSubmitting) return; // Prevent multiple submissions
+    setIsSubmitting(true);
+    
+    //get the user id from the token
+    const token = await AsyncStorage.getItem('token');
+    
+    //set the status of the user by calling an api using axios
+    
+    
+  };
 
   const handleRelatedEventPress = (eventId: string) => {
     router.push(`/student/pages/EventPage?id=${eventId}`);
