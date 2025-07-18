@@ -3,6 +3,7 @@ package reidConnect.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,6 +39,9 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
                         .requestMatchers("/api/posts/uploads/**").permitAll() // Allow public access to image serving
+                        .requestMatchers(HttpMethod.GET, "/api/events").permitAll() // Allow public access to GET all events
+                        .requestMatchers(HttpMethod.GET, "/api/events/conflicts").permitAll() // Allow public access to conflicts endpoint
+                        .requestMatchers(HttpMethod.GET, "/api/events/{id}").permitAll() // Allow public access to GET single event
                         .requestMatchers("/api/posts/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
                         .requestMatchers("/api/venues/**").authenticated()

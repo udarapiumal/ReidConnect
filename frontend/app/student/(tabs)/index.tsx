@@ -6,48 +6,62 @@
 // for you
 //
 
-import { Platform, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
-import React from 'react';
+import { Platform, StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 
 import { EventCard, EventData } from '@/components/EventCard';
 import { PostCard, PostData } from '@/components/PostCard';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { BASE_URL } from '@/constants/config';
 
-// Mock data
-const featuredEvents: EventData[] = [
-  {
-    id: '1',
-    title: 'Mind Matters - Phase 2',
-    category: 'Wellness',
-    date: 'Today, 10:30 AM',
-    location: 'Google Meet',
-    image: require('@/assets/images/event1.png'),
-    club: 'Rotaract Club of UOC',
-  },
-  {
-    id: '2',
-    title: "ROTA අවුරුදු '25",
-    category: 'Cultural',
-    date: 'Apr 14, 2025',
-    location: 'University of Colombo',
-    image: require('@/assets/images/event2.png'),
-    club: 'Rotaract Club of UOC',
-  },
-  {
-    id: '3',
-    title: 'Food & Wine Festival',
-    category: 'Food',
-    date: 'Jul 22, 2025',
-    location: 'Downtown Plaza',
-    image: require('@/assets/images/event2.png'),
-    club: 'Rotaract Club of UOC',
-  },
-];
+// API function to fetch events
+const getAllEvents = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/events`);
+    console.log('Events:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    throw error;
+  }
+};
+
+// Mock data for fallback
+// const fallbackEvents: EventData[] = [
+//   {
+//     id: '1',
+//     title: 'Mind Matters - Phase 2',
+//     category: 'Wellness',
+//     date: 'Today, 10:30 AM',
+//     location: 'Google Meet',
+//     image: require('@/assets/images/event1.png'),
+//     club: 'Rotaract Club of UOC',
+//   },
+//   {
+//     id: '2',
+//     title: "ROTA අවුරුදු '25",
+//     category: 'Cultural',
+//     date: 'Apr 14, 2025',
+//     location: 'University of Colombo',
+//     image: require('@/assets/images/event2.png'),
+//     club: 'Rotaract Club of UOC',
+//   },
+//   {
+//     id: '3',
+//     title: 'Food & Wine Festival',
+//     category: 'Food',
+//     date: 'Jul 22, 2025',
+//     location: 'Downtown Plaza',
+//     image: require('@/assets/images/event2.png'),
+//     club: 'Rotaract Club of UOC',
+//   },
+// ];
 
 const communityPosts: PostData[] = [
   {
@@ -72,37 +86,84 @@ const communityPosts: PostData[] = [
   },
 ];
 
-const upcomingEvents: EventData[] = [
-  {
-    id: '4',
-    title: 'Yoga in the Park',
-    category: 'Fitness',
-    date: 'Tomorrow, 8:00 AM',
-    location: 'Riverside Park',
-    image: require('@/assets/images/event1.png'),
-  },
-  {
-    id: '5',
-    title: 'Indie Film Screening',
-    category: 'Arts',
-    date: 'Jul 8, 7:00 PM',
-    location: 'Art House Cinema',
-    image: require('@/assets/images/event2.png'),
-  },
-  {
-    id: '6',
-    title: 'Farmers Market',
-    category: 'Food',
-    date: 'Saturday, 9:00 AM',
-    location: 'Town Square',
-    image: require('@/assets/images/event1.png'),
-  },
-];
-
 export default function HomePage() {
   const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
   const router = useRouter();
+
+  // State for events
+  const [featuredEvents, setFeaturedEvents] = useState<EventData[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventData[]>([]);
+  const [nextEvents, setNextEvents] = useState<EventData[]>([]);
+  const [popularEvents, setPopularEvents] = useState<EventData[]>([]);
+  const [nearbyEvents, setNearbyEvents] = useState<EventData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch events when component mounts
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const eventsData = await getAllEvents();
+        
+        // Categorize events based on different criteria
+        
+        // Featured Events - events with high engagement or marked as featured
+        const featured = eventsData
+          .filter((event: any) => event.featured || (event.going + event.interested) > 50)
+          .slice(0, 3);
+        
+        // Your Next Event - events user is going to or interested in
+        const next = eventsData
+          .filter((event: any) => event.statusOfUser === 'going' || event.statusOfUser === 'interested')
+          .slice(0, 5);
+        
+        // Upcoming Events - events happening soon (sorted by date)
+        const upcoming = eventsData
+          .filter((event: any) => {
+            const eventDate = new Date(event.date);
+            const now = new Date();
+            return eventDate > now;
+          })
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 5);
+        
+        // Popular Events - events with high engagement
+        const popular = eventsData
+          .sort((a: any, b: any) => (b.going + b.interested) - (a.going + a.interested))
+          .slice(0, 5);
+        
+        // Nearby Events - events in specific locations or categories
+        const nearby = eventsData
+          .filter((event: any) => 
+            event.location?.toLowerCase().includes('university') ||
+            event.location?.toLowerCase().includes('colombo') ||
+            event.location?.toLowerCase().includes('campus')
+          )
+          .slice(0, 5);
+        
+        // Set state with categorized events, fallback to all events if categories are empty
+        setFeaturedEvents(featured.length > 0 ? featured : eventsData.slice(0, 3));
+        setNextEvents(next.length > 0 ? next : eventsData.slice(0, 3));
+        setUpcomingEvents(upcoming.length > 0 ? upcoming : eventsData.slice(0, 5));
+        setPopularEvents(popular.length > 0 ? popular : eventsData.slice(0, 5));
+        setNearbyEvents(nearby.length > 0 ? nearby : eventsData.slice(0, 5));
+        
+      } catch (error) {
+        console.error('Failed to fetch events, using fallback data:', error);
+        // Use fallback data if API fails
+        setFeaturedEvents(fallbackEvents);
+        setNextEvents(fallbackEvents);
+        setUpcomingEvents(fallbackEvents);
+        setPopularEvents(fallbackEvents);
+        setNearbyEvents(fallbackEvents);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const handleEventPress = (eventId: string) => {
     router.push(`/student/pages/EventPage?id=${eventId}`);
@@ -115,6 +176,16 @@ export default function HomePage() {
   const handleCommunitySeeMorePress = () => {
     router.push(`/student/community`);
   };
+
+  // Show loading spinner while fetching events
+  if (loading) {
+    return (
+      <ThemedView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" />
+        <ThemedText style={styles.loadingText}>Loading events...</ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
       <ThemedView style={styles.container}>
@@ -164,7 +235,7 @@ export default function HomePage() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.featuredEventsContainer}>
-              {upcomingEvents.map(event => (
+              {nextEvents.map(event => (
                     <EventCard 
                       key={event.id} 
                       event={event} 
@@ -177,7 +248,7 @@ export default function HomePage() {
 
           {/* Upcoming Event */}
           <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Event</ThemedText>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Events</ThemedText>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -195,12 +266,12 @@ export default function HomePage() {
 
           {/* Popular Event */}
           <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Popular Event</ThemedText>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Popular Events</ThemedText>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.featuredEventsContainer}>
-              {upcomingEvents.map(event => (
+              {popularEvents.map(event => (
                       <EventCard 
                         key={event.id} 
                         event={event} 
@@ -227,7 +298,7 @@ export default function HomePage() {
           {/* Upcoming Events */}
           <View style={styles.section}>
             <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Near You</ThemedText>
-            {upcomingEvents.map(event => (
+            {nearbyEvents.map(event => (
                 <EventCard 
                   key={event.id} 
                   event={event} 
@@ -248,6 +319,14 @@ export default function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   scrollView: {
     flex: 1,

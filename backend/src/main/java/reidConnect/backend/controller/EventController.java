@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 public class EventController {
 
     private final EventService eventService;
@@ -239,5 +241,12 @@ public class EventController {
         return ResponseEntity.ok("✅ Attendance removed");
     }
 
+    // Get Attendance Counts (Interested and Going)
+    @GetMapping("/{eventId}/attendance/counts")
+    public ResponseEntity<EventAttendanceCountDto> getEventAttendanceCounts(
+            @PathVariable Long eventId) {
+        EventAttendanceCountDto counts = eventService.getEventAttendanceCounts(eventId);
+        return ResponseEntity.ok(counts);
+    }
 
 }

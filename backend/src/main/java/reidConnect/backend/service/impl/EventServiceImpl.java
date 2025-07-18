@@ -2,6 +2,7 @@ package reidConnect.backend.service.impl;
 
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
@@ -234,5 +235,18 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         attendanceRepository.deleteByEventAndUser(event, user);
+    }
+
+    @Override
+    public EventAttendanceCountDto getEventAttendanceCounts(Long eventId) {
+        // Check if event exists
+        if (!eventRepository.existsById(eventId)) {
+            throw new RuntimeException("Event not found");
+        }
+
+        long interestedCount = attendanceRepository.countByEventIdAndStatus(eventId, EventAttendanceStatus.INTERESTED);
+        long goingCount = attendanceRepository.countByEventIdAndStatus(eventId, EventAttendanceStatus.GOING);
+
+        return new EventAttendanceCountDto(eventId, interestedCount, goingCount);
     }
 }

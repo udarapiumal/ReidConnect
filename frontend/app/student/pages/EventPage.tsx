@@ -9,7 +9,15 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@/constants/config';
+
+interface UserType {
+  id: string;
+  sub: string;
+  role: string;
+}
 
 // This is a placeholder for your actual data fetching logic from your database
 const Events: EventData[] = [
@@ -119,16 +127,104 @@ export default function EventDetailPage() {
     setLoading(false);
   }, [id]);
 
-  const handleInterestPress = async (status: 'interested' | 'going') => {
-    if (!event || isSubmitting) return; // Prevent multiple submissions
+  const handleInteraction = async (newStatus: 'interested' | 'going') => {
+    if (!event || isSubmitting) return;
+
     setIsSubmitting(true);
-    
-    //get the user id from the token
-    const token = await AsyncStorage.getItem('token');
-    
-    //set the status of the user by calling an api using axios
-    
-    
+    const oldStatus = interestStatus;
+
+    // Determine the final status - if clicking the same button, deselect it
+    const finalStatus = newStatus === oldStatus ? 'none' : newStatus;
+
+    try {
+      // Get token and decode to get user info
+      const token = await AsyncStorage.getItem("token");
+      if (!token) throw new Error("No token");
+      
+      const decoded = jwtDecode<UserType>(token);
+      const userId = decoded.id;
+
+      // Optimistically update the UI with proper count calculations
+      let newInterestedCount = event.interested || 0;
+      let newGoingCount = event.going || 0;
+
+      // Remove old status count
+      if (oldStatus === 'interested') newInterestedCount -= 1;
+      if (oldStatus === 'going') newGoingCount -= 1;
+
+      // Add new status count (only if not 'none')
+      if (finalStatus === 'interested') newInterestedCount += 1;
+      if (finalStatus === 'going') newGoingCount += 1;
+      
+      setEvent(prev => prev ? { ...prev, interested: newInterestedCount, going: newGoingCount } : null);
+      setInterestStatus(finalStatus);
+      
+      // Make the finalStatus upper case for API
+      const finalStatusUpper = finalStatus.toUpperCase();
+      const apiUrl = `${BASE_URL}/api/events/${id}/attendance?userId=${userId}&status=${finalStatusUpper}`;
+      
+      console.log('🚀 Making API call to:', apiUrl);
+      console.log('📝 Request details:', {
+        method: 'POST',
+        eventId: id,
+        userId: userId,
+        status: finalStatusUpper,
+        token: token ? 'Present' : 'Missing'
+      });
+
+      // Replace with your actual API endpoint and logic
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Add authorization - required for STUDENT role
+        },
+        // Add request body with the data
+        body: JSON.stringify({
+          eventId: id,
+          userId: userId,
+          status: finalStatusUpper
+        })
+      });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
+        throw new Error(`API call failed with status ${response.status}: ${errorText}`);
+      }
+
+      // Check if response has content before parsing JSON
+      const contentLength = response.headers.get('content-length');
+      let responseData = null;
+      
+      if (contentLength && contentLength !== '0') {
+        try {
+          responseData = await response.json();
+          console.log('✅ API Response Data:', responseData);
+        } catch (jsonError) {
+          console.warn('⚠️ Failed to parse JSON response, but request was successful:', jsonError);
+          // Try to get response as text instead
+          const textData = await response.text();
+          console.log('📄 Response as text:', textData);
+        }
+      } else {
+        console.log('✅ API request successful - No response content (empty body)');
+      }
+      
+      console.log('✅ Status updated successfully in database');
+
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      // Revert optimistic UI update on error
+      setEvent(prev => prev ? { ...prev, interested: event.interested || 0, going: event.going || 0 } : null);
+      setInterestStatus(oldStatus);
+      // Optionally, show an error message to the user
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRelatedEventPress = (eventId: string) => {
@@ -193,12 +289,26 @@ export default function EventDetailPage() {
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.button }]}>
-            <Ionicons name="star" size={20} color={colors.buttonText} />
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { backgroundColor: interestStatus === 'interested' ? '#8B0000' : colors.button }
+            ]}
+            onPress={() => handleInteraction('interested')}
+            disabled={isSubmitting}
+          >
+            <Ionicons name={interestStatus === 'interested' ? "star" : "star-outline"} size={20} color={colors.buttonText} />
             <ThemedText style={[styles.buttonText, { color: colors.buttonText }]}>Interested</ThemedText>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, { backgroundColor: colors.secondaryButton }]}>
-            <Ionicons name="checkmark" size={20} color={colors.secondaryButtonText} />
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { backgroundColor: interestStatus === 'going' ? '#8B0000' : colors.secondaryButton }
+            ]}
+            onPress={() => handleInteraction('going')}
+            disabled={isSubmitting}
+          >
+            <Ionicons name={interestStatus === 'going' ? "checkmark-circle" : "checkmark"} size={20} color={colors.secondaryButtonText} />
             <ThemedText style={[styles.buttonText, { color: colors.secondaryButtonText }]}>Going</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.moreOptionsButton, { backgroundColor: colors.secondaryButton }]}>
@@ -210,7 +320,7 @@ export default function EventDetailPage() {
         <View style={[styles.eventInfoSection, { borderTopColor: colors.border }]}>
           <InfoRow icon="location-outline" text={event.location} />
           <InfoRow icon="checkmark-circle-outline" text={`${event.going} going · ${event.interested} interested`} />
-          <InfoRow icon="globe-outline" text={event.privacy} />
+          <InfoRow icon="globe-outline" text={event.privacy || 'Public'} />
         </View>
 
         {/* Navigation Tabs */}
@@ -238,10 +348,10 @@ export default function EventDetailPage() {
         <View style={[styles.hostSection, { borderTopColor: colors.border }]}>
           <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Meet your host</ThemedText>
           <View style={[styles.hostProfile, { backgroundColor: colors.card }]}>
-            <Image source={event.host.logo} style={styles.hostLogo} />
-            <ThemedText style={[styles.hostName, { color: colors.text }]}>{event.host.name}</ThemedText>
-            <ThemedText style={[styles.hostStats, { color: colors.icon }]}>{`${event.host.pastEvents} past event · ${event.host.followers} followers`}</ThemedText>
-            <ThemedText style={[styles.hostDescription, { color: colors.text }]}>{event.host.description}</ThemedText>
+            <Image source={event.host?.logo} style={styles.hostLogo} />
+            <ThemedText style={[styles.hostName, { color: colors.text }]}>{event.host?.name}</ThemedText>
+            <ThemedText style={[styles.hostStats, { color: colors.icon }]}>{`${event.host?.pastEvents} past event · ${event.host?.followers} followers`}</ThemedText>
+            <ThemedText style={[styles.hostDescription, { color: colors.text }]}>{event.host?.description}</ThemedText>
             <TouchableOpacity style={[styles.followButton, { backgroundColor: colors.secondaryButton }]}>
               <Ionicons name="add" size={20} color={colors.secondaryButtonText} />
               <ThemedText style={[styles.buttonText, { color: colors.secondaryButtonText }]}>Follow</ThemedText>

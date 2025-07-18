@@ -1,5 +1,6 @@
 package reidConnect.backend.service;
 
+import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
@@ -21,6 +22,7 @@ public interface EventService {
     void markAttendance(Long eventId, Long userId, EventAttendanceStatus status);
     void updateAttendanceStatus(Long eventId, Long userId, EventAttendanceStatus newStatus);
     void removeAttendance(Long eventId, Long userId);
-
+    
+    EventAttendanceCountDto getEventAttendanceCounts(Long eventId);
 
 }
