@@ -6,12 +6,12 @@ import Sidebar from './components/union/Sidebar'; // Import Navbar
 import AcademicDashboard from './components/academic/Dashboard';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import UnionDashboard from './components/union/Dashboard';
-
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 // Wrapper to conditionally render Navbar
 function AppWrapper() {
   const location = useLocation();
-  const hideSidebarPaths = ['/']; // Add more paths if needed
+  const hideSidebarPaths = ['/', '/academic/dashboard']; // Add more paths if needed
   const showSidebar = !hideSidebarPaths.includes(location.pathname);
 
   return (
