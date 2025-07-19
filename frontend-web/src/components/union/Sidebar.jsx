@@ -30,6 +30,14 @@ const Sidebar = () => {
               Profile Management
             </Link>
           </li>
+           <li>
+            <Link
+              to="/union/Clubmanagement"
+              className={location.pathname === '/union/Clubmanagement' ? 'active' : ''}
+            >
+              Club Management
+            </Link>
+          </li>
         </ul>
       </div>
 

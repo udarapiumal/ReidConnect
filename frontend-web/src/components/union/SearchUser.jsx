@@ -10,31 +10,33 @@ function SearchUser() {
     return email.split('@')[0];
   };
 
- const handleSearch = async () => {
-  const regNumber = extractRegNumber(email.trim());
+  const handleSearch = async () => {
+    const regNumber = extractRegNumber(email.trim());
 
-  const token = localStorage.getItem("token"); // get the JWT token
+    const token = localStorage.getItem("token"); // get the JWT token
 
-  if (!token) {
-    alert("Please log in first");
-    return;
-  }
+    if (!token) {
+      alert("Please log in first");
+      return;
+    }
 
-  try {
-    const response = await axios.get(`http://localhost:8080/users/search`, {
-      params: { regNumber },
-      headers: {
-        Authorization: `Bearer ${token}`,  // <-- add token here
-      },
-    });
-    setUser(response.data);
-    setError('');
-  } catch (err) {
-    setUser(null);
-    setError('User not found or error occurred');
-  }
-};
-
+    try {
+      const response = await axios.get(`http://localhost:8080/users/search`, {
+        params: { regNumber },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUser(response.data);
+      setError('');
+      
+      // Debug: Log the response to see what fields are available
+      console.log('User data received:', response.data);
+    } catch (err) {
+      setUser(null);
+      setError('User not found or error occurred');
+    }
+  };
 
   return (
     <div style={styles.page}>
@@ -57,10 +59,47 @@ function SearchUser() {
         {user && (
           <div style={styles.resultBox}>
             <h3 style={styles.resultTitle}>User Found:</h3>
-            <p><strong>ID:</strong> {user.id}</p>
-            <p><strong>Username:</strong> {user.username}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Role:</strong> {user.role}</p>
+            
+            {/* Profile Picture Section - Always show, for debugging */}
+            <div style={styles.profilePicContainer}>
+              
+              {/* Always render an image element to test */}
+              <img 
+               src={
+  user.profilePicUrl
+    ? `http://localhost:8080${user.profilePicUrl}`
+    : user.profile_picture_url
+    ? `http://localhost:8080${user.profile_picture_url}`
+    : user.profilePictureUrl
+    ? `http://localhost:8080${user.profilePictureUrl}`
+    : 'https://via.placeholder.com/100x100.png?text=No+Image'
+}
+                alt="Profile" 
+                style={{
+                  ...styles.profilePic,
+                  border: '2px solid red' // Red border to make it visible
+                }}
+                onLoad={(e) => {
+                  console.log('✓ Image loaded successfully:', e.target.src);
+                  e.target.style.border = '3px solid green'; // Green border on success
+                }}
+                onError={(e) => {
+                  console.log('✗ Failed to load profile picture:', e.target.src);
+                  e.target.style.border = '3px solid red'; // Keep red border on error
+                  e.target.alt = 'Image failed to load';
+                }}
+              />
+              
+              {/* Show the raw URL for debugging */}
+             
+            </div>
+            
+            <div style={styles.userDetails}>
+              <p><strong>ID:</strong> {user.id}</p>
+              <p><strong>Username:</strong> {user.username}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Role:</strong> {user.role}</p>
+            </div>
           </div>
         )}
 
@@ -72,12 +111,12 @@ function SearchUser() {
 
 const styles = {
   page: {
-  backgroundColor: '#f4f4f4',
-  minHeight: '100vh',
-  display: 'flex',
-  justifyContent: 'center',
-  paddingTop: '4rem', // ← this moves the card higher
-},
+    backgroundColor: '#f4f4f4',
+    minHeight: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    paddingTop: '4rem',
+  },
   container: {
     backgroundColor: '#ffffff',
     padding: '2rem 2.5rem',
@@ -131,6 +170,22 @@ const styles = {
   resultTitle: {
     color: '#FF0033',
     marginBottom: '1rem'
+  },
+  profilePicContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '1.5rem'
+  },
+  profilePic: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '3px solid #FF0033',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  },
+  userDetails: {
+    textAlign: 'left'
   },
   error: {
     color: '#FF0033',

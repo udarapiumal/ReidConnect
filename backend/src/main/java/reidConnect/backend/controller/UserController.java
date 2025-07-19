@@ -1,6 +1,7 @@
 package reidConnect.backend.controller;
 
 import org.springframework.web.bind.annotation.RequestParam;
+import reidConnect.backend.dto.UserWithProfileDto;
 import reidConnect.backend.entity.User;
 
 import reidConnect.backend.service.UserService;
@@ -34,7 +35,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
     @GetMapping("/search")
-    public ResponseEntity<User> getUserByRegNumber(@RequestParam("regNumber") String regNumber) {
+    public ResponseEntity<UserWithProfileDto> getUserByRegNumber(@RequestParam("regNumber") String regNumber) {
         return ResponseEntity.ok(userService.getUserByRegNumber(regNumber));
     }
 }
