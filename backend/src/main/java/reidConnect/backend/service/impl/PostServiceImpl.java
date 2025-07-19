@@ -177,6 +177,18 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
+    @Override
+    public long getTotalPostCountByClubId(Long clubId) {
+        return postRepository.countByClub_Id(clubId);
+    }
+
+    @Override
+    public long getRecentPostCountByClubId(Long clubId, int days) {
+        java.time.LocalDateTime fromDate = java.time.LocalDateTime.now().minusDays(days);
+        return postRepository.countByClub_IdAndCreatedAtAfter(clubId, fromDate);
+    }
+
+
 
 }
 

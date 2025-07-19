@@ -13,8 +13,13 @@ public interface PostRepository extends JpaRepository<Post, Long>
     // Find all posts by club ID in descending order
     List<Post> findAllByClub_IdOrderByCreatedAtDesc(Long clubId);
 
-    // Find top 3 most recent posts for a club
+    // Find the 3 most recent posts for a club
     List<Post> findTop3ByClub_IdOrderByCreatedAtDesc(Long clubId);
 
     List<Post> findByEventId(Long eventId);
+
+    long countByClub_Id(Long clubId);
+
+    long countByClub_IdAndCreatedAtAfter(Long clubId, java.time.LocalDateTime date);
+
 }

@@ -289,7 +289,6 @@ export default function CreatePostScreen() {
               <Picker
                 selectedValue={selectedEventId}
                 onValueChange={(itemValue) => {
-                  console.log('🎯 Selected event:', itemValue);
                   setSelectedEventId(itemValue);
                 }}
                 style={styles.picker}
@@ -299,14 +298,14 @@ export default function CreatePostScreen() {
                 <Picker.Item 
                   label={eventsLoading ? "Loading events..." : "No event selected"} 
                   value={null}
-                  color="#fff"
+                  color="#666"
                 />
                 {events.map(event => (
                   <Picker.Item 
                     key={event.id} 
                     label={event.name || `Event ${event.id}`} 
                     value={event.id}
-                    color="#fff"
+                    color="#666"
                   />
                 ))}
               </Picker>
@@ -542,7 +541,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   picker: {
-    color: '#fff',
+    color: '#1a1a1a',
     backgroundColor: 'transparent',
     height: 56,
     ...Platform.select({

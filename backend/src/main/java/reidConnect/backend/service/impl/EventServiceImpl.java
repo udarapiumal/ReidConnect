@@ -14,6 +14,8 @@ import reidConnect.backend.mapper.EventMapper;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.EventService;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -258,5 +260,30 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.INTERESTED);
     }
+
+    @Override
+    public long countAllEvents() {
+        return eventRepository.count();
+    }
+
+    @Override
+    public long countEventsInLast28Days() {
+        LocalDate today = LocalDate.now();
+        LocalDate cutoffDate = today.minusDays(28);
+        return eventRepository.countByCreatedAtAfter(cutoffDate.atStartOfDay());
+    }
+
+    @Override
+    public long countAllEventsByClubId(Long clubId) {
+        return eventRepository.countByClub_Id(clubId);
+    }
+
+    @Override
+    public long countRecentEventsByClubId(Long clubId) {
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(28);
+        return eventRepository.countByClub_IdAndCreatedAtAfter(clubId, fromDate);
+    }
+
+
 
 }

@@ -28,4 +28,9 @@ public interface PostService {
     long getLikeCount(Long postId);
 
     List<PostResponseDto> getPostsByEventId(Long eventId);
+
+    long getTotalPostCountByClubId(Long clubId);
+
+    long getRecentPostCountByClubId(Long clubId, int days);
+
 }

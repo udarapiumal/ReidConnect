@@ -27,5 +27,12 @@ public interface EventService {
     long countGoingAttendance(Long eventId);     // ✅
     long countInterestedAttendance(Long eventId); // ✅
 
+    long countAllEvents();
+    long countEventsInLast28Days();
+
+    long countAllEventsByClubId(Long clubId);
+    long countRecentEventsByClubId(Long clubId);
+
+
 
 }

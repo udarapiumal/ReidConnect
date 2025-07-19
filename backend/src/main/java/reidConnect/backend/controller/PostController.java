@@ -100,7 +100,8 @@ public class PostController {
     }
 
     //Get a post by ID
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')" +
+            "")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
         PostResponseDto post = postService.getPostById(id);
@@ -171,6 +172,23 @@ public class PostController {
         List<PostResponseDto> posts = postService.getPostsByEventId(eventId);
         return ResponseEntity.ok(posts);
     }
+
+    // Total number of posts for a club
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @GetMapping("/club/{clubId}/count")
+    public ResponseEntity<Long> getTotalPostCount(@PathVariable Long clubId) {
+        long count = postService.getTotalPostCountByClubId(clubId);
+        return ResponseEntity.ok(count);
+    }
+
+    // Posts in the last 28 days for a club
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @GetMapping("/club/{clubId}/count/recent")
+    public ResponseEntity<Long> getRecentPostCount(@PathVariable Long clubId) {
+        long count = postService.getRecentPostCountByClubId(clubId, 28);
+        return ResponseEntity.ok(count);
+    }
+
 
 
 }

@@ -28,9 +28,6 @@ public class Club {
     @Column(name = "profile_picture")
     private String profile_picture;
 
-    @Column(name = "sub_count")
-    private Integer sub_count;
-
     @Column(name = "bio")
     private String bio;
 

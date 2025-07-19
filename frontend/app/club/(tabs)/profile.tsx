@@ -1,407 +1,680 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from "react";
+import { Feather, Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import {
-  Alert,
+  ActivityIndicator,
   Dimensions,
+  FlatList,
   Image,
+  Modal,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View
-} from "react-native";
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
 import { useClub } from "../../context/ClubContext";
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
+const imageSize = (screenWidth - 4) / 3; // 3 columns with 2px gaps
 
-export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const { clubDetails, user } = useClub();
+const formatTimeAgo = (timestamp) => {
+  const now = new Date();
+  const createdAt = new Date(timestamp);
+  const diffMs = now - createdAt;
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const totalHours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const minutes = totalMinutes % 60;
+  let result = '';
+  if (days > 0) result += `${days}d `;
+  if (hours > 0) result += `${hours}h `;
+  if (minutes > 0 || (!days && !hours)) result += `${minutes}m `;
+  return result.trim() + ' ago';
+};
 
-  const [name, setName] = useState("");
-  const [profilePicture, setprofilePicture] = useState("");
-  const [website, setwebsite] = useState("");
-  const [bio, setbio] = useState("");
-  const [isPrivate, setIsPrivate] = useState(true);
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert("Profile Updated", "Your profile has been saved successfully");
+export default function ClubProfileScreen() {
+  const { token, clubDetails } = useClub();
+  const [selectedTab, setSelectedTab] = useState('posts');
+  const [posts, setPosts] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [eventCount, setEventCount] = useState(0);
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPosts(res.data || []);
+    } catch (err) {
+      console.error("Error fetching posts:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/events/club/${clubDetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEvents(res.data || []);
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCounts = async () => {
+    try {
+      const [postRes, eventRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${BASE_URL}/api/events/count/${clubDetails.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      setPostCount(postRes.data || 0);
+      setEventCount(eventRes.data || 0);
+    } catch (error) {
+      console.error('Error fetching counts:', error);
+    }
   };
 
   useEffect(() => {
-    if (clubDetails) {
-      setName(clubDetails.clubName || "");
-      setprofilePicture(clubDetails.profilePicture || "");
-      setwebsite(clubDetails.website || "");
-      setbio(clubDetails.bio || "");
-      setIsPrivate(clubDetails.isPrivate ?? true);
+    if (selectedTab === 'posts') fetchPosts();
+    else fetchEvents();
+  }, [selectedTab]);
+
+  useEffect(() => {
+    if (clubDetails?.id) {
+      fetchCounts();
     }
   }, [clubDetails]);
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    // Reset to original values if needed
+  const currentData = selectedTab === 'posts' ? posts : events;
+
+  const handleItemPress = (index) => {
+    setSelectedIndex(index);
+    setShowDetailView(true);
   };
 
-  const copyToClipboard = () => {
-    Alert.alert("Copied", "Channel URL copied to clipboard");
+  const renderGridItem = ({ item, index }) => {
+    // Handle different image path structures for posts vs events
+    const imageUri = selectedTab === 'posts' 
+      ? (item.mediaPaths?.[0] ? `${BASE_URL}/${item.mediaPaths[0]}` : null)
+      : (item.imagePath ? `${BASE_URL}/${item.imagePath}` : null);
+    
+    return (
+      <TouchableOpacity 
+        style={styles.gridItem} 
+        onPress={() => handleItemPress(index)}
+      >
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.gridImage}
+            onError={(error) => {
+              console.log('Image load error:', error.nativeEvent.error);
+            }}
+          />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <Ionicons 
+              name={selectedTab === 'posts' ? "image-outline" : "calendar-outline"} 
+              size={32} 
+              color="#666" 
+            />
+          </View>
+        )}
+        {/* Multiple images indicator - only for posts */}
+        {selectedTab === 'posts' && item.mediaPaths && item.mediaPaths.length > 1 && (
+          <View style={styles.multipleImagesIndicator}>
+            <Ionicons name="copy-outline" size={16} color="#fff" />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
-        
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile settings</Text>
+  const renderDetailItem = ({ item, index }) => {
+    const isEvent = selectedTab === 'events';
+    const images = isEvent ? (item.imagePath ? [item.imagePath] : []) : (item.mediaPaths || []);
+    
+    // Format target years and faculties for events
+    const formatTargets = (targets) => {
+      if (!targets || targets.length === 0) return '';
+      return targets.map(target => target.replace('_', ' ')).join(', ');
+    };
+
+    // Format date for events
+    const formatEventDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    };
+
+    return (
+      <View style={styles.detailCard}>
+        <View style={styles.detailHeader}>
+          <Image
+            source={require('../../../assets/clubImages/profilePictures/rota_ucsc.jpg')}
+            style={styles.detailAvatar}
+          />
+          <View style={styles.detailHeaderText}>
+            <Text style={styles.detailClubName}>{clubDetails?.clubName || "Club Name"}</Text>
+            <Text style={styles.detailTime}>{formatTimeAgo(item.createdAt)}</Text>
+          </View>
         </View>
-
-        <ScrollView style={styles.scrollView}>
-          {/* Cover Image with Centered Profile Picture */}
-          <View style={styles.coverSection}>
-            <View style={styles.coverImageContainer}>
+        
+        {/* Event venue header - only for events */}
+        {isEvent && (
+          <View style={styles.eventVenue}>
+            <Ionicons name="location-outline" size={16} color="#0095f6" />
+            <Text style={styles.venueText}>
+              {item.venueName || item.venue || 'Venue TBA'}
+            </Text>
+          </View>
+        )}
+        
+        <ScrollView 
+          horizontal 
+          pagingEnabled 
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageContainer}
+        >
+          {images.length > 0 ? (
+            images.map((path, idx) => (
               <Image
-                source={require("../../../assets/clubImages/profilePictures/rota_cover.jpg")}
-                style={styles.coverImage}
-                resizeMode="cover"
+                key={idx}
+                source={{ uri: `${BASE_URL}/${path}` }}
+                style={styles.detailImage}
+                onError={(error) => {
+                  console.log('Detail image load error:', error.nativeEvent.error);
+                }}
               />
-            </View>
-            
-            {/* Profile Picture centered on cover */}
-            <View style={styles.profilePictureSection}>
-              <View style={styles.profilePictureContainer}>
-                <View style={styles.profilePicture}>
-                  <Image 
-                    source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                    style={styles.profilePictureImage} 
-                  />
-                </View>
-                <TouchableOpacity style={styles.cameraButton}>
-                  <Ionicons name="camera" size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Edit Cover Photo Button */}
-            <TouchableOpacity style={styles.editCoverButton}>
-              <Ionicons name="camera" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Profile Fields */}
-          <View style={styles.profileFields}>
-            {/* Name Field */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Name</Text>
-              <View style={styles.fieldRow}>
-                {isEditing ? (
-                  <TextInput
-                    style={[styles.fieldValue, styles.editableField]}
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="Enter name"
-                    placeholderTextColor="#666"
-                  />
-                ) : (
-                  <Text style={styles.fieldValue}>{name}</Text>
-                )}
-                <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={() => setIsEditing(!isEditing)}
-                >
-                  <Ionicons name="pencil" size={16} color="#fff" />
-                </TouchableOpacity>
-
-              </View>
-            </View>
-
-            {/* Channel URL Field */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Website URL</Text>
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldValue}>{website}</Text>
-                <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={() => setIsEditing(!isEditing)}
-                >
-                  <Ionicons name="pencil" size={16} color="#fff" />
-                </TouchableOpacity>
-
-              </View>
-            </View>
-
-            {/* bio Field */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.fieldLabel}>Bio</Text>
-              <View style={styles.fieldRow}>
-                {isEditing ? (
-                  <TextInput
-                    style={[styles.fieldValue, styles.editableField]}
-                    value={bio}
-                    onChangeText={setbio}
-                    placeholder="Add a bio"
-                    placeholderTextColor="#666"
-                    multiline
-                  />
-                ) : (
-                  <Text style={[styles.fieldValue, styles.bioText]}>
-                    {bio}
-                  </Text>
-                )}
-                <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={() => setIsEditing(!isEditing)}
-                >
-                  <Ionicons name="pencil" size={16} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            
-          </View>
-
-          {/* Edit Buttons */}
-          {isEditing && (
-            <View style={styles.editingButtons}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.detailPlaceholder}>
+              <Ionicons 
+                name={isEvent ? "calendar-outline" : "image-outline"} 
+                size={64} 
+                color="#666" 
+              />
+              <Text style={styles.placeholderText}>
+                {isEvent ? 'Event image' : 'No image available'}
+              </Text>
             </View>
           )}
         </ScrollView>
+        
+        {images.length > 1 && (
+          <View style={styles.imageIndicators}>
+            {images.map((_, idx) => (
+              <View key={idx} style={styles.indicator} />
+            ))}
+          </View>
+        )}
+        
+        <View style={styles.detailContent}>
+          {/* Event name - highlighted for events */}
+          {isEvent && (
+            <Text style={styles.eventName}>{item.name}</Text>
+          )}
+          
+          <Text style={styles.detailDescription}>
+            {item.description || 'No description'}
+          </Text>
+          
+          {/* Event specific details */}
+          {isEvent && (
+            <View style={styles.eventDetails}>
+              {item.date && (
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="calendar" size={16} color="#0095f6" />
+                  <Text style={styles.eventDetailText}>{formatEventDate(item.date)}</Text>
+                </View>
+              )}
+              
+              {item.targetYears && item.targetYears.length > 0 && (
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="school" size={16} color="#0095f6" />
+                  <Text style={styles.eventDetailText}>
+                    Target Years: {formatTargets(item.targetYears)}
+                  </Text>
+                </View>
+              )}
+              
+              {item.targetFaculties && item.targetFaculties.length > 0 && (
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="business" size={16} color="#0095f6" />
+                  <Text style={styles.eventDetailText}>
+                    Faculties: {formatTargets(item.targetFaculties)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
       </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.profileHeader}>
+        <View style={styles.profileTopRow}>
+          <Image
+            source={require('../../../assets/clubImages/profilePictures/rota_ucsc.jpg')}
+            style={styles.avatar}
+          />
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{postCount}</Text>
+              <Text style={styles.statLabel}>posts</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{eventCount}</Text>
+              <Text style={styles.statLabel}>events</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{clubDetails?.subCount || 0}</Text>
+              <Text style={styles.statLabel}>subscribers</Text>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.profileInfo}>
+          <Text style={styles.clubName}>{clubDetails?.clubName || "Club Name"}</Text>
+          <Text style={styles.clubBio}>
+            {clubDetails?.bio || "Club Name"}
+          </Text>
+        </View>
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.followButton}>
+            <Text style={styles.followButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.messageButton}>
+            <Text style={styles.messageButtonText}>Share</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Tab Switcher */}
+      <View style={styles.tabSwitcher}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('posts')}
+          style={[styles.tabButton, selectedTab === 'posts' && styles.activeTab]}
+        >
+          <Ionicons 
+            name="grid-outline" 
+            size={24} 
+            color={selectedTab === 'posts' ? '#fff' : '#666'} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('events')}
+          style={[styles.tabButton, selectedTab === 'events' && styles.activeTab]}
+        >
+          <Ionicons 
+            name="calendar-outline" 
+            size={24} 
+            color={selectedTab === 'events' ? '#fff' : '#666'} 
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Grid Content */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      ) : (
+        <FlatList
+          data={currentData}
+          renderItem={renderGridItem}
+          numColumns={3}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.gridContainer}
+          ItemSeparatorComponent={() => <View style={{ height: 2 }} />}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Feather 
+                name={selectedTab === 'posts' ? "image" : "calendar"} 
+                size={48} 
+                color="#666" 
+              />
+              <Text style={styles.emptyText}>
+                No {selectedTab} yet
+              </Text>
+            </View>
+          )}
+        />
+      )}
+
+      {/* Detail View Modal */}
+      <Modal
+        visible={showDetailView}
+        animationType="slide"
+        onRequestClose={() => setShowDetailView(false)}
+      >
+        <SafeAreaView style={styles.detailContainer}>
+          <View style={styles.detailTopBar}>
+            <TouchableOpacity 
+              onPress={() => setShowDetailView(false)}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.detailTitle}>
+              {selectedTab === 'posts' ? 'Posts' : 'Events'}
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          <FlatList
+            data={currentData}
+            renderItem={renderDetailItem}
+            keyExtractor={(item) => item.id.toString()}
+            initialScrollIndex={selectedIndex}
+            getItemLayout={(data, index) => ({
+              length: screenWidth + 200, // Approximate item height
+              offset: (screenWidth + 200) * index,
+              index,
+            })}
+            showsVerticalScrollIndicator={false}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-        flex: 1,
-        backgroundColor: "#151718",
-    },
-  container: {
-    flex: 1,
-    backgroundColor: "#151718",
+  container: { 
+    flex: 1, 
+    backgroundColor: '#151718' 
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  
+  // Profile Header
+  profileHeader: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: "0F0F0F",
+    paddingVertical: 16,
+    backgroundColor: '#151718',
   },
-  backButton: {
-    padding: 8,
-  },
-  backIcon: {
-    color: "#fff",
-    fontSize: 24,
-  },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "500",
-    flex: 1,
-    marginLeft: 16,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  headerIcon: {
-    padding: 8,
-  },
-  headerIconText: {
-    color: "#fff",
-    fontSize: 20,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  coverSection: {
-    position: "relative",
-    width: "100%",
-    height: 200, // Maintain aspect ratio for 820x462
-    backgroundColor: "#222",
-  },
-  coverImageContainer: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#222",
-  },
-  coverImage: {
-    width: "100%",
-    height: "100%",
-  },
-  profilePictureSection: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profilePictureContainer: {
-    position: "relative",
-  },
-  profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 80,
-    backgroundColor: "#333",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 4,
-    borderColor: "#fff",
-    overflow: "hidden",
-  },
-  profilePictureImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 50,
-  },
-  profilePictureText: {
-    color: "#fff",
-    fontSize: 36,
-    fontWeight: "bold",
-  },
-  cameraButton: {
-    position: "absolute",
-    bottom: -5,
-    right: -5,
-    backgroundColor: "#333",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  cameraIcon: {
-    fontSize: 16,
-  },
-  editCoverButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  editIcon: {
-    fontSize: 16,
-  },
-  profileFields: {
-    paddingHorizontal: 16,
-    paddingTop: 32,
-    backgroundColor: "#151718",
-  },
-  fieldContainer: {
-    marginBottom: 24,
-  },
-  fieldLabel: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 8,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  fieldValue: {
-    color: "#ccc",
-    fontSize: 16,
-    flex: 1,
-  },
-  editableField: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-    paddingBottom: 4,
-    color: "#fff",
-  },
-  bioText: {
-    color: "#666",
-    fontStyle: "italic",
-  },
-  editButton: {
-    padding: 8,
-  },
-  editButtonIcon: {
-    fontSize: 16,
-  },
-  privacyContainer: {
-    marginTop: 8,
-  },
-  privacyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  profileTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  privacyText: {
-    color: "#fff",
-    fontSize: 16,
+  avatar: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    marginRight: 24,
+  },
+  statsContainer: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
-  privacyNote: {
-    color: "#666",
-    fontSize: 12,
-    lineHeight: 16,
+  statItem: {
+    alignItems: 'center',
   },
-  editingButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    gap: 16,
+  statNumber: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  saveButton: {
-    backgroundColor: "#ff4444",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
+  statLabel: {
+    color: '#fff',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  profileInfo: {
+    marginBottom: 16,
+  },
+  clubName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  clubBio: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  followButton: {
     flex: 1,
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#333",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    flex: 1,
-  },
-  cancelButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    backgroundColor: "#000",
+    backgroundColor: '#0095f6',
     paddingVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  followButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  messageButton: {
+    flex: 1,
+    backgroundColor: '#262626',
+    paddingVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  messageButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Tab Switcher
+  tabSwitcher: {
+    flexDirection: 'row',
+    borderTopWidth: 0.5,
+    borderTopColor: '#262626',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#fff',
+  },
+
+  // Grid
+  gridContainer: {
+    paddingTop: 2,
+  },
+  gridItem: {
+    width: imageSize,
+    height: imageSize,
+    position: 'relative',
+    backgroundColor: '#1a1a1a',
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  multipleImagesIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 18,
+    marginTop: 16,
+  },
+
+  // Detail View
+  detailContainer: {
+    flex: 1,
+    backgroundColor: '#151718',
+  },
+  detailTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#333",
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#262626',
+  },
+  backButton: {
+    padding: 4,
+  },
+  detailTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  detailCard: {
+    marginBottom: 24,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  detailAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+  },
+  detailHeaderText: {
+    flex: 1,
+  },
+  detailClubName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  detailTime: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 1,
+  },
+  imageContainer: {
+    height: screenWidth,
+  },
+  detailImage: {
+    width: screenWidth,
+    height: screenWidth,
+  },
+  detailPlaceholder: {
+    width: screenWidth,
+    height: screenWidth,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  imageIndicators: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 6,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#0095f6',
+  },
+  detailContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  eventName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  detailDescription: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  eventVenue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#111',
+    marginBottom: 2,
+  },
+  venueText: {
+    color: '#0095f6',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  eventDetails: {
+    marginTop: 12,
+    gap: 8,
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eventDetailText: {
+    color: '#ccc',
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
   },
 });

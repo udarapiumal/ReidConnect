@@ -165,11 +165,6 @@ export default function ClubDashboardTab() {
     useFocusEffect(
         useCallback(() => {
             if (loading) return;
-
-            console.log("clubDetails after loading:", clubDetails);
-            console.log("user after loading:", user);
-            console.log("token: ", token);
-
             fetchLatestPostsWithStats();
         }, [loading, clubDetails, user, token])
     );

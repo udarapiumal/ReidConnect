@@ -263,6 +263,32 @@ public class EventController {
         return ResponseEntity.ok(count);
     }
 
+    // Count all events
+    @GetMapping("/count")
+    public ResponseEntity<Long> countAllEvents() {
+        return ResponseEntity.ok(eventService.countAllEvents());
+    }
+
+    // Count events from last 28 days
+    @GetMapping("/count/recent")
+    public ResponseEntity<Long> countEventsInLast28Days() {
+        return ResponseEntity.ok(eventService.countEventsInLast28Days());
+    }
+
+    @GetMapping("/count/{clubId}")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    public ResponseEntity<Long> countAllEventsByClubId(@PathVariable Long clubId) {
+        long count = eventService.countAllEventsByClubId(clubId);
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/count/recent/{clubId}")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    public ResponseEntity<Long> countRecentEventsByClubId(@PathVariable Long clubId) {
+        long count = eventService.countRecentEventsByClubId(clubId);
+        return ResponseEntity.ok(count);
+    }
+
 
 
 }
