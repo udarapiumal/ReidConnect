@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { useNavigate } from 'react-router-dom';
 import AcademicSidebar from './AcademicSidebar';
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const [selectedTimeRange, setSelectedTimeRange] = useState("Next 7 days");
     const [sortBy, setSortBy] = useState("Sort by dates");
     const [allCourses, setAllCourses] = useState("All courses");
@@ -13,8 +15,7 @@ export default function Dashboard() {
 
     const handleNavigation = (itemId) => {
         setActiveNavItem(itemId);
-        // Add navigation logic here
-        console.log(`Navigate to: ${itemId}`);
+        // Navigation logic is handled in AcademicSidebar component
     };
 
     // Sample data
@@ -411,10 +412,10 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     statusPending: {
-        backgroundColor: '#fbbf24',
+        backgroundColor: '#1a1a1a',
     },
     statusApproved: {
-        backgroundColor: '#10b981',
+        backgroundColor: '#1a1a1a',
     },
     statusText: {
         fontSize: 12,

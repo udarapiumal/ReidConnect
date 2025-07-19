@@ -1,16 +1,28 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigate } from 'react-router-dom';
 
 const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
+    const navigate = useNavigate();
+    
     const navigationItems = [
-        { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard' },
-        { id: 'Academic Staff', icon: 'fa-solid fa-user-graduate', label: 'Academic Staff' },
-        { id: 'Lecture Time Table', icon: 'fa-solid fa-calendar-days', label: 'Lecture Time Table' },
-        { id: 'Academic Events', icon: 'fa-solid fa-calendar-check', label: 'Academic Events' },
-        { id: 'Hall Bookings', icon: 'fa-solid fa-building-columns', label: 'Hall Bookings' },
-        { id: 'Reports', icon: 'fa-solid fa-chart-column', label: 'Reports' },
-        { id: 'Notifications', icon: 'fa-solid fa-bell', label: 'Notifications' }
+        { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
+        { id: 'Academic Staff', icon: 'fa-solid fa-user-graduate', label: 'Academic Staff', route: '/academic/lecturers' },
+        { id: 'Lecture Time Table', icon: 'fa-solid fa-calendar-days', label: 'Lecture Time Table', route: '/academic/timetable' },
+        { id: 'Academic Events', icon: 'fa-solid fa-calendar-check', label: 'Academic Events', route: '/academic/events' },
+        { id: 'Hall Bookings', icon: 'fa-solid fa-building-columns', label: 'Hall Bookings', route: '/academic/bookings' },
+        { id: 'Reports', icon: 'fa-solid fa-chart-column', label: 'Reports', route: '/academic/reports' },
+        { id: 'Notifications', icon: 'fa-solid fa-bell', label: 'Notifications', route: '/academic/notifications' }
     ];
+
+    const handleNavigation = (item) => {
+        if (onNavigate) {
+            onNavigate(item.id);
+        }
+        if (item.route) {
+            navigate(item.route);
+        }
+    };
 
     return (
         <View style={styles.sidebar}>
@@ -25,7 +37,7 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
                                 styles.navItem,
                                 activeItem === item.id && styles.navItemActive
                             ]}
-                            onPress={() => onNavigate && onNavigate(item.id)}
+                            onPress={() => handleNavigation(item)}
                         >
                             <i className={`fa ${item.icon}`} style={styles.navIcon}></i>
                             <Text style={[
