@@ -1,10 +1,10 @@
 .gallery-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   padding: 20px;
+  margin-left: 250px; /* Adjust based on your sidebar width */
 }
-
 .club-card {
   background: #fff;
   border: 1px solid #ddd;

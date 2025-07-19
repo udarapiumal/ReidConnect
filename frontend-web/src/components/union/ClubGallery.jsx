@@ -28,7 +28,9 @@ const ClubGallery = () => {
   }, []);
 
   return (
+    
     <div className="gallery-container">
+        
       {clubs.length === 0 ? (
         <p>No clubs found.</p>
       ) : (
