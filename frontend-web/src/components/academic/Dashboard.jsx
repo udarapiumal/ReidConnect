@@ -70,8 +70,8 @@ export default function Dashboard() {
                 </View>
                 <View style={styles.headerRight}>
                     <View style={styles.headerIcons}>
-                        <Text style={styles.icon}>🔔</Text>
-                        <Text style={styles.icon}>👤</Text>
+                        <i className="fas fa-bell" style={styles.icon}></i>
+                        <i className="fas fa-user" style={styles.icon}></i>
                         <Text style={styles.adminText}>Admin</Text>
                     </View>
                 </View>
@@ -115,7 +115,7 @@ export default function Dashboard() {
                                         <View style={styles.eventDetails}>
                                             <Text style={styles.eventTime}>{event.time}</Text>
                                             <View style={styles.eventInfo}>
-                                                <Text style={styles.eventIcon}>📋</Text>
+                                                <i className="fas fa-clipboard" style={styles.eventIcon}></i>
                                                 <View>
                                                     <Text style={styles.eventType}>{event.type}</Text>
                                                     <Text style={styles.eventLocation}>{event.location}</Text>
@@ -137,8 +137,8 @@ export default function Dashboard() {
                                 <View style={styles.calendarControls}>
                                     <Text style={styles.controlText}>{allCourses}</Text>
                                     <Text style={styles.controlText}>{allStatuses}</Text>
-                                    <TouchableOpacity style={styles.newEventBtn}>
-                                        <Text style={styles.btnText}>New event</Text>
+                                    <TouchableOpacity style={styles.iconBtn}>
+                                        <i className="fas fa-plus" style={styles.btnIcon}></i>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -192,8 +192,8 @@ export default function Dashboard() {
                         <View style={styles.dataSection}>
                             <View style={styles.sectionHeader}>
                                 <Text style={styles.sectionTitle}>Lectures</Text>
-                                <TouchableOpacity style={styles.addBtn}>
-                                    <Text style={styles.btnText}>Add</Text>
+                                <TouchableOpacity style={styles.iconBtn}>
+                                    <i className="fas fa-plus" style={styles.btnIcon}></i>
                                 </TouchableOpacity>
                             </View>
                             <View style={styles.dataTable}>
@@ -214,8 +214,8 @@ export default function Dashboard() {
                         <View style={styles.dataSection}>
                             <View style={styles.sectionHeader}>
                                 <Text style={styles.sectionTitle}>Bookings</Text>
-                                <TouchableOpacity style={styles.manageBtn}>
-                                    <Text style={styles.btnText}>Manage</Text>
+                                <TouchableOpacity style={styles.iconBtn}>
+                                    <i className="fas fa-cog" style={styles.btnIcon}></i>
                                 </TouchableOpacity>
                             </View>
                             <View style={styles.bookingList}>
@@ -229,8 +229,8 @@ export default function Dashboard() {
                         <View style={styles.dataSection}>
                             <View style={styles.sectionHeader}>
                                 <Text style={styles.sectionTitle}>Events</Text>
-                                <TouchableOpacity style={styles.addBtn}>
-                                    <Text style={styles.btnText}>Add</Text>
+                                <TouchableOpacity style={styles.iconBtn}>
+                                    <i className="fas fa-plus" style={styles.btnIcon}></i>
                                 </TouchableOpacity>
                             </View>
                             <View style={styles.dataTable}>
@@ -296,7 +296,8 @@ const styles = StyleSheet.create({
     },
     icon: {
         fontSize: 20,
-        color: 'white',
+        color: 'white', // Ensure header icons are white
+        marginRight: 8,
     },
     adminText: {
         color: 'white',
@@ -360,16 +361,38 @@ const styles = StyleSheet.create({
         backgroundColor: '#ef4444',
         padding: 8,
         borderRadius: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    iconBtn: {
+        backgroundColor: '#ef4444',
+        padding: 8,
+        borderRadius: 4,
+        width: 32,
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     addBtn: {
         backgroundColor: '#ef4444',
         padding: 8,
         borderRadius: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
     },
     manageBtn: {
         backgroundColor: '#ef4444',
         padding: 8,
         borderRadius: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    btnIcon: {
+        color: 'white',
+        fontSize: 14,
     },
     btnText: {
         color: 'white',
@@ -414,6 +437,8 @@ const styles = StyleSheet.create({
     },
     eventIcon: {
         fontSize: 16,
+        color: 'white', // Ensure event icons are white
+        marginRight: 8,
     },
     eventType: {
         fontWeight: '600',

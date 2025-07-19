@@ -3,12 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
     const navigationItems = [
-        { id: 'Dashboard', icon: '📊', label: 'Dashboard' },
-        { id: 'Events', icon: '📅', label: 'Events' },
-        { id: 'Lectures', icon: '🎓', label: 'Lectures' },
-        { id: 'Bookings', icon: '📝', label: 'Bookings' },
-        { id: 'Reports', icon: '📈', label: 'Reports' },
-        { id: 'Notifications', icon: '🔔', label: 'Notifications' }
+        { id: 'Dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
+        { id: 'Events', icon: 'fa-calendar-alt', label: 'Events' },
+        { id: 'Lectures', icon: 'fa-graduation-cap', label: 'Lectures' },
+        { id: 'Bookings', icon: 'fa-clipboard-list', label: 'Bookings' },
+        { id: 'Reports', icon: 'fa-chart-line', label: 'Reports' },
+        { id: 'Notifications', icon: 'fa-bell', label: 'Notifications' }
     ];
 
     return (
@@ -26,7 +26,7 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
                             ]}
                             onPress={() => onNavigate && onNavigate(item.id)}
                         >
-                            <Text style={styles.navIcon}>{item.icon}</Text>
+                            <i className={`fas ${item.icon}`} style={styles.navIcon}></i>
                             <Text style={[
                                 styles.navText,
                                 activeItem === item.id && styles.navTextActive
@@ -42,7 +42,6 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
             <View style={styles.bottomSection}>
                 <TouchableOpacity style={styles.logoutButton}>
                     <Text style={styles.logoutText}>Logout</Text>
-                    <Text style={styles.logoutIcon}>↗</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -89,6 +88,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         width: 20,
         textAlign: 'center',
+        color: 'white', // Ensure icon color is white
     },
     navText: {
         fontSize: 14,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     logoutIcon: {
-        color: '#ffffff',
+        color: 'white', // Ensure logout icon is white
         fontSize: 14,
         fontWeight: '500',
     },
