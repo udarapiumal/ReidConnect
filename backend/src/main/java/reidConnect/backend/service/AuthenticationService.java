@@ -13,9 +13,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class AuthenticationService {
@@ -40,28 +46,51 @@ public class AuthenticationService {
     }
 
     public User signup(RegisterUserDto input) {
-        // Create and save User
+        // 1. Create and save User
         User user = new User(input.getUsername(), input.getEmail(), passwordEncoder.encode(input.getPassword()));
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationExpiration(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
         User savedUser = userRepository.save(user);
 
-        // Create and save Student
+        // 2. Handle file upload if present
+        String profilePictureUrl = null;
+        if (input.getProfilePic() != null && !input.getProfilePic().isEmpty()) {
+            String filename = UUID.randomUUID() + "_" + input.getProfilePic().getOriginalFilename();
+
+            try {
+                // Use the current working directory + /uploads like the other method
+                Path uploadDir = Paths.get("C:/ReidConnect/backend/src/main/resources/static/uploads");
+                Files.createDirectories(uploadDir);
+                Path filePath = uploadDir.resolve(filename);
+                input.getProfilePic().transferTo(filePath.toFile());
+
+                profilePictureUrl = "/uploads/" + filename;
+
+                System.out.println("Saved profile pic to: " + profilePictureUrl);
+            } catch (IOException e) {
+                e.printStackTrace();
+                // optionally: throw new RuntimeException("Could not save profile picture", e);
+            }
+        } else {
+            System.out.println("No profile picture uploaded");
+        }
+
+        // 3. Create and save Student with profile picture
         Student student = new Student();
         student.setStudentName(input.getUsername());
         student.setContactNumber(input.getContactNumber());
         student.setAcademicYear(input.getAcademicYear());
-        student.setAge(input.getAge());
+        student.setProfilePictureUrl(profilePictureUrl); // Will be null if no picture
         student.setUser(savedUser);
         studentRepository.save(student);
 
-
-        // Send verification email
+        // 4. Send verification email
         sendVerificationEmail(savedUser);
 
         return savedUser;
     }
+
     public User authenticate(LoginUserDto input) {
         User user = userRepository.findByEmail(input.getEmail()) // Fixed method name to findByEmail
                 .orElseThrow(() -> new RuntimeException("User not found"));

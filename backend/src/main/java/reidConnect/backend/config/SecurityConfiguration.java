@@ -45,6 +45,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
