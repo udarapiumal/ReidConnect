@@ -86,7 +86,7 @@ export default function Dashboard() {
 
                 {/* Main Content */}
                 <ScrollView style={styles.mainContent}>
-                    <Text style={styles.pageTitle}>Dashboard</Text>
+                    <Text style={styles.pageTitle}>Dashboard Overview</Text>
                     
                     <View style={styles.dashboardGrid}>
                         {/* Timeline Section */}
@@ -225,7 +225,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderBottomWidth: 1,
         borderBottomColor: '#333',
-        zIndex: 20, // Ensure header is above sidebar
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 64,
+        zIndex: 1001,
     },
     headerLeft: {
         flex: 1,
@@ -260,12 +265,14 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         flexDirection: 'row',
-        position: 'relative', // Fix any overlap issues
+        marginTop: 64,
     },
     mainContent: {
         flex: 1,
         padding: 32,
-        backgroundColor: '#1a1a1a', // Ensure background covers any overlap
+        backgroundColor: '#1a1a1a',
+        marginLeft: 200,
+        minHeight: 'calc(100vh - 64px)',
     },
     pageTitle: {
         fontSize: 32,

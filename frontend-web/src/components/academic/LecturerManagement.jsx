@@ -14,37 +14,94 @@ const LecturerManagement = () => {
         department: '',
         phone: '',
         specialization: '',
-        status: 'Active'
+        position: 'Senior Lecturer'
     });
 
-    // Sample lecturer data
+    // Sample lecturer data organized by position
     const [lecturers, setLecturers] = useState([
+        // Senior Lecturers
         {
-            id: 'L001',
+            id: 'SL001',
+            name: 'Prof. Sarah Johnson',
+            email: 'sarah.johnson@university.edu',
+            department: 'Computer Science',
+            phone: '+1-555-0124',
+            specialization: 'Data Structures & Algorithms',
+            position: 'Senior Lecturer'
+        },
+        {
+            id: 'SL002',
+            name: 'Prof. Michael Davis',
+            email: 'michael.davis@university.edu',
+            department: 'Engineering',
+            phone: '+1-555-0126',
+            specialization: 'Machine Learning',
+            position: 'Senior Lecturer'
+        },
+        {
+            id: 'SL003',
+            name: 'Prof. Emily Chen',
+            email: 'emily.chen@university.edu',
+            department: 'Computer Science',
+            phone: '+1-555-0127',
+            specialization: 'Database Systems',
+            position: 'Senior Lecturer'
+        },
+        // Assistant Lecturers
+        {
+            id: 'AL001',
             name: 'Dr. John Smith',
             email: 'john.smith@university.edu',
             department: 'Computer Science',
             phone: '+1-555-0123',
             specialization: 'Artificial Intelligence',
-            status: 'Active'
+            position: 'Assistant Lecturer'
         },
         {
-            id: 'L002',
-            name: 'Prof. Sarah Johnson',
-            email: 'sarah.johnson@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0124',
-            specialization: 'Data Structures',
-            status: 'Active'
-        },
-        {
-            id: 'L003',
-            name: 'Dr. Michael Brown',
-            email: 'michael.brown@university.edu',
+            id: 'AL002',
+            name: 'Dr. Lisa Wang',
+            email: 'lisa.wang@university.edu',
             department: 'Engineering',
-            phone: '+1-555-0125',
+            phone: '+1-555-0128',
             specialization: 'Software Engineering',
-            status: 'Inactive'
+            position: 'Assistant Lecturer'
+        },
+        {
+            id: 'AL003',
+            name: 'Dr. Robert Brown',
+            email: 'robert.brown@university.edu',
+            department: 'Computer Science',
+            phone: '+1-555-0129',
+            specialization: 'Computer Networks',
+            position: 'Assistant Lecturer'
+        },
+        // Instructors
+        {
+            id: 'IN001',
+            name: 'Ms. Jennifer Taylor',
+            email: 'jennifer.taylor@university.edu',
+            department: 'Computer Science',
+            phone: '+1-555-0130',
+            specialization: 'Web Development',
+            position: 'Instructor'
+        },
+        {
+            id: 'IN002',
+            name: 'Mr. David Wilson',
+            email: 'david.wilson@university.edu',
+            department: 'Engineering',
+            phone: '+1-555-0131',
+            specialization: 'Programming Fundamentals',
+            position: 'Instructor'
+        },
+        {
+            id: 'IN003',
+            name: 'Ms. Amy Rodriguez',
+            email: 'amy.rodriguez@university.edu',
+            department: 'Computer Science',
+            phone: '+1-555-0132',
+            specialization: 'Mobile App Development',
+            position: 'Instructor'
         }
     ]);
 
@@ -63,7 +120,7 @@ const LecturerManagement = () => {
             department: '',
             phone: '',
             specialization: '',
-            status: 'Active'
+            position: 'Senior Lecturer'
         });
     };
 
@@ -84,8 +141,18 @@ const LecturerManagement = () => {
                 lecturer.id === editingLecturer ? formData : lecturer
             ));
         } else {
-            // Add new lecturer
-            const newId = 'L' + String(lecturers.length + 1).padStart(3, '0');
+            // Add new lecturer with appropriate ID prefix
+            let newId;
+            if (formData.position === 'Senior Lecturer') {
+                const seniorCount = lecturers.filter(l => l.position === 'Senior Lecturer').length;
+                newId = 'SL' + String(seniorCount + 1).padStart(3, '0');
+            } else if (formData.position === 'Assistant Lecturer') {
+                const assistantCount = lecturers.filter(l => l.position === 'Assistant Lecturer').length;
+                newId = 'AL' + String(assistantCount + 1).padStart(3, '0');
+            } else {
+                const instructorCount = lecturers.filter(l => l.position === 'Instructor').length;
+                newId = 'IN' + String(instructorCount + 1).padStart(3, '0');
+            }
             setLecturers([...lecturers, { ...formData, id: newId }]);
         }
         setShowAddForm(false);
@@ -100,7 +167,68 @@ const LecturerManagement = () => {
     const filteredLecturers = lecturers.filter(lecturer =>
         lecturer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lecturer.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lecturer.specialization.toLowerCase().includes(searchQuery.toLowerCase())
+        lecturer.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lecturer.position.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Group lecturers by position
+    const seniorLecturers = filteredLecturers.filter(lecturer => lecturer.position === 'Senior Lecturer');
+    const assistantLecturers = filteredLecturers.filter(lecturer => lecturer.position === 'Assistant Lecturer');
+    const instructors = filteredLecturers.filter(lecturer => lecturer.position === 'Instructor');
+
+    const renderLecturerTable = (lecturerList, title, bgColor) => (
+        <View style={styles.categorySection}>
+            {/* Category Heading Outside Table */}
+            <View style={styles.categoryHeading}>
+                <View style={[styles.categoryIndicator, { backgroundColor: bgColor }]}></View>
+                <Text style={styles.categoryLabel}>{title}</Text>
+                <View style={styles.categoryCount}>
+                    <Text style={styles.countText}>{lecturerList.length}</Text>
+                </View>
+            </View>
+            
+            {/* Table Container */}
+            <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                    <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
+                    <Text style={[styles.tableHeaderText, styles.nameColumn]}>Name</Text>
+                    <Text style={[styles.tableHeaderText, styles.emailColumn]}>Email</Text>
+                    <Text style={[styles.tableHeaderText, styles.phoneColumn]}>Phone</Text>
+                    <Text style={[styles.tableHeaderText, styles.specializationColumn]}>Specialization</Text>
+                    <Text style={[styles.tableHeaderText, styles.actionsColumn]}>Actions</Text>
+                </View>
+                <ScrollView style={styles.tableBody}>
+                    {lecturerList.map((lecturer) => (
+                        <View key={lecturer.id} style={styles.tableRow}>
+                            <Text style={[styles.tableCellText, styles.idColumn]}>{lecturer.id}</Text>
+                            <Text style={[styles.tableCellText, styles.nameColumn]}>{lecturer.name}</Text>
+                            <Text style={[styles.tableCellText, styles.emailColumn]}>{lecturer.email}</Text>
+                            <Text style={[styles.tableCellText, styles.phoneColumn]}>{lecturer.phone}</Text>
+                            <Text style={[styles.tableCellText, styles.specializationColumn]}>{lecturer.specialization}</Text>
+                            <View style={[styles.actionsColumn, styles.actionsContainer]}>
+                                <TouchableOpacity 
+                                    style={styles.editBtn}
+                                    onPress={() => handleEditLecturer(lecturer)}
+                                >
+                                    <i className="fa-solid fa-edit" style={styles.actionIcon}></i>
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    style={styles.deleteBtn}
+                                    onPress={() => handleDeleteLecturer(lecturer.id)}
+                                >
+                                    <i className="fa-solid fa-trash" style={styles.actionIcon}></i>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    ))}
+                    {lecturerList.length === 0 && (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyText}>No {title.toLowerCase()} found</Text>
+                        </View>
+                    )}
+                </ScrollView>
+            </View>
+        </View>
     );
 
     return (
@@ -109,7 +237,7 @@ const LecturerManagement = () => {
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <Text style={styles.appTitle}>
-                        Reid<Text style={styles.academicText}>Connect Academic</Text>
+                        ReidConnect <Text style={styles.academicText}>AcademicAdmin</Text>
                     </Text>
                 </View>
                 <View style={styles.headerRight}>
@@ -150,57 +278,15 @@ const LecturerManagement = () => {
                                     onPress={handleAddLecturer}
                                 >
                                     <i className="fa-solid fa-plus" style={styles.btnIcon}></i>
-                                    <Text style={styles.btnText}>Add New Lecturer</Text>
+                                    <Text style={styles.btnText}>Add New</Text>
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Lecturers Table */}
-                            <View style={styles.tableContainer}>
-                                <View style={styles.tableHeader}>
-                                    <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
-                                    <Text style={[styles.tableHeaderText, styles.nameColumn]}>Name</Text>
-                                    <Text style={[styles.tableHeaderText, styles.emailColumn]}>Email</Text>
-                                    <Text style={[styles.tableHeaderText, styles.departmentColumn]}>Department</Text>
-                                    <Text style={[styles.tableHeaderText, styles.phoneColumn]}>Phone</Text>
-                                    <Text style={[styles.tableHeaderText, styles.specializationColumn]}>Specialization</Text>
-                                    <Text style={[styles.tableHeaderText, styles.statusColumn]}>Status</Text>
-                                    <Text style={[styles.tableHeaderText, styles.actionsColumn]}>Actions</Text>
-                                </View>
-
-                                <ScrollView style={styles.tableBody}>
-                                    {filteredLecturers.map((lecturer) => (
-                                        <View key={lecturer.id} style={styles.tableRow}>
-                                            <Text style={[styles.tableCellText, styles.idColumn]}>{lecturer.id}</Text>
-                                            <Text style={[styles.tableCellText, styles.nameColumn]}>{lecturer.name}</Text>
-                                            <Text style={[styles.tableCellText, styles.emailColumn]}>{lecturer.email}</Text>
-                                            <Text style={[styles.tableCellText, styles.departmentColumn]}>{lecturer.department}</Text>
-                                            <Text style={[styles.tableCellText, styles.phoneColumn]}>{lecturer.phone}</Text>
-                                            <Text style={[styles.tableCellText, styles.specializationColumn]}>{lecturer.specialization}</Text>
-                                            <View style={[styles.statusColumn, styles.statusContainer]}>
-                                                <View style={[
-                                                    styles.statusBadge,
-                                                    lecturer.status === 'Active' ? styles.statusActive : styles.statusInactive
-                                                ]}>
-                                                    <Text style={styles.statusText}>{lecturer.status}</Text>
-                                                </View>
-                                            </View>
-                                            <View style={[styles.actionsColumn, styles.actionsContainer]}>
-                                                <TouchableOpacity 
-                                                    style={styles.editBtn}
-                                                    onPress={() => handleEditLecturer(lecturer)}
-                                                >
-                                                    <i className="fa-solid fa-edit" style={styles.actionIcon}></i>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity 
-                                                    style={styles.deleteBtn}
-                                                    onPress={() => handleDeleteLecturer(lecturer.id)}
-                                                >
-                                                    <i className="fa-solid fa-trash" style={styles.actionIcon}></i>
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    ))}
-                                </ScrollView>
+                            {/* Lecturers Categories */}
+                            <View style={styles.categoriesContainer}>
+                                {renderLecturerTable(seniorLecturers, "Senior Lecturers", "#fff")}
+                                {renderLecturerTable(assistantLecturers, "Assistant Lecturers", "#fff")}
+                                {renderLecturerTable(instructors, "Instructors", "#fff")}
                             </View>
                         </>
                     ) : (
@@ -256,6 +342,48 @@ const LecturerManagement = () => {
                                 </View>
 
                                 <View style={styles.formGroup}>
+                                    <Text style={styles.formLabel}>Position *</Text>
+                                    <View style={styles.positionSelector}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.positionOption,
+                                                formData.position === 'Senior Lecturer' && styles.positionOptionSelected
+                                            ]}
+                                            onPress={() => setFormData({...formData, position: 'Senior Lecturer'})}
+                                        >
+                                            <Text style={[
+                                                styles.positionOptionText,
+                                                formData.position === 'Senior Lecturer' && styles.positionOptionTextSelected
+                                            ]}>Senior Lecturer</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.positionOption,
+                                                formData.position === 'Assistant Lecturer' && styles.positionOptionSelected
+                                            ]}
+                                            onPress={() => setFormData({...formData, position: 'Assistant Lecturer'})}
+                                        >
+                                            <Text style={[
+                                                styles.positionOptionText,
+                                                formData.position === 'Assistant Lecturer' && styles.positionOptionTextSelected
+                                            ]}>Assistant Lecturer</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.positionOption,
+                                                formData.position === 'Instructor' && styles.positionOptionSelected
+                                            ]}
+                                            onPress={() => setFormData({...formData, position: 'Instructor'})}
+                                        >
+                                            <Text style={[
+                                                styles.positionOptionText,
+                                                formData.position === 'Instructor' && styles.positionOptionTextSelected
+                                            ]}>Instructor</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <View style={styles.formGroup}>
                                     <Text style={styles.formLabel}>Specialization</Text>
                                     <TextInput
                                         style={styles.formInput}
@@ -264,36 +392,6 @@ const LecturerManagement = () => {
                                         placeholder="Enter specialization"
                                         placeholderTextColor="#999"
                                     />
-                                </View>
-
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Status</Text>
-                                    <View style={styles.statusSelector}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.statusOption,
-                                                formData.status === 'Active' && styles.statusOptionSelected
-                                            ]}
-                                            onPress={() => setFormData({...formData, status: 'Active'})}
-                                        >
-                                            <Text style={[
-                                                styles.statusOptionText,
-                                                formData.status === 'Active' && styles.statusOptionTextSelected
-                                            ]}>Active</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.statusOption,
-                                                formData.status === 'Inactive' && styles.statusOptionSelected
-                                            ]}
-                                            onPress={() => setFormData({...formData, status: 'Inactive'})}
-                                        >
-                                            <Text style={[
-                                                styles.statusOptionText,
-                                                formData.status === 'Inactive' && styles.statusOptionTextSelected
-                                            ]}>Inactive</Text>
-                                        </TouchableOpacity>
-                                    </View>
                                 </View>
                             </View>
 
@@ -309,7 +407,7 @@ const LecturerManagement = () => {
                                     onPress={handleSubmit}
                                 >
                                     <Text style={styles.submitBtnText}>
-                                        {editingLecturer ? 'Update Lecturer' : 'Add Lecturer'}
+                                        {editingLecturer ? 'Update' : 'Add'}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -334,7 +432,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#2a2a2a',
         borderBottomWidth: 1,
         borderBottomColor: '#333',
-        zIndex: 20,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1001,
+        height: 64,
     },
     headerLeft: {
         flex: 1,
@@ -369,11 +472,14 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         flexDirection: 'row',
+        marginTop: 64,
     },
     mainContent: {
         flex: 1,
         padding: 32,
         backgroundColor: '#1a1a1a',
+        marginLeft: 200,
+        minHeight: 'calc(100vh - 64px)',
     },
     pageTitle: {
         fontSize: 32,
@@ -417,6 +523,40 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
+    categoriesContainer: {
+        gap: 32,
+    },
+    categorySection: {
+        marginBottom: 24,
+    },
+    categoryHeading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 12,
+    },
+    categoryIndicator: {
+        width: 4,
+        height: 24,
+        borderRadius: 2,
+    },
+    categoryLabel: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: 'white',
+        flex: 1,
+    },
+    categoryCount: {
+        backgroundColor: '#333',
+        paddingVertical: 4,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+    },
+    countText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+    },
     tableContainer: {
         backgroundColor: '#2a2a2a',
         borderRadius: 12,
@@ -435,7 +575,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     tableBody: {
-        maxHeight: 400,
+        maxHeight: 300,
+    },
+    emptyState: {
+        padding: 32,
+        alignItems: 'center',
+    },
+    emptyText: {
+        color: '#999',
+        fontSize: 14,
+        fontStyle: 'italic',
     },
     tableRow: {
         flexDirection: 'row',
@@ -449,47 +598,22 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     idColumn: {
-        width: 80,
+        width: 100,
     },
     nameColumn: {
-        width: 150,
-    },
-    emailColumn: {
         width: 200,
     },
-    departmentColumn: {
-        width: 120,
+    emailColumn: {
+        width: 250,
     },
     phoneColumn: {
-        width: 120,
+        width: 140,
     },
     specializationColumn: {
-        width: 150,
-    },
-    statusColumn: {
-        width: 100,
+        width: 200,
     },
     actionsColumn: {
         width: 100,
-    },
-    statusContainer: {
-        alignItems: 'flex-start',
-    },
-    statusBadge: {
-        paddingVertical: 4,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-    },
-    statusActive: {
-        backgroundColor: '#22c55e',
-    },
-    statusInactive: {
-        backgroundColor: '#ef4444',
-    },
-    statusText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: 'white',
     },
     actionsContainer: {
         flexDirection: 'row',
@@ -553,11 +677,12 @@ const styles = StyleSheet.create({
         padding: 12,
         fontSize: 14,
     },
-    statusSelector: {
+    positionSelector: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 12,
     },
-    statusOption: {
+    positionOption: {
         backgroundColor: '#333',
         paddingVertical: 8,
         paddingHorizontal: 16,
@@ -565,15 +690,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#555',
     },
-    statusOptionSelected: {
+    positionOptionSelected: {
         backgroundColor: '#ef4444',
         borderColor: '#ef4444',
     },
-    statusOptionText: {
+    positionOptionText: {
         color: '#ccc',
         fontSize: 14,
     },
-    statusOptionTextSelected: {
+    positionOptionTextSelected: {
         color: 'white',
         fontWeight: '500',
     },
