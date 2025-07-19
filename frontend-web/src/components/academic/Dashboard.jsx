@@ -186,69 +186,22 @@ export default function Dashboard() {
                         </View>
                     </View>
 
-                    {/* Bottom Sections */}
+                    {/* Bottom Sections: Total Counts */}
                     <View style={styles.bottomSections}>
-                        {/* Lectures */}
-                        <View style={styles.dataSection}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Lectures</Text>
-                                <TouchableOpacity style={styles.iconBtn}>
-                                    <i className="fas fa-plus" style={styles.btnIcon}></i>
-                                </TouchableOpacity>
-                            </View>
-                            <View style={styles.dataTable}>
-                                <View style={styles.tableHeader}>
-                                    <Text style={styles.tableHeaderText}>Course</Text>
-                                    <Text style={styles.tableHeaderText}>Time</Text>
-                                </View>
-                                {lectures.map((lecture, index) => (
-                                    <View key={index} style={styles.tableRow}>
-                                        <Text style={styles.tableCellText}>{lecture.course}</Text>
-                                        <Text style={styles.tableCellText}>{lecture.time}</Text>
-                                    </View>
-                                ))}
-                            </View>
+                        <View style={styles.countCard}>
+                            <i className="fas fa-graduation-cap" style={styles.countIcon}></i>
+                            <Text style={styles.countNumber}>200+</Text>
+                            <Text style={styles.countLabel}>Lectures</Text>
                         </View>
-
-                        {/* Bookings */}
-                        <View style={styles.dataSection}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Bookings</Text>
-                                <TouchableOpacity style={styles.iconBtn}>
-                                    <i className="fas fa-cog" style={styles.btnIcon}></i>
-                                </TouchableOpacity>
-                            </View>
-                            <View style={styles.bookingList}>
-                                {bookings.map((booking, index) => (
-                                    <Text key={index} style={styles.bookingItem}>{booking}</Text>
-                                ))}
-                            </View>
+                        <View style={styles.countCard}>
+                            <i className="fas fa-clipboard-list" style={styles.countIcon}></i>
+                            <Text style={styles.countNumber}>50</Text>
+                            <Text style={styles.countLabel}>Bookings</Text>
                         </View>
-
-                        {/* Events */}
-                        <View style={styles.dataSection}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>Events</Text>
-                                <TouchableOpacity style={styles.iconBtn}>
-                                    <i className="fas fa-plus" style={styles.btnIcon}></i>
-                                </TouchableOpacity>
-                            </View>
-                            <View style={styles.dataTable}>
-                                <View style={styles.tableHeader}>
-                                    <Text style={styles.tableHeaderText}>Event</Text>
-                                    <Text style={styles.tableHeaderText}>Date</Text>
-                                    <Text style={styles.tableHeaderText}>Status</Text>
-                                </View>
-                                {events.map((event, index) => (
-                                    <View key={index} style={styles.tableRow}>
-                                        <Text style={styles.tableCellText}>{event.event}</Text>
-                                        <Text style={styles.tableCellText}>{event.date}</Text>
-                                        <View style={[styles.statusBadge, event.status.toLowerCase() === 'pending' ? styles.statusPending : styles.statusApproved]}>
-                                            <Text style={styles.statusText}>{event.status}</Text>
-                                        </View>
-                                    </View>
-                                ))}
-                            </View>
+                        <View style={styles.countCard}>
+                            <i className="fas fa-calendar-alt" style={styles.countIcon}></i>
+                            <Text style={styles.countNumber}>100+</Text>
+                            <Text style={styles.countLabel}>Events</Text>
                         </View>
                     </View>
                 </ScrollView>
@@ -555,45 +508,34 @@ const styles = StyleSheet.create({
     bottomSections: {
         flexDirection: 'row',
         gap: 32,
+        marginTop: 32,
+        justifyContent: 'space-between',
     },
-    dataSection: {
+    countCard: {
         flex: 1,
         backgroundColor: '#2a2a2a',
-        borderRadius: 8,
-        padding: 24,
-    },
-    dataTable: {
-        marginTop: 16,
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#555',
-    },
-    tableHeaderText: {
-        flex: 1,
-        color: '#ccc',
-        fontWeight: '600',
-    },
-    tableRow: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
+        borderRadius: 12,
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 32,
+        marginHorizontal: 8,
+        minWidth: 150,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     },
-    tableCellText: {
-        flex: 1,
+    countIcon: {
+        fontSize: 32,
         color: 'white',
+        marginBottom: 8,
     },
-    bookingList: {
-        marginTop: 16,
+    countNumber: {
+        fontSize: 36,
+        fontWeight: 'bold',
+        color: 'white',
+        marginBottom: 4,
     },
-    bookingItem: {
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
+    countLabel: {
+        fontSize: 16,
         color: '#ccc',
+        fontWeight: '500',
     },
 });

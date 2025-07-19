@@ -3,12 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
     const navigationItems = [
-        { id: 'Dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
-        { id: 'Events', icon: 'fa-calendar-alt', label: 'Events' },
-        { id: 'Lectures', icon: 'fa-graduation-cap', label: 'Lectures' },
-        { id: 'Bookings', icon: 'fa-clipboard-list', label: 'Bookings' },
-        { id: 'Reports', icon: 'fa-chart-line', label: 'Reports' },
-        { id: 'Notifications', icon: 'fa-bell', label: 'Notifications' }
+        { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard' },
+        { id: 'Academic Staff', icon: 'fa-solid fa-user-graduate', label: 'Academic Staff' },
+        { id: 'Lecture Time Table', icon: 'fa-solid fa-calendar-days', label: 'Lecture Time Table' },
+        { id: 'Academic Events', icon: 'fa-solid fa-calendar-check', label: 'Academic Events' },
+        { id: 'Hall Bookings', icon: 'fa-solid fa-building-columns', label: 'Hall Bookings' },
+        { id: 'Reports', icon: 'fa-solid fa-chart-column', label: 'Reports' },
+        { id: 'Notifications', icon: 'fa-solid fa-bell', label: 'Notifications' }
     ];
 
     return (
@@ -26,7 +27,7 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
                             ]}
                             onPress={() => onNavigate && onNavigate(item.id)}
                         >
-                            <i className={`fas ${item.icon}`} style={styles.navIcon}></i>
+                            <i className={`fa ${item.icon}`} style={styles.navIcon}></i>
                             <Text style={[
                                 styles.navText,
                                 activeItem === item.id && styles.navTextActive
@@ -71,15 +72,21 @@ const styles = StyleSheet.create({
         paddingTop: 50,
     },
     navigationList: {
+        flexDirection: 'row',
         gap: 4,
+        flexWrap: 'wrap',
     },
     navItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        justifyContent: 'left',
+        width: 180,
+        height: 48,
         borderRadius: 8,
         gap: 12,
+        marginRight: 8,
+        marginBottom: 8,
+        backgroundColor: 'transparent',
     },
     navItemActive: {
         backgroundColor: '#2a2a2a',
