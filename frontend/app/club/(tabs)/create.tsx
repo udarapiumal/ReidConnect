@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -9,6 +11,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -29,7 +32,10 @@ export default function CreatePostScreen() {
   const [selectedImages, setSelectedImages] = useState([]);
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { clubDetails } = useClub();
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const { clubDetails, token } = useClub();
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState(null);
 
   // Request permissions on component mount
   useEffect(() => {
@@ -40,6 +46,35 @@ export default function CreatePostScreen() {
       }
     })();
   }, []);
+
+  const fetchEventsByClubId = async (clubId, token, setEvents, setEventsLoading) => {
+  if (!clubId || !token) {
+    console.warn("Missing clubId or token");
+    return;
+  }
+
+  setEventsLoading(true);
+  try {
+    const response = await axios.get(`${BASE_URL}/api/events/club/${clubId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    setEvents(Array.isArray(response.data) ? response.data : []);
+  } catch (err) {
+    console.error("❌ Failed to load events:", err);
+    setEvents([]);
+  } finally {
+    setEventsLoading(false);
+  }
+};
+
+
+
+  // Load events when component mounts
+  useEffect(() => {
+    fetchEventsByClubId(clubDetails?.id, token, setEvents, setEventsLoading);
+  }, [clubDetails, token]);
+
 
   const pickImages = async () => {
     try {
@@ -75,74 +110,63 @@ export default function CreatePostScreen() {
     setSelectedImages(reordered);
   };
 
+  const handleSharePost = async () => {
+    setIsLoading(true);
     
+    try {
+      const token = await AsyncStorage.getItem("token");
+      console.log("🪪 Fetched token from storage:", token);
 
+      const formData = new FormData();
+      formData.append("clubId", clubDetails.id.toString());
+      formData.append("description", description);
+      if (selectedEventId) {
+        formData.append("eventId", selectedEventId.toString());
+      }
 
-const handleSharePost = async () => {
-  setIsLoading(true);
-  
-  try {
-    const token = await AsyncStorage.getItem("token");
-    console.log("🪪 Fetched token from storage:", token);
+      console.log("🖼 Selected images count:", selectedImages.length);
 
-    const formData = new FormData();
-    formData.append("clubId", clubDetails.id.toString());
-    formData.append("description", description);
-
-    console.log("🖼 Selected images count:", selectedImages.length);
-
-    // ✅ Method 1: Simple object approach (most common)
-    selectedImages.forEach((image, index) => {
-      formData.append("media", {
-        uri: image.uri,
-        name: `photo_${index}.jpg`,
-        type: "image/jpeg",
+      selectedImages.forEach((image, index) => {
+        formData.append("media", {
+          uri: image.uri,
+          name: `photo_${index}.jpg`,
+          type: "image/jpeg",
+        });
+        console.log(`📎 Attached image ${index}:`, image.uri);
       });
-      console.log(`📎 Attached image ${index}:`, image.uri);
-    });
 
-    // ✅ Debug: Try to log FormData (might not work in React Native)
-    console.log("📤 Attempting to send FormData with", selectedImages.length, "files");
+      const response = await fetch(`${BASE_URL}/api/posts`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Server error:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
 
-    const response = await fetch(`${BASE_URL}/api/posts`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        // Don't set Content-Type - let the system handle it
-      },
-      body: formData,
-    });
-
-    console.log("📡 Response status:", response.status);
-    console.log("📡 Response headers:", response.headers);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Server error:", errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      const result = await response.text();
+      console.log("Server response:", result);
+      Alert.alert("Success", "Post created successfully!");
+      
+      // Reset form and navigate back
+      setDescription('');
+      setSelectedImages([]);
+      setSelectedEventId(null);
+      setStep(1);
+      navigation.goBack();
+      
+    } catch (error) {
+      console.error("Error creating post:", error);
+      Alert.alert("Error", error.message || "Failed to create post");
+    } finally {
+      setIsLoading(false);
     }
-
-    const result = await response.text();
-    console.log("✅ Server response:", result);
-    Alert.alert("✅ Success", "Post created successfully!");
-    
-    // Reset form and navigate back
-    setDescription('');
-    setSelectedImages([]);
-    setStep(1);
-    navigation.goBack();
-    
-  } catch (error) {
-    console.error("❌ Error creating post:", error);
-    Alert.alert("Error", error.message || "Failed to create post");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
+  };
 
   const renderImageItem = ({ item, index }) => (
     <View style={styles.imageContainer}>
@@ -255,6 +279,43 @@ const handleSharePost = async () => {
             <Text style={styles.charCount}>{description.length}/500</Text>
           </View>
 
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>
+              Link to an Event (optional)
+              {eventsLoading && <Text style={styles.loadingText}> - Loading...</Text>}
+            </Text>
+            
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedEventId}
+                onValueChange={(itemValue) => {
+                  setSelectedEventId(itemValue);
+                }}
+                style={styles.picker}
+                dropdownIconColor="#666"
+                enabled={!eventsLoading}
+              >
+                <Picker.Item 
+                  label={eventsLoading ? "Loading events..." : "No event selected"} 
+                  value={null}
+                  color="#666"
+                />
+                {events.map(event => (
+                  <Picker.Item 
+                    key={event.id} 
+                    label={event.name || `Event ${event.id}`} 
+                    value={event.id}
+                    color="#666"
+                  />
+                ))}
+              </Picker>
+            </View>
+            
+            {events.length === 0 && !eventsLoading && (
+              <Text style={styles.noEventsText}>No events available for this club</Text>
+            )}
+          </View>
+
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
               style={styles.backButton} 
@@ -292,9 +353,9 @@ const handleSharePost = async () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-        flex: 1,
-        backgroundColor: "#151718",
-    },
+    flex: 1,
+    backgroundColor: "#151718",
+  },
   container: { 
     flex: 1, 
     backgroundColor: '#0a0a0a' 
@@ -446,6 +507,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
+  loadingText: {
+    color: '#666',
+    fontWeight: '400',
+    fontSize: 12,
+  },
   input: {
     backgroundColor: '#1a1a1a',
     color: '#fff',
@@ -463,6 +529,41 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     textAlign: 'right',
+    marginTop: 4,
+  },
+  // Enhanced Picker Styles
+  pickerContainer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  picker: {
+    color: '#1a1a1a',
+    backgroundColor: 'transparent',
+    height: 56,
+    ...Platform.select({
+      ios: {
+        paddingHorizontal: 16,
+      },
+      android: {
+        paddingHorizontal: 12,
+      },
+    }),
+  },
+  pickerIconContainer: {
+    position: 'absolute',
+    right: 16,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    pointerEvents: 'none',
+  },
+  noEventsText: {
+    color: '#666',
+    fontSize: 12,
+    fontStyle: 'italic',
     marginTop: 4,
   },
   buttonContainer: {

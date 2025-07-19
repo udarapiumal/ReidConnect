@@ -5,13 +5,17 @@ import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.entity.*;
+import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.mapper.EventMapper;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.EventService;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +31,8 @@ public class EventServiceImpl implements EventService {
     private final SlotRepository slotRepository;
     private final EventYearRepository eventYearRepository;
     private final EventFacultyRepository eventFacultyRepository;
+    private final UserRepository userRepository;
+    private final EventAttendanceRepository attendanceRepository;
 
     public EventServiceImpl(EventRepository eventRepository,
                             EventSlotRepository eventSlotRepository,
@@ -34,7 +40,9 @@ public class EventServiceImpl implements EventService {
                             VenueRepository venueRepository,
                             SlotRepository slotRepository,
                             EventYearRepository eventYearRepository,
-                            EventFacultyRepository eventFacultyRepository) {
+                            EventFacultyRepository eventFacultyRepository,
+                            UserRepository userRepository,
+                            EventAttendanceRepository eventAttendanceRepository) {
         this.eventRepository = eventRepository;
         this.eventSlotRepository = eventSlotRepository;
         this.clubRepository = clubRepository;
@@ -42,6 +50,8 @@ public class EventServiceImpl implements EventService {
         this.slotRepository = slotRepository;
         this.eventYearRepository = eventYearRepository;
         this.eventFacultyRepository = eventFacultyRepository;
+        this.userRepository = userRepository;
+        this.attendanceRepository = eventAttendanceRepository;
     }
 
     @Override
@@ -148,6 +158,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventResponseDto> getEventsByClubId(Long clubId) {
+        List<Event> events = eventRepository.findAllByClub_IdOrderByCreatedAtDesc(clubId);
+        return events.stream()
+                .map(EventMapper::mapToEventResponseDto)
+                .toList();
+    }
+
+
+    @Override
     public List<EventResponseDto> getAllEvents() {
         return eventRepository.findAll().stream()
                 .map(event -> {
@@ -184,4 +203,87 @@ public class EventServiceImpl implements EventService {
                 })
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void markAttendance(Long eventId, Long userId, EventAttendanceStatus status) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // If already marked, do not allow duplicate
+        if (attendanceRepository.findByEventAndUser(event, user).isPresent()) {
+            throw new RuntimeException("Attendance already exists. Use update instead.");
+        }
+
+        EventAttendance attendance = new EventAttendance();
+        attendance.setEvent(event);
+        attendance.setUser(user);
+        attendance.setStatus(status);
+
+        attendanceRepository.save(attendance);
+    }
+
+    @Override
+    public void updateAttendanceStatus(Long eventId, Long userId, EventAttendanceStatus newStatus) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        EventAttendance attendance = attendanceRepository.findByEventAndUser(event, user)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found"));
+
+        attendance.setStatus(newStatus);
+        attendanceRepository.save(attendance);
+    }
+
+    @Override
+    public void removeAttendance(Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        attendanceRepository.deleteByEventAndUser(event, user);
+    }
+    @Override
+    public long countGoingAttendance(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.GOING);
+    }
+
+    @Override
+    public long countInterestedAttendance(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.INTERESTED);
+    }
+
+    @Override
+    public long countAllEvents() {
+        return eventRepository.count();
+    }
+
+    @Override
+    public long countEventsInLast28Days() {
+        LocalDate today = LocalDate.now();
+        LocalDate cutoffDate = today.minusDays(28);
+        return eventRepository.countByCreatedAtAfter(cutoffDate.atStartOfDay());
+    }
+
+    @Override
+    public long countAllEventsByClubId(Long clubId) {
+        return eventRepository.countByClub_Id(clubId);
+    }
+
+    @Override
+    public long countRecentEventsByClubId(Long clubId) {
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(28);
+        return eventRepository.countByClub_IdAndCreatedAtAfter(clubId, fromDate);
+    }
+
+
+
 }

@@ -26,5 +26,4 @@ public class EventUpdateDto {
     private List<Long> slotIds;
     private List<Years> targetYears;
     private List<Faculties> targetFaculties;
-
 }

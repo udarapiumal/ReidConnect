@@ -39,6 +39,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
                         .requestMatchers("/api/posts/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
+                        .requestMatchers("/api/venues/**").authenticated()
                         .requestMatchers("/api/comments/**").authenticated()
                         .requestMatchers("/lost/**").authenticated()
                         .requestMatchers("/users/**").authenticated()

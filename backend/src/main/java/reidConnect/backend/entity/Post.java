@@ -33,4 +33,8 @@ public class Post {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @ManyToOne(optional = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "event_id", referencedColumnName = "id", nullable = true)
+    private Event event;
+
 }

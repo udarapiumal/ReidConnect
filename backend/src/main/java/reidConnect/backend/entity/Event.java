@@ -37,8 +37,8 @@ public class Event {
     @Column(name = "description", length = 500)
     private String description;
 
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
-    @JoinColumn(name = "venue_id", referencedColumnName = "id")
+    @ManyToOne(optional = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "venue_id", referencedColumnName = "id", nullable = true)
     private Venue venue;
 
     @Column(name = "venue_name")
@@ -55,7 +55,6 @@ public class Event {
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EventFaculty> targetFaculties = new ArrayList<>();
-
 
     @CreationTimestamp
     @Column(updatable = false, nullable = false)

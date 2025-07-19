@@ -23,6 +23,9 @@ public class Venue {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "faculty")
+    private String faculty;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "capacity_range")
     private CapacityRange capacityRange;
