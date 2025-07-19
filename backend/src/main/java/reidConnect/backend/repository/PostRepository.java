@@ -15,4 +15,6 @@ public interface PostRepository extends JpaRepository<Post, Long>
 
     // Find top 3 most recent posts for a club
     List<Post> findTop3ByClub_IdOrderByCreatedAtDesc(Long clubId);
+
+    List<Post> findByEventId(Long eventId);
 }

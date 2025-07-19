@@ -18,7 +18,7 @@ public class ClubController {
     private ClubService clubService;
 
     //Build Add Club REST API
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     @PostMapping
     public ResponseEntity<ClubDto> createClub(@RequestBody ClubDto clubDto) {
         ClubDto savedClub = clubService.createClub(clubDto);
@@ -26,7 +26,7 @@ public class ClubController {
     }
 
     //Build Get Club REST API
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     @GetMapping("{id}")
     public ResponseEntity<ClubDto> getClubById(@PathVariable("id") Long clubId) {
         ClubDto clubDto = clubService.getClubById(clubId);
@@ -34,7 +34,7 @@ public class ClubController {
     }
 
     //Build Get Club by user_id REST API
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     @GetMapping("/by-user/{userId}")
     public ResponseEntity<ClubDto> getClubByUserId(@PathVariable("userId") Long userId) {
         ClubDto clubDto = clubService.getByUserId(userId);
@@ -43,7 +43,7 @@ public class ClubController {
 
 
     //Build Get All Clubs REST API
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     @GetMapping
     public ResponseEntity<Iterable<ClubDto>> getAllClubs() {
         List<ClubDto> clubs = clubService.getAllClubs();

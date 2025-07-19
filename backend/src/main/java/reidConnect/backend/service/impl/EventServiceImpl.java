@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
@@ -155,6 +156,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventResponseDto> getEventsByClubId(Long clubId) {
+        List<Event> events = eventRepository.findAllByClub_IdOrderByCreatedAtDesc(clubId);
+        return events.stream()
+                .map(EventMapper::mapToEventResponseDto)
+                .toList();
+    }
+
+
+    @Override
     public List<EventResponseDto> getAllEvents() {
         return eventRepository.findAll().stream()
                 .map(event -> {
@@ -235,4 +245,18 @@ public class EventServiceImpl implements EventService {
 
         attendanceRepository.deleteByEventAndUser(event, user);
     }
+    @Override
+    public long countGoingAttendance(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.GOING);
+    }
+
+    @Override
+    public long countInterestedAttendance(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.INTERESTED);
+    }
+
 }

@@ -35,7 +35,8 @@ public class PostController {
     public ResponseEntity<String> createPost(
             @RequestParam("clubId") Long clubId,
             @RequestParam("description") String description,
-            @RequestParam(value = "media", required = false) List<MultipartFile> mediaFiles) {
+            @RequestParam(value = "media", required = false) List<MultipartFile> mediaFiles,
+            @RequestParam(value = "eventId", required = false) Long eventId) {
 
         try {
             // 1. Save files to /static/uploads/ and collect their paths
@@ -60,12 +61,11 @@ public class PostController {
                         continue;
                     }
 
-                    // Give it a unique filename to avoid collisions
                     String uniqueFileName = UUID.randomUUID() + "_" + originalFilename;
                     Path filePath = uploadDir.resolve(uniqueFileName);
                     Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-                    savedFileNames.add("uploads/" + uniqueFileName); // relative path for access
+                    savedFileNames.add("uploads/" + uniqueFileName);
                     System.out.println("💾 Saved file: " + uniqueFileName);
                 }
             }
@@ -74,7 +74,8 @@ public class PostController {
             PostCreateDto dto = new PostCreateDto();
             dto.setClubId(clubId);
             dto.setDescription(description);
-            dto.setMediaPaths(savedFileNames); // set string paths
+            dto.setMediaPaths(savedFileNames);
+            dto.setEventId(eventId); // ✅ Set eventId in DTO
 
             postService.createPost(dto);
 
@@ -89,6 +90,7 @@ public class PostController {
     }
 
 
+
     //Get all posts
     @PreAuthorize("hasRole('CLUB')")
     @GetMapping
@@ -98,7 +100,7 @@ public class PostController {
     }
 
     //Get a post by ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
         PostResponseDto post = postService.getPostById(id);
@@ -106,7 +108,7 @@ public class PostController {
     }
 
     // Get all posts by club ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<PostResponseDto>> getPostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getPostsByClubId(clubId);
@@ -161,6 +163,13 @@ public class PostController {
     public ResponseEntity<Long> getLikeCount(@PathVariable Long postId) {
         long count = postService.getLikeCount(postId);
         return ResponseEntity.ok(count);
+    }
+
+    // Get all posts related to an event
+    @GetMapping("/event/{eventId}")
+    public ResponseEntity<List<PostResponseDto>> getPostsByEventId(@PathVariable Long eventId) {
+        List<PostResponseDto> posts = postService.getPostsByEventId(eventId);
+        return ResponseEntity.ok(posts);
     }
 
 

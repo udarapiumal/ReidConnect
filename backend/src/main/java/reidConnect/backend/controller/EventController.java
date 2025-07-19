@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
@@ -173,6 +174,15 @@ public class EventController {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
 
+    // Get all events by club ID
+    @PreAuthorize("hasAnyRole('CLUB', 'STUDENT', 'UNION')")
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<EventResponseDto>> getEventsByClubId(@PathVariable Long clubId) {
+        List<EventResponseDto> events = eventService.getEventsByClubId(clubId);
+        return ResponseEntity.ok(events);
+    }
+
+
     // ✅ GET EVENT BY ID
     @GetMapping("/{id}")
     public ResponseEntity<EventResponseDto> getEventById(@PathVariable Long id) {
@@ -238,6 +248,21 @@ public class EventController {
         eventService.removeAttendance(eventId, userId);
         return ResponseEntity.ok("✅ Attendance removed");
     }
+
+    // Get count of GOING attendees
+    @GetMapping("/{eventId}/attendance/going")
+    public ResponseEntity<Long> getGoingCount(@PathVariable Long eventId) {
+        long count = eventService.countGoingAttendance(eventId);
+        return ResponseEntity.ok(count);
+    }
+
+    // Get count of INTERESTED attendees
+    @GetMapping("/{eventId}/attendance/interested")
+    public ResponseEntity<Long> getInterestedCount(@PathVariable Long eventId) {
+        long count = eventService.countInterestedAttendance(eventId);
+        return ResponseEntity.ok(count);
+    }
+
 
 
 }

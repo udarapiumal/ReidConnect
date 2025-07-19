@@ -93,7 +93,6 @@ export default function ClubDashboardTab() {
             );
 
             setLatestPosts(postsWithStats);
-            console.log("Latest posts with stats:", postsWithStats);
         } catch (error) {
             console.error("Error fetching latest posts:", error);
         } finally {

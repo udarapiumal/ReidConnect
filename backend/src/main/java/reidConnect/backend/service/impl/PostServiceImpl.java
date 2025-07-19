@@ -22,6 +22,8 @@ public class PostServiceImpl implements PostService {
     private final ClubRepository clubRepository;
     private final PostLikeRepository PostLikeRepository;
     private final UserRepository UserRepository;
+    private final EventRepository eventRepository;
+
 
     @Override
     @Transactional
@@ -29,13 +31,19 @@ public class PostServiceImpl implements PostService {
         Club club = clubRepository.findById(dto.getClubId())
                 .orElseThrow(() -> new RuntimeException("Club not found"));
 
-        Post post = PostMapper.mapToPost(dto, club);
+        Event event = null;
+        if (dto.getEventId() != null) {
+            event = eventRepository.findById(dto.getEventId())
+                    .orElseThrow(() -> new RuntimeException("Event not found"));
+        }
+
+        Post post = PostMapper.mapToPost(dto, club, event);
         Post savedPost = postRepository.save(post);
 
         List<Post_Media> mediaList = PostMapper.mapToPostMediaList(dto.getMediaPaths(), savedPost);
-
         postMediaRepository.saveAll(mediaList);
     }
+
 
     @Override
     public List<PostResponseDto> getAllPosts() {
@@ -129,16 +137,23 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        // Update fields
+        Event event = null;
+        if (dto.getEventId() != null) {
+            event = eventRepository.findById(dto.getEventId())
+                    .orElseThrow(() -> new RuntimeException("Event not found"));
+        }
+
+        // Update post-fields including event
         post.setDescription(dto.getDescription());
+        post.setEvent(event); // ✅ add this line to update event reference
         postRepository.save(post);
 
         // Replace old media with new media
         postMediaRepository.deleteAllByPost_Id(post.getId());
-
         List<Post_Media> mediaList = PostMapper.mapToPostMediaList(dto.getMediaPaths(), post);
         postMediaRepository.saveAll(mediaList);
     }
+
 
     @Override
     @Transactional
@@ -149,6 +164,19 @@ public class PostServiceImpl implements PostService {
         // Then delete post
         postRepository.deleteById(id);
     }
+
+    @Override
+    @Transactional
+    public List<PostResponseDto> getPostsByEventId(Long eventId) {
+        List<Post> posts = postRepository.findByEventId(eventId);
+        return posts.stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+    }
+
 
 }
 

@@ -27,5 +27,4 @@ public class EventRequestDto {
     private List<Long> slotIds;  // required for selecting time slots
     private List<Years> targetYears;
     private List<Faculties> targetFaculties;
-
 }

@@ -70,4 +70,30 @@ public class EventMapper {
                 faculties
         );
     }
+
+    public static EventResponseDto mapToEventResponseDto(Event event) {
+        List<Years> years = event.getTargetYears().stream()
+                .map(EventYear::getYear)
+                .collect(Collectors.toList());
+
+        List<Faculties> faculties = event.getTargetFaculties().stream()
+                .map(EventFaculty::getFaculty)
+                .collect(Collectors.toList());
+
+        return new EventResponseDto(
+                event.getId(),
+                event.getClub().getId(),
+                event.getName(),
+                event.getDescription(),
+                event.getVenue() != null ? event.getVenue().getId() : null,
+                event.getVenueName(),
+                event.getDate(),
+                event.getImagePath(),
+                new ArrayList<>(), // or pass real slot IDs if available
+                event.getCreatedAt(),
+                years,
+                faculties
+        );
+    }
+
 }
