@@ -4,17 +4,22 @@ import Login from './components/Login';
 import SearchUser from './components/union/SearchUser';
 import Sidebar from './components/union/Sidebar'; // Import Navbar
 import AcademicDashboard from './components/academic/Dashboard';
+import LecturerManagement from './components/academic/LecturerManagement';
+import EventSchedule from './components/academic/EventSchedule';
+import HallBookings from './components/academic/HallBookings';
+import Reports from './components/academic/Reports';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import UnionDashboard from './components/union/Dashboard';
 import LostItemsGallery from './components/union/LostandFoundPosts';
 import LostItemForm from './components/union/LostandFound';
 import ClubGallery from './components/union/ClubGallery';
 import ClubDetail from './components/union/ClubDetail'; // Import the new ClubDetail component
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 // Wrapper to conditionally render Navbar
 function AppWrapper() {
   const location = useLocation();
-  const hideSidebarPaths = ['/']; // Add more paths if needed
+  const hideSidebarPaths = ['/', '/academic/dashboard', '/academic/lecturers', '/academic/events', '/academic/bookings', '/academic/reports']; // Add more paths if needed
   const showSidebar = !hideSidebarPaths.includes(location.pathname);
 
   return (
@@ -29,6 +34,10 @@ function AppWrapper() {
         <Route path="/union/Clubmanagement" element={<ClubGallery/>}/>
         <Route path="/club/:clubId" element={<ClubDetail/>}/> {/* New route for club detail */}
         <Route path="/academic/dashboard" element={<AcademicDashboard />} />
+        <Route path="/academic/lecturers" element={<LecturerManagement />} />
+        <Route path="/academic/events" element={<EventSchedule />} />
+        <Route path="/academic/bookings" element={<HallBookings />} />
+        <Route path="/academic/reports" element={<Reports />} />
       </Routes>
     </>
   );
