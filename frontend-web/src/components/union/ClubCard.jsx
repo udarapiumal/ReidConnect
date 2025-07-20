@@ -1,53 +1,70 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../css/ClubCard.css';
 
 const ClubCard = ({ club, isSelected, onSelect }) => {
-  // Helper function to get status badge
-  const getStatusBadge = (status) => {
-    const statusClass = status ? status.toLowerCase() : 'active';
-    return (
-      <span className={`status-badge ${statusClass}`}>
-        {status || 'Active'}
-      </span>
-    );
+  const navigate = useNavigate();
+
+  // Helper function to truncate bio text
+  const truncateText = (text, maxLength = 50) => {
+    if (!text) return 'No bio available';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
-  // Helper function to format date
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
+  // Helper function to format website URL
+  const formatWebsiteUrl = (url) => {
+    if (!url) return null;
+        
+    // Add https:// if no protocol is specified
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return `https://${url}`;
+    }
+    return url;
   };
 
-  // Helper function to get location flag (you can expand this with more flags)
-  const getLocationFlag = (location) => {
-    const flags = {
-      'Stockholm': '🇸🇪',
-      'Miami': '🇺🇸',
-      'Kyiv': '🇺🇦',
-      'Ottawa': '🇨🇦',
-      'São Paulo': '🇧🇷',
-      'London': '🇬🇧',
-      'default': '🌍'
-    };
-    return flags[location] || flags.default;
+  // Helper function to get domain name from URL
+  const getDomainName = (url) => {
+    if (!url) return 'No website';
+    try {
+      const formattedUrl = formatWebsiteUrl(url);
+      const domain = new URL(formattedUrl).hostname;
+      return domain.replace('www.', '');
+    } catch {
+      return url;
+    }
+  };
+
+  // Handle row click to navigate to club detail page
+  const handleRowClick = (e) => {
+    // Prevent navigation if clicking on checkbox, links, or interactive elements
+    if (e.target.type === 'checkbox' || e.target.tagName === 'A' || e.target.closest('input')) {
+      return;
+    }
+    navigate(`/club/${club.id}`);
+  };
+
+  // Handle checkbox click separately
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation();
+    onSelect();
   };
 
   return (
-    <tr className={`club-row ${isSelected ? 'selected' : ''}`}>
+    <tr 
+      className={`club-row ${isSelected ? 'selected' : ''}`}
+      onClick={handleRowClick}
+      style={{ cursor: 'pointer' }}
+    >
       <td className="checkbox-col">
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={onSelect}
+          onChange={handleCheckboxClick}
+          onClick={handleCheckboxClick}
           className="table-checkbox"
         />
       </td>
-      
+            
       <td className="name-col">
         <div className="club-name-cell">
           <div className="club-avatar">
@@ -61,42 +78,56 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
               }}
             />
           </div>
-          <span className="club-name">{club.club_name || 'Club Name'}</span>
+          <span className="club-name">{club.club_name || 'Unnamed Club'}</span>
         </div>
       </td>
-      
-      <td>
-        <span className="club-category">{club.category || 'General'}</span>
+            
+      <td className="website-col">
+        {club.website ? (
+          <a 
+            href={formatWebsiteUrl(club.website)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="website-link"
+            title={club.website}
+            onClick={(e) => e.stopPropagation()} // Prevent row click when clicking link
+          >
+            {getDomainName(club.website)}
+          </a>
+        ) : (
+          <span className="no-website">No website</span>
+        )}
       </td>
-      
-      <td>
-        <div className="location-cell">
-          <span className="location-flag">{getLocationFlag(club.location)}</span>
-          {club.website ? (
-            <a 
-              href={club.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="website-link"
-            >
-              Visit Site
-            </a>
+            
+      <td className="bio-col">
+        <span 
+          className="club-bio"
+          title={club.bio || 'No bio available'}
+        >
+          {truncateText(club.bio)}
+        </span>
+      </td>
+            
+      <td className="owner-col">
+        <div className="owner-cell">
+          {club.user ? (
+            <>
+              <span className="owner-name">
+                {club.user.firstName && club.user.lastName
+                  ? `${club.user.firstName} ${club.user.lastName}`
+                  : club.user.username || club.user.email || 'Unknown User'
+                }
+              </span>
+              {club.user.email && (
+                <span className="owner-email" title={club.user.email}>
+                  {club.user.email}
+                </span>
+              )}
+            </>
           ) : (
-            <span className="no-website">No website</span>
+            <span className="no-owner">No owner info</span>
           )}
         </div>
-      </td>
-      
-      <td>
-        <span className="member-count">{club.member_count || '0'}</span>
-      </td>
-      
-      <td>
-        <span className="created-date">{formatDate(club.created_at)}</span>
-      </td>
-      
-      <td>
-        {getStatusBadge(club.status)}
       </td>
     </tr>
   );

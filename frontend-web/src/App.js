@@ -9,7 +9,7 @@ import UnionDashboard from './components/union/Dashboard';
 import LostItemsGallery from './components/union/LostandFoundPosts';
 import LostItemForm from './components/union/LostandFound';
 import ClubGallery from './components/union/ClubGallery';
-
+import ClubDetail from './components/union/ClubDetail'; // Import the new ClubDetail component
 
 // Wrapper to conditionally render Navbar
 function AppWrapper() {
@@ -24,9 +24,10 @@ function AppWrapper() {
         <Route path="/" element={<Login />} />
         <Route path="/union/Profilemanagement" element={<SearchUser />} />
         <Route path="/union/LostandFound" element={<LostItemsGallery />} />
-         <Route path="/union/LostandFoundForm" element={<LostItemForm/>} />
+        <Route path="/union/LostandFoundForm" element={<LostItemForm/>} />
         <Route path="/union/dashboard" element={<UnionDashboard/>} />
         <Route path="/union/Clubmanagement" element={<ClubGallery/>}/>
+        <Route path="/club/:clubId" element={<ClubDetail/>}/> {/* New route for club detail */}
         <Route path="/academic/dashboard" element={<AcademicDashboard />} />
       </Routes>
     </>
