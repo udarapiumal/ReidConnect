@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,11 +31,15 @@ public class Club {
     @Column(name = "profile_picture")
     private String profile_picture;
 
+    @Column(name = "cover_picture")
+    private String cover_picture;
+
     @Column(name = "bio")
     private String bio;
 
     @OneToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
+
 
 }

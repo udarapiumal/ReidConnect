@@ -5,9 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
-import reidConnect.backend.dto.LoginUserDto;
-import reidConnect.backend.dto.RegisterUserDto;
-import reidConnect.backend.dto.VerifyUserDto;
+import reidConnect.backend.dto.*;
+import reidConnect.backend.entity.Club;
 import reidConnect.backend.entity.User;
 import reidConnect.backend.responses.LoginResponse;
 import reidConnect.backend.service.AuthenticationService;
@@ -112,4 +111,68 @@ public class AuthenticationController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PostMapping(value = "/register-club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> registerClub(
+            @RequestPart("username") String username,
+            @RequestPart("email") String email,
+            @RequestPart("password") String password,
+            @RequestPart("clubName") String clubName,
+            @RequestPart("website") String website,
+            @RequestPart("bio") String bio,
+            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture,
+            @RequestPart(value = "coverPicture", required = false) MultipartFile coverPicture,
+            HttpServletRequest request) {
+
+        try {
+            // Upload directory
+            String uploadPath = new java.io.File("src/main/resources/static/uploads").getAbsolutePath();
+
+            // Save profile picture
+            String profilePicPath = null;
+            if (profilePicture != null && !profilePicture.isEmpty()) {
+                String profilePicName = java.util.UUID.randomUUID() + "_" + profilePicture.getOriginalFilename();
+                java.nio.file.Path profileFilePath = java.nio.file.Paths.get(uploadPath, profilePicName);
+                java.nio.file.Files.write(profileFilePath, profilePicture.getBytes());
+                profilePicPath = "/uploads/" + profilePicName;
+            }
+
+            // Save cover picture
+            String coverPicPath = null;
+            if (coverPicture != null && !coverPicture.isEmpty()) {
+                String coverPicName = java.util.UUID.randomUUID() + "_" + coverPicture.getOriginalFilename();
+                java.nio.file.Path coverFilePath = java.nio.file.Paths.get(uploadPath, coverPicName);
+                java.nio.file.Files.write(coverFilePath, coverPicture.getBytes());
+                coverPicPath = "/uploads/" + coverPicName;
+            }
+
+            // Create and save User
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password));
+            user.setRole("club");
+            user.setEnabled(false);
+            user.setVerificationCode(null);
+            user.setVerificationExpiration(null);
+            User savedUser = authenticationService.saveUser(user);
+
+            // Create and save Club
+            Club club = new Club();
+            club.setClub_name(clubName);
+            club.setWebsite(website);
+            club.setBio(bio);
+            club.setProfile_picture(profilePicPath);
+            club.setCover_picture(coverPicPath);
+            club.setUser(savedUser);
+
+            RegisterClubDto savedClub = authenticationService.saveClub(club);
+            return ResponseEntity.ok(savedClub);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error registering club: " + e.getMessage());
+        }
+    }
+
+
 }

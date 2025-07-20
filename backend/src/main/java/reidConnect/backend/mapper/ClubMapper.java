@@ -13,6 +13,7 @@ public class ClubMapper {
                 club.getUser().getId(),
                 club.getWebsite(),
                 club.getProfile_picture(),
+                club.getCover_picture(),
                 club.getBio()
         );
     }
@@ -23,6 +24,7 @@ public class ClubMapper {
                 clubDto.getClubName(),
                 clubDto.getWebsite(),
                 clubDto.getProfilePicture(),
+                clubDto.getCoverPicture(),
                 clubDto.getBio(),
                 user
         );

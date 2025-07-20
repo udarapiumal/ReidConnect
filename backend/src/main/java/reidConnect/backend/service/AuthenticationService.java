@@ -1,10 +1,10 @@
 package reidConnect.backend.service;
 
-import reidConnect.backend.dto.LoginUserDto;
-import reidConnect.backend.dto.RegisterUserDto;
-import reidConnect.backend.dto.VerifyUserDto;
+import reidConnect.backend.dto.*;
+import reidConnect.backend.entity.Club;
 import reidConnect.backend.entity.Student;
 import reidConnect.backend.entity.User;
+import reidConnect.backend.repository.ClubRepository;
 import reidConnect.backend.repository.StudentRepository;
 import reidConnect.backend.repository.UserRepository;
 import jakarta.mail.MessagingException;
@@ -30,19 +30,21 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final StudentRepository studentRepository;
+    private final ClubRepository clubRepository;
 
     public AuthenticationService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             EmailService emailService,
-            StudentRepository studentRepository
+            StudentRepository studentRepository, ClubRepository clubRepository
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.emailService = emailService;
         this.studentRepository = studentRepository;
+        this.clubRepository = clubRepository;
     }
 
     public User signup(RegisterUserDto input) {
@@ -160,4 +162,23 @@ public class AuthenticationService {
         int code = random.nextInt(900000) + 100000;
         return String.valueOf(code);
     }
+
+    public User saveUser(User user) {
+        return userRepository.save(user);
+    }
+
+    public RegisterClubDto saveClub(Club club) {
+        Club saved = clubRepository.save(club);
+        RegisterClubDto dto = new RegisterClubDto();
+        dto.setUsername(saved.getUser().getUsername());
+        dto.setEmail(saved.getUser().getEmail());
+        dto.setClubName(saved.getClub_name());
+        dto.setWebsite(saved.getWebsite());
+        dto.setBio(saved.getBio());
+        dto.setProfilePicture(saved.getProfile_picture());
+        dto.setCoverPicture(saved.getCover_picture());
+        return dto;
+    }
+
+
 }
