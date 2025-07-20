@@ -11,6 +11,7 @@ import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
@@ -247,6 +248,15 @@ public class EventController {
             @PathVariable Long eventId) {
         EventAttendanceCountDto counts = eventService.getEventAttendanceCounts(eventId);
         return ResponseEntity.ok(counts);
+    }
+
+    // Get User's Attendance Status for an Event
+    @GetMapping("/{eventId}/attendance/user/{userId}")
+    public ResponseEntity<UserEventAttendanceDto> getUserEventAttendanceStatus(
+            @PathVariable Long eventId,
+            @PathVariable Long userId) {
+        UserEventAttendanceDto userAttendance = eventService.getUserEventAttendanceStatus(eventId, userId);
+        return ResponseEntity.ok(userAttendance);
     }
 
 }

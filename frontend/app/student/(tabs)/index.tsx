@@ -12,6 +12,8 @@ import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { jwtDecode } from "jwt-decode";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { EventCard, EventData } from '@/components/EventCard';
 import { PostCard, PostData } from '@/components/PostCard';
@@ -20,48 +22,96 @@ import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { BASE_URL } from '@/constants/config';
 
+interface UserType {
+  id: string;
+  sub: string;
+  role: string;
+}
+
 // API function to fetch events
 const getAllEvents = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/api/events`);
     console.log('Events:', response.data);
-    return response.data;
+    
+    // Get user info for status checking
+    const token = await AsyncStorage.getItem("token");
+    let userId = null;
+    if (token) {
+      try {
+        const decoded = jwtDecode<UserType>(token);
+        userId = decoded.id;
+      } catch (error) {
+        console.error('Failed to decode token:', error);
+      }
+    }
+    
+    // Fetch attendance counts and user status for each event
+    const eventsWithCounts = await Promise.all(
+      response.data.map(async (event: any) => {
+        try {
+          // Fetch attendance counts
+          const countsResponse = await axios.get(`${BASE_URL}/api/events/${event.id}/attendance/counts`);
+          const rawCounts = countsResponse.data;
+          console.log(`Raw counts for event ${event.id}:`, rawCounts);
+          
+          // Map API response to expected format
+          const mappedCounts = {
+            going: rawCounts.goingCount || 0,
+            interested: rawCounts.interestedCount || 0
+          };
+          console.log(`Mapped counts for event ${event.id}:`, mappedCounts);
+          
+          // Fetch user status if logged in
+          let userStatus = 'none';
+          if (userId && token) {
+            try {
+              const userStatusResponse = await axios.get(
+                `${BASE_URL}/api/events/${event.id}/attendance/user/${userId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                }
+              );
+              const responseData = userStatusResponse.data;
+              const rawStatus = responseData.status;
+              userStatus = rawStatus ? rawStatus.toLowerCase() : 'none';
+              console.log(`User status for event ${event.id}:`, rawStatus, '-> normalized:', userStatus);
+            } catch (error: any) {
+              if (error.response?.status === 404) {
+                console.log(`User has not registered for event ${event.id} yet`);
+              } else {
+                console.error(`Failed to fetch user status for event ${event.id}:`, error);
+              }
+              userStatus = 'none';
+            }
+          }
+          
+          return {
+            ...event,
+            ...mappedCounts,
+            statusOfUser: userStatus,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch counts for event ${event.id}:`, error);
+          return {
+            ...event,
+            going: 0,
+            interested: 0,
+            statusOfUser: 'none',
+          };
+        }
+      })
+    );
+    
+    console.log('Events with counts and user status:', eventsWithCounts);
+    return eventsWithCounts;
   } catch (error) {
     console.error('Error fetching events:', error);
     throw error;
   }
 };
-
-// Mock data for fallback
-// const fallbackEvents: EventData[] = [
-//   {
-//     id: '1',
-//     title: 'Mind Matters - Phase 2',
-//     category: 'Wellness',
-//     date: 'Today, 10:30 AM',
-//     location: 'Google Meet',
-//     image: require('@/assets/images/event1.png'),
-//     club: 'Rotaract Club of UOC',
-//   },
-//   {
-//     id: '2',
-//     title: "ROTA අවුරුදු '25",
-//     category: 'Cultural',
-//     date: 'Apr 14, 2025',
-//     location: 'University of Colombo',
-//     image: require('@/assets/images/event2.png'),
-//     club: 'Rotaract Club of UOC',
-//   },
-//   {
-//     id: '3',
-//     title: 'Food & Wine Festival',
-//     category: 'Food',
-//     date: 'Jul 22, 2025',
-//     location: 'Downtown Plaza',
-//     image: require('@/assets/images/event2.png'),
-//     club: 'Rotaract Club of UOC',
-//   },
-// ];
 
 const communityPosts: PostData[] = [
   {
@@ -115,7 +165,16 @@ export default function HomePage() {
         
         // Your Next Event - events user is going to or interested in
         const next = eventsData
-          .filter((event: any) => event.statusOfUser === 'going' || event.statusOfUser === 'interested')
+          .filter((event: any) => 
+            event.statusOfUser === 'going' || event.statusOfUser === 'interested'
+          )
+          .sort((a: any, b: any) => {
+            // Prioritize 'going' events over 'interested'
+            if (a.statusOfUser === 'going' && b.statusOfUser === 'interested') return -1;
+            if (a.statusOfUser === 'interested' && b.statusOfUser === 'going') return 1;
+            // Then sort by date
+            return new Date(a.date).getTime() - new Date(b.date).getTime();
+          })
           .slice(0, 5);
         
         // Upcoming Events - events happening soon (sorted by date)
@@ -123,40 +182,44 @@ export default function HomePage() {
           .filter((event: any) => {
             const eventDate = new Date(event.date);
             const now = new Date();
-            return eventDate > now;
+            const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            // Filter for events within the next week
+            return eventDate > now && eventDate < oneWeekFromNow;
           })
           .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 5);
         
-        // Popular Events - events with high engagement
+        // Popular Events - most 5 events with the highest engagement
+        // (interested)
         const popular = eventsData
-          .sort((a: any, b: any) => (b.going + b.interested) - (a.going + a.interested))
+          .filter((event: any) => event.interested > 0)
+          .sort((a: any, b: any) => b.interested - a.interested)
           .slice(0, 5);
-        
-        // Nearby Events - events in specific locations or categories
+
+        // Nearby Events - events in specific venues or categories
         const nearby = eventsData
           .filter((event: any) => 
-            event.location?.toLowerCase().includes('university') ||
-            event.location?.toLowerCase().includes('colombo') ||
-            event.location?.toLowerCase().includes('campus')
+            event.venueName?.toLowerCase().includes('university') ||
+            event.venueName?.toLowerCase().includes('colombo') ||
+            event.venueName?.toLowerCase().includes('campus')
           )
           .slice(0, 5);
         
         // Set state with categorized events, fallback to all events if categories are empty
         setFeaturedEvents(featured.length > 0 ? featured : eventsData.slice(0, 3));
-        setNextEvents(next.length > 0 ? next : eventsData.slice(0, 3));
-        setUpcomingEvents(upcoming.length > 0 ? upcoming : eventsData.slice(0, 5));
-        setPopularEvents(popular.length > 0 ? popular : eventsData.slice(0, 5));
+        setNextEvents(next); // Show empty if no events with user attendance
+        setUpcomingEvents(upcoming);
+        setPopularEvents(popular);
         setNearbyEvents(nearby.length > 0 ? nearby : eventsData.slice(0, 5));
         
       } catch (error) {
-        console.error('Failed to fetch events, using fallback data:', error);
-        // Use fallback data if API fails
-        setFeaturedEvents(fallbackEvents);
-        setNextEvents(fallbackEvents);
-        setUpcomingEvents(fallbackEvents);
-        setPopularEvents(fallbackEvents);
-        setNearbyEvents(fallbackEvents);
+        console.error('Failed to fetch events, using empty arrays:', error);
+        // Use empty arrays if API fails
+        setFeaturedEvents([]);
+        setNextEvents([]);
+        setUpcomingEvents([]);
+        setPopularEvents([]);
+        setNearbyEvents([]);
       } finally {
         setLoading(false);
       }
@@ -165,7 +228,7 @@ export default function HomePage() {
     fetchEvents();
   }, []);
 
-  const handleEventPress = (eventId: string) => {
+  const handleEventPress = (eventId: number) => {
     router.push(`/student/pages/EventPage?id=${eventId}`);
   };
 
@@ -229,22 +292,24 @@ export default function HomePage() {
           </View>
 
           {/* Your Next Event */}
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Your Next Event</ThemedText>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredEventsContainer}>
-              {nextEvents.map(event => (
-                    <EventCard 
-                      key={event.id} 
-                      event={event} 
-                      size="very_large" 
-                      onPress={() => handleEventPress(event.id)}
-                    />
-              ))}
-            </ScrollView>
-          </View>
+          {nextEvents.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>Your Next Event</ThemedText>
+              <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredEventsContainer}>
+                {nextEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="very_large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           {/* Upcoming Event */}
           <View style={styles.section}>
@@ -257,7 +322,7 @@ export default function HomePage() {
                     <EventCard 
                       key={event.id} 
                       event={event} 
-                      size="very_large" 
+                      size="large" 
                       onPress={() => handleEventPress(event.id)}
                     />
                 ))}
@@ -275,7 +340,7 @@ export default function HomePage() {
                       <EventCard 
                         key={event.id} 
                         event={event} 
-                        size="very_large" 
+                        size="large" 
                         onPress={() => handleEventPress(event.id)}
                       />
               ))}
@@ -302,7 +367,7 @@ export default function HomePage() {
                 <EventCard 
                   key={event.id} 
                   event={event} 
-                  size="small" 
+                  size="large" 
                   onPress={() => handleEventPress(event.id)}
                 />
             ))}

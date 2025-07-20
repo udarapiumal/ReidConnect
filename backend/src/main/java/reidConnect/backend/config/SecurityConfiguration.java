@@ -42,6 +42,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/events").permitAll() // Allow public access to GET all events
                         .requestMatchers(HttpMethod.GET, "/api/events/conflicts").permitAll() // Allow public access to conflicts endpoint
                         .requestMatchers(HttpMethod.GET, "/api/events/{id}").permitAll() // Allow public access to GET single event
+                        .requestMatchers(HttpMethod.GET, "/api/events/{eventId}/attendance/counts").permitAll() // Allow public access to attendance counts
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll() // Allow public access to attendance counts
                         .requestMatchers("/api/posts/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
                         .requestMatchers("/api/venues/**").authenticated()

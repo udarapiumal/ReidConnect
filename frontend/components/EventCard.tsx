@@ -6,22 +6,30 @@ import { Feather, AntDesign } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { BASE_URL } from '@/constants/config';
 
 type EventSize = 'large' | 'small' | 'very_large';
 
 export type EventData = {
-  id: string;
-  title: string;
-  category: string;
+  id: number;
+  clubId: number;
+  name: string;
+  description: string;
   date: string;
-  location: string;
-  image: string | number | ImageSource | ImageSource[];
-  club?: string;
+  imagePath: string;
+  slotIds: number[];
+  targetFaculties: string[];
+  targetYears: string[];
+  venueId: number | null;
+  venueName: string;
+  createdAt: string;
+  // Additional fields for UI
   going?: number;
   interested?: number;
-  statusOfUser?: 'going' | 'interested' | 'none'; // Status of the user for this event
+  statusOfUser?: 'going' | 'interested' | 'none';
+  club?: string;
+  category?: string;
   privacy?: string;
-  description?: string;
   host?: {
     name: string;
     logo: any;
@@ -46,7 +54,7 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
   const primaryColor = useThemeColor({}, 'tint');
   const secondaryTextColor = useThemeColor({}, 'icon');
 
-  const imageSource = typeof event.image === 'string' ? { uri: event.image } : event.image;
+  const imageSource = event.imagePath ? { uri: `${BASE_URL}/api/posts/uploads/${event.imagePath}` } : require('@/assets/images/event1.png');
 
   const handleLikePress = () => {
     setIsLiked(!isLiked);
@@ -116,14 +124,14 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
             />
           </TouchableOpacity>
         </View>
-        <ThemedText style={[styles.category, { color: primaryColor }]}>{event.category}</ThemedText>
+        <ThemedText style={[styles.category, { color: primaryColor }]}>{event.category || 'Event'}</ThemedText>
         <ThemedText style={[styles.title, getTitleStyle()]}>
-          {event.title}
+          {event.name}
         </ThemedText>
         <View style={styles.metaContainer}>
           <View style={styles.metaItem}>
             <Feather name="map-pin" size={14} color={secondaryTextColor} />
-            <ThemedText style={[styles.metaText, { color: secondaryTextColor }]}>{event.location}</ThemedText>
+            <ThemedText style={[styles.metaText, { color: secondaryTextColor }]}>{event.venueName}</ThemedText>
           </View>
           <View style={styles.metaItem}>
             <Feather name="calendar" size={14} color={secondaryTextColor} />

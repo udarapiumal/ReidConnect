@@ -19,70 +19,6 @@ interface UserType {
   role: string;
 }
 
-// This is a placeholder for your actual data fetching logic from your database
-const Events: EventData[] = [
-  {
-    id: '1',
-    title: 'Mind Matters - Phase 2',
-    category: 'Wellness',
-    date: 'Today, 10:30 AM',
-    location: 'Google Meet',
-    image: require('@/assets/images/event1.png'),
-    club: 'Rotaract Club of UOC',
-    going: 1,
-    interested: 5,
-    privacy: 'Public · Anyone on or off ReidConnect',
-    description: `Exclusive First Look: All-New MG ZS Hybrid+\nGet an exclusive first look at the UK's best-selling MG ZS Hybrid+, now in Sri Lanka!\n\nJoin us for an intimate preview before the rest of the country gets to see it. Take a closer look, sit inside, and experience what's new.\nWhen: Thursday, 17th July 2025...`,
-    host: {
-      name: 'Rotaract Club of UOC',
-      logo: require('@/assets/images/ucsc-logo.png'),
-      pastEvents: 1,
-      followers: '4.1K',
-      description: 'Official page of Rotaract Club of University of Colombo'
-    }
-  },
-  {
-    id: '2',
-    title: "ROTA අවුරුදු '25",
-    category: 'Cultural',
-    date: 'Apr 14, 2025',
-    location: 'University of Colombo',
-    image: require('@/assets/images/event2.png'),
-    club: 'Rotaract Club of UOC',
-    going: 122,
-    interested: 500,
-    privacy: 'Public · Anyone on or off ReidConnect',
-    description: `Celebrate the Sinhala & Tamil New Year with us! ROTA අවුරුදු '25 brings you a day full of traditional games, music, and food. Don't miss out on the fun!`,
-    host: {
-      name: 'Rotaract Club of UOC',
-      logo: require('@/assets/images/ucsc-logo.png'),
-      pastEvents: 1,
-      followers: '4.1K',
-      description: 'Official page of Rotaract Club of University of Colombo'
-    }
-  },
-  {
-    id: '3',
-    title: 'Food & Wine Festival',
-    category: 'Food',
-    date: 'Jul 22, 2025',
-    location: 'Downtown Plaza',
-    image: require('@/assets/images/event2.png'),
-    club: 'Rotaract Club of UOC',
-    going: 250,
-    interested: 1200,
-    privacy: 'Public · Anyone on or off ReidConnect',
-    description: `A paradise for foodies! Explore a variety of cuisines from top chefs and enjoy a selection of the finest wines. A perfect weekend outing.`,
-    host: {
-      name: 'Rotaract Club of UOC',
-      logo: require('@/assets/images/ucsc-logo.png'),
-      pastEvents: 1,
-      followers: '4.1K',
-      description: 'Official page of Rotaract Club of University of Colombo'
-    }
-  },
-];
-
 
 export default function EventDetailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -97,34 +33,138 @@ export default function EventDetailPage() {
   const colors = Colors[colorScheme];
 
   useEffect(() => {
-    // Combine all event arrays to search for the event
-    const allEvents = [...Events];
-    
-    // Find the event by ID
-    const foundEvent = allEvents.find(e => e.id === id);
-    
-    if (foundEvent) {
-      setEvent(foundEvent);
+    const fetchEvent = async () => {
+      if (!id) return;
       
-      // Set initial interest status of a student
-      if (foundEvent.statusOfUser === 'going') {
-        setInterestStatus('going');
-      } else if (foundEvent.statusOfUser === 'interested') {
-        setInterestStatus('interested');
-      } else {
-        setInterestStatus('none');
-      }
+      try {
+        setLoading(true);
+        
+        // Get token and decode to get user info for status checking
+        const token = await AsyncStorage.getItem("token");
+        let userId = null;
+        if (token) {
+          try {
+            const decoded = jwtDecode<UserType>(token);
+            userId = decoded.id;
+          } catch (error) {
+            console.error('Failed to decode token:', error);
+          }
+        }
+        
+        // Fetch specific event
+        const eventResponse = await axios.get(`${BASE_URL}/api/events/${id}`);
+        const eventData = eventResponse.data;
+        console.log('📋 Event data:', eventData);
+        
+        // Fetch attendance counts
+        let countsData = { going: 0, interested: 0 };
+        try {
+          const countsResponse = await axios.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
+          const rawCounts = countsResponse.data;
+          console.log('📊 Raw attendance counts from API:', rawCounts);
+          
+          // Map API response to expected format
+          countsData = {
+            going: rawCounts.goingCount || 0,
+            interested: rawCounts.interestedCount || 0
+          };
+          console.log('📊 Mapped attendance counts:', countsData);
+        } catch (error) {
+          console.error('Failed to fetch attendance counts:', error);
+        }
+        
+        // Fetch user's attendance status if logged in
+        let userStatus = 'none';
+        if (userId && token) {
+          try {
+            // Fetch user's attendance status from the API
+            const userStatusResponse = await axios.get(
+              `${BASE_URL}/api/events/${id}/attendance/user/${userId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              }
+            );
+            
+            const responseData = userStatusResponse.data;
+            console.log('👤 Full user status response:', responseData);
+            
+            // Extract status from the response
+            const rawStatus = responseData.status;
+            // Normalize the status from database (API returns uppercase like "INTERESTED", "GOING")
+            userStatus = rawStatus ? rawStatus.toLowerCase() : 'none';
+            console.log('👤 User status from API:', rawStatus, '-> normalized:', userStatus);
+          } catch (error: any) {
+            console.error('Failed to fetch user status:', error);
+            if (error.response?.status === 403) {
+              console.log('👤 403 Forbidden - User may not have permission');
+            } else if (error.response?.status === 404) {
+              console.log('👤 404 Not Found - User has not registered for this event yet');
+            }
+            // Fallback: Start with 'none' status if there's an error
+            userStatus = 'none';
+          }
+        }
+        
+        // Combine event data with counts and user status
+        const combinedEvent = {
+          ...eventData,
+          going: countsData.going || 0,
+          interested: countsData.interested || 0,
+          statusOfUser: userStatus,
+        };
+        
+        setEvent(combinedEvent);
+        
+        // Set initial interest status based on user's current status from database
+        // userStatus is already normalized to lowercase ('interested', 'going', 'none')
+        const normalizedStatus = userStatus as 'none' | 'interested' | 'going';
+        console.log('🎯 Setting initial interest status:', userStatus, '->', normalizedStatus);
+        setInterestStatus(normalizedStatus);
 
-      // Get related events (same category, excluding current event)
-      const related = allEvents.filter(e => 
-        e.id !== id && 
-        (e.category === foundEvent.category || e.club === foundEvent.club)
-      ).slice(0, 3);
-      
-      setRelatedEvents(related);
-    }
-    
-    setLoading(false);
+        // Fetch all events for related events
+        const allEventsResponse = await axios.get(`${BASE_URL}/api/events`);
+        const allEvents = allEventsResponse.data;
+        
+        // Get related events (same category or club, excluding current event)
+        const related = allEvents.filter((e: EventData) => 
+          e.id !== parseInt(id) && 
+          (e.category === combinedEvent.category || e.clubId === combinedEvent.clubId)
+        ).slice(0, 3);
+        
+        // Fetch related events attendance counts
+        const relatedWithCounts = await Promise.all(
+          related.map(async (relatedEvent: EventData) => {
+            try {
+              const relatedCountsResponse = await axios.get(`${BASE_URL}/api/events/${relatedEvent.id}/attendance/counts`);
+              const rawCounts = relatedCountsResponse.data;
+              return {
+                ...relatedEvent,
+                going: rawCounts.goingCount || 0,
+                interested: rawCounts.interestedCount || 0,
+              };
+            } catch (error) {
+              console.error(`Failed to fetch counts for related event ${relatedEvent.id}:`, error);
+              return {
+                ...relatedEvent,
+                going: 0,
+                interested: 0,
+              };
+            }
+          })
+        );
+        
+        setRelatedEvents(relatedWithCounts);
+        
+      } catch (error) {
+        console.error('Failed to fetch event:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
   }, [id]);
 
   const handleInteraction = async (newStatus: 'interested' | 'going') => {
@@ -159,36 +199,43 @@ export default function EventDetailPage() {
       setEvent(prev => prev ? { ...prev, interested: newInterestedCount, going: newGoingCount } : null);
       setInterestStatus(finalStatus);
       
-      // Make the finalStatus upper case for API
-      const finalStatusUpper = finalStatus.toUpperCase();
-      const apiUrl = `${BASE_URL}/api/events/${id}/attendance?userId=${userId}&status=${finalStatusUpper}`;
+      // Determine API method and URL based on current and new status
+      let method: string;
+      let apiUrl: string;
+      let body: any = null;
+
+      if (finalStatus === 'none') {
+        // Remove attendance
+        method = 'DELETE';
+        apiUrl = `${BASE_URL}/api/events/${id}/attendance?userId=${userId}`;
+      } else if (oldStatus === 'none') {
+        // Mark new attendance
+        method = 'POST';
+        apiUrl = `${BASE_URL}/api/events/${id}/attendance?userId=${userId}&status=${finalStatus.toUpperCase()}`;
+      } else {
+        // Update existing attendance
+        method = 'PUT';
+        apiUrl = `${BASE_URL}/api/events/${id}/attendance?userId=${userId}&status=${finalStatus.toUpperCase()}`;
+      }
       
-      console.log('🚀 Making API call to:', apiUrl);
-      console.log('📝 Request details:', {
-        method: 'POST',
-        eventId: id,
-        userId: userId,
-        status: finalStatusUpper,
-        token: token ? 'Present' : 'Missing'
+      console.log('🚀 Making API call:', {
+        method,
+        url: apiUrl,
+        oldStatus,
+        newStatus: finalStatus,
+        userId,
       });
 
-      // Replace with your actual API endpoint and logic
       const response = await fetch(apiUrl, {
-        method: 'POST',
+        method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Add authorization - required for STUDENT role
+          'Authorization': `Bearer ${token}`,
         },
-        // Add request body with the data
-        body: JSON.stringify({
-          eventId: id,
-          userId: userId,
-          status: finalStatusUpper
-        })
+        ...(body && { body: JSON.stringify(body) })
       });
 
       console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -196,22 +243,30 @@ export default function EventDetailPage() {
         throw new Error(`API call failed with status ${response.status}: ${errorText}`);
       }
 
-      // Check if response has content before parsing JSON
-      const contentLength = response.headers.get('content-length');
-      let responseData = null;
-      
-      if (contentLength && contentLength !== '0') {
-        try {
-          responseData = await response.json();
-          console.log('✅ API Response Data:', responseData);
-        } catch (jsonError) {
-          console.warn('⚠️ Failed to parse JSON response, but request was successful:', jsonError);
-          // Try to get response as text instead
-          const textData = await response.text();
-          console.log('📄 Response as text:', textData);
-        }
-      } else {
-        console.log('✅ API request successful - No response content (empty body)');
+      const responseText = await response.text();
+      console.log('✅ API Response:', responseText);
+
+      // After successful API call, fetch updated counts from server to ensure accuracy
+      try {
+        const countsResponse = await axios.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
+        const rawUpdatedCounts = countsResponse.data;
+        console.log('✅ Raw updated counts from server:', rawUpdatedCounts);
+        
+        // Map API response to expected format
+        const updatedCounts = {
+          going: rawUpdatedCounts.goingCount || 0,
+          interested: rawUpdatedCounts.interestedCount || 0
+        };
+        console.log('✅ Mapped updated counts:', updatedCounts);
+        
+        setEvent(prev => prev ? { 
+          ...prev, 
+          interested: updatedCounts.interested, 
+          going: updatedCounts.going 
+        } : null);
+      } catch (countError) {
+        console.error('Failed to fetch updated counts:', countError);
+        // Keep the optimistic update if we can't fetch from server
       }
       
       console.log('✅ Status updated successfully in database');
@@ -227,7 +282,7 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleRelatedEventPress = (eventId: string) => {
+  const handleRelatedEventPress = (eventId: number) => {
     router.push(`/student/pages/EventPage?id=${eventId}`);
   };
 
@@ -258,7 +313,7 @@ export default function EventDetailPage() {
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{ 
-          title: event.title, 
+          title: event.name, 
           headerTintColor: colors.text, 
           headerStyle: { backgroundColor: colors.background } 
         }} 
@@ -267,9 +322,9 @@ export default function EventDetailPage() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Event Banner */}
         <View style={styles.bannerContainer}>
-          {event.image && (
+          {event.imagePath && (
             <Image 
-              source={typeof event.image === 'string' ? { uri: event.image } : event.image as any}
+              source={{ uri: `${BASE_URL}/api/posts/uploads/${event.imagePath}` }}
               style={styles.eventImage}
               resizeMode="cover"
             />
@@ -283,7 +338,7 @@ export default function EventDetailPage() {
         {/* Event Header */}
         <View style={styles.headerContainer}>
           <ThemedText style={styles.eventTime}>{event.date}</ThemedText>
-          <ThemedText style={styles.eventTitle}>{event.title}</ThemedText>
+          <ThemedText style={styles.eventTitle}>{event.name}</ThemedText>
           <ThemedText style={styles.eventHost}>Public · Event by {event.club}</ThemedText>
         </View>
 
@@ -292,24 +347,24 @@ export default function EventDetailPage() {
           <TouchableOpacity 
             style={[
               styles.button, 
-              { backgroundColor: interestStatus === 'interested' ? '#8B0000' : colors.button }
+              { backgroundColor: interestStatus === 'interested' ? '#8B0000' : (interestStatus === 'going' ? colors.secondaryButton : colors.button) }
             ]}
             onPress={() => handleInteraction('interested')}
             disabled={isSubmitting}
           >
-            <Ionicons name={interestStatus === 'interested' ? "star" : "star-outline"} size={20} color={colors.buttonText} />
-            <ThemedText style={[styles.buttonText, { color: colors.buttonText }]}>Interested</ThemedText>
+            <Ionicons name={interestStatus === 'interested' ? "star" : "star-outline"} size={20} color={interestStatus === 'interested' ? colors.buttonText : (interestStatus === 'going' ? colors.secondaryButtonText : colors.buttonText)} />
+            <ThemedText style={[styles.buttonText, { color: interestStatus === 'interested' ? colors.buttonText : (interestStatus === 'going' ? colors.secondaryButtonText : colors.buttonText) }]}>Interested</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[
               styles.button, 
-              { backgroundColor: interestStatus === 'going' ? '#8B0000' : colors.secondaryButton }
+              { backgroundColor: interestStatus === 'going' ? '#8B0000' : colors.secondaryButton}
             ]}
             onPress={() => handleInteraction('going')}
             disabled={isSubmitting}
           >
-            <Ionicons name={interestStatus === 'going' ? "checkmark-circle" : "checkmark"} size={20} color={colors.secondaryButtonText} />
-            <ThemedText style={[styles.buttonText, { color: colors.secondaryButtonText }]}>Going</ThemedText>
+            <Ionicons name={interestStatus === 'going' ? "checkmark-circle" : "checkmark"} size={20} color={interestStatus === 'going' ? colors.buttonText : (interestStatus === 'interested' ? colors.secondaryButtonText : colors.buttonText)} />
+            <ThemedText style={[styles.buttonText, { color: interestStatus === 'going' ? colors.buttonText : (interestStatus === 'interested' ? colors.secondaryButtonText : colors.buttonText) }]}>Going</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.moreOptionsButton, { backgroundColor: colors.secondaryButton }]}>
             <Ionicons name="ellipsis-horizontal" size={20} color={colors.secondaryButtonText} />
@@ -318,7 +373,7 @@ export default function EventDetailPage() {
 
         {/* Event Info Section */}
         <View style={[styles.eventInfoSection, { borderTopColor: colors.border }]}>
-          <InfoRow icon="location-outline" text={event.location} />
+          <InfoRow icon="location-outline" text={event.venueName} />
           <InfoRow icon="checkmark-circle-outline" text={`${event.going} going · ${event.interested} interested`} />
           <InfoRow icon="globe-outline" text={event.privacy || 'Public'} />
         </View>

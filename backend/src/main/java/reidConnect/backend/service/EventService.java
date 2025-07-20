@@ -4,6 +4,7 @@ import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
@@ -24,5 +25,6 @@ public interface EventService {
     void removeAttendance(Long eventId, Long userId);
     
     EventAttendanceCountDto getEventAttendanceCounts(Long eventId);
+    UserEventAttendanceDto getUserEventAttendanceStatus(Long eventId, Long userId);
 
 }
