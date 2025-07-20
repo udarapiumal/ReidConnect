@@ -14,7 +14,8 @@ const LecturerManagement = () => {
         department: '',
         phone: '',
         specialization: '',
-        position: 'Senior Lecturer'
+        position: 'Senior Lecturer',
+        image: ''
     });
 
     // Sample lecturer data organized by position
@@ -27,7 +28,8 @@ const LecturerManagement = () => {
             department: 'Computer Science',
             phone: '+1-555-0124',
             specialization: 'Data Structures & Algorithms',
-            position: 'Senior Lecturer'
+            position: 'Senior Lecturer',
+            image: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face'
         },
         {
             id: 'SL002',
@@ -36,7 +38,8 @@ const LecturerManagement = () => {
             department: 'Engineering',
             phone: '+1-555-0126',
             specialization: 'Machine Learning',
-            position: 'Senior Lecturer'
+            position: 'Senior Lecturer',
+            image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
         },
         {
             id: 'SL003',
@@ -45,7 +48,8 @@ const LecturerManagement = () => {
             department: 'Computer Science',
             phone: '+1-555-0127',
             specialization: 'Database Systems',
-            position: 'Senior Lecturer'
+            position: 'Senior Lecturer',
+            image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
         },
         // Assistant Lecturers
         {
@@ -55,7 +59,8 @@ const LecturerManagement = () => {
             department: 'Computer Science',
             phone: '+1-555-0123',
             specialization: 'Artificial Intelligence',
-            position: 'Assistant Lecturer'
+            position: 'Assistant Lecturer',
+            image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
         },
         {
             id: 'AL002',
@@ -64,7 +69,8 @@ const LecturerManagement = () => {
             department: 'Engineering',
             phone: '+1-555-0128',
             specialization: 'Software Engineering',
-            position: 'Assistant Lecturer'
+            position: 'Assistant Lecturer',
+            image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
         },
         {
             id: 'AL003',
@@ -73,7 +79,8 @@ const LecturerManagement = () => {
             department: 'Computer Science',
             phone: '+1-555-0129',
             specialization: 'Computer Networks',
-            position: 'Assistant Lecturer'
+            position: 'Assistant Lecturer',
+            image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
         },
         // Instructors
         {
@@ -83,7 +90,8 @@ const LecturerManagement = () => {
             department: 'Computer Science',
             phone: '+1-555-0130',
             specialization: 'Web Development',
-            position: 'Instructor'
+            position: 'Instructor',
+            image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face'
         },
         {
             id: 'IN002',
@@ -92,7 +100,8 @@ const LecturerManagement = () => {
             department: 'Engineering',
             phone: '+1-555-0131',
             specialization: 'Programming Fundamentals',
-            position: 'Instructor'
+            position: 'Instructor',
+            image: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?w=150&h=150&fit=crop&crop=face'
         },
         {
             id: 'IN003',
@@ -101,7 +110,8 @@ const LecturerManagement = () => {
             department: 'Computer Science',
             phone: '+1-555-0132',
             specialization: 'Mobile App Development',
-            position: 'Instructor'
+            position: 'Instructor',
+            image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face'
         }
     ]);
 
@@ -120,7 +130,8 @@ const LecturerManagement = () => {
             department: '',
             phone: '',
             specialization: '',
-            position: 'Senior Lecturer'
+            position: 'Senior Lecturer',
+            image: ''
         });
     };
 
@@ -190,6 +201,7 @@ const LecturerManagement = () => {
             {/* Table Container */}
             <View style={styles.tableContainer}>
                 <View style={styles.tableHeader}>
+                    <Text style={[styles.tableHeaderText, styles.imageColumn]}>Image</Text>
                     <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
                     <Text style={[styles.tableHeaderText, styles.nameColumn]}>Name</Text>
                     <Text style={[styles.tableHeaderText, styles.emailColumn]}>Email</Text>
@@ -200,6 +212,13 @@ const LecturerManagement = () => {
                 <ScrollView style={styles.tableBody}>
                     {lecturerList.map((lecturer) => (
                         <View key={lecturer.id} style={styles.tableRow}>
+                            <View style={[styles.imageColumn, styles.imageContainer]}>
+                                <img 
+                                    src={lecturer.image || 'https://via.placeholder.com/40x40?text=No+Image'} 
+                                    alt={lecturer.name}
+                                    style={styles.lecturerImage}
+                                />
+                            </View>
                             <Text style={[styles.tableCellText, styles.idColumn]}>{lecturer.id}</Text>
                             <Text style={[styles.tableCellText, styles.nameColumn]}>{lecturer.name}</Text>
                             <Text style={[styles.tableCellText, styles.emailColumn]}>{lecturer.email}</Text>
@@ -381,6 +400,30 @@ const LecturerManagement = () => {
                                             ]}>Instructor</Text>
                                         </TouchableOpacity>
                                     </View>
+                                </View>
+
+                                <View style={styles.formGroup}>
+                                    <Text style={styles.formLabel}>Image URL</Text>
+                                    <TextInput
+                                        style={styles.formInput}
+                                        value={formData.image}
+                                        onChangeText={(text) => setFormData({...formData, image: text})}
+                                        placeholder="Enter image URL"
+                                        placeholderTextColor="#999"
+                                    />
+                                    {formData.image && (
+                                        <View style={styles.imagePreviewContainer}>
+                                            <Text style={styles.previewLabel}>Preview:</Text>
+                                            <img 
+                                                src={formData.image} 
+                                                alt="Preview"
+                                                style={styles.imagePreview}
+                                                onError={(e) => {
+                                                    e.target.src = 'https://via.placeholder.com/80x80?text=Invalid+URL';
+                                                }}
+                                            />
+                                        </View>
+                                    )}
                                 </View>
 
                                 <View style={styles.formGroup}>
@@ -597,6 +640,20 @@ const styles = StyleSheet.create({
         color: '#ccc',
         fontSize: 14,
     },
+    imageColumn: {
+        width: 60,
+    },
+    imageContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lecturerImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        objectFit: 'cover',
+        border: '2px solid #555',
+    },
     idColumn: {
         width: 100,
     },
@@ -728,6 +785,27 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
+    },
+    imagePreviewContainer: {
+        marginTop: 12,
+        alignItems: 'center',
+        padding: 12,
+        backgroundColor: '#333',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#555',
+    },
+    previewLabel: {
+        color: '#ccc',
+        fontSize: 12,
+        marginBottom: 8,
+    },
+    imagePreview: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        objectFit: 'cover',
+        border: '2px solid #555',
     },
 });
 

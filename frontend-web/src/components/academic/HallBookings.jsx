@@ -323,14 +323,16 @@ const HallBookings = () => {
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Text style={styles.pageTitle}>Hall Bookings</Text>
+                    <Text style={styles.appTitle}>
+                        ReidConnect <Text style={styles.academicText}>AcademicAdmin</Text>
+                    </Text>
                 </View>
                 <View style={styles.headerRight}>
                     <View style={styles.headerIcons}>
                         <i className="fas fa-bell" style={styles.icon}></i>
                         <i className="fas fa-user" style={styles.icon}></i>
                     </View>
-                    <Text style={styles.adminText}>Academic Admin</Text>
+                    <Text style={styles.adminText}>Admin</Text>
                 </View>
             </View>
 
@@ -339,6 +341,11 @@ const HallBookings = () => {
                 <AcademicSidebar activeItem="Hall Bookings" />
                 
                 <View style={styles.mainContent}>
+                    {/* Page Header */}
+                    <View style={styles.pageHeader}>
+                        <Text style={styles.pageTitle}>Hall Bookings</Text>
+                    </View>
+
                     {/* Tab Navigation */}
                     <View style={styles.tabContainer}>
                         <TouchableOpacity
@@ -469,11 +476,16 @@ const styles = StyleSheet.create({
         marginLeft: 200,
         minHeight: 'calc(100vh - 64px)',
     },
+    pageHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 32,
+    },
     pageTitle: {
         fontSize: 32,
         fontWeight: 'bold',
         color: 'white',
-        marginBottom: 32,
     },
     tabContainer: {
         flexDirection: 'row',
