@@ -1,177 +1,47 @@
-/* PostCard.css */
 .post-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.post-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.post-header {
-  padding: 16px 16px 0 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.post-club-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.post-club-avatar {
-  width: 40px;
-  height: 40px;
   border-radius: 8px;
-  object-fit: cover;
-  border: 2px solid #f1f5f9;
+  margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  width: 100%;
 }
 
-.post-meta {
+.card-content {
   display: flex;
-  flex-direction: column;
-}
-
-.post-club-name {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 14px;
-}
-
-.post-date {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 2px;
-}
-
-.post-event-tag {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background-color: #ddd6fe;
-  color: #5b21b6;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.post-content {
+  flex-direction: row;
+  align-items: flex-start;
   padding: 16px;
+  gap: 16px;
+}
+
+.media-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 200px;
+}
+
+.post-media-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .post-description {
-  color: #374151;
-  line-height: 1.6;
-  margin: 0;
-  font-size: 14px;
-}
-
-.post-event-info {
-  margin: 16px;
-  padding: 12px;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  border-left: 4px solid #4f46e5;
-}
-
-.event-info-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.event-title {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 14px;
-}
-
-.event-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.event-date {
-  font-size: 13px;
-  color: #4f46e5;
-  font-weight: 500;
-}
-
-.event-venue {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #64748b;
-}
-
-.post-actions {
-  padding: 12px 16px 16px 16px;
-  border-top: 1px solid #f1f5f9;
-  display: flex;
-  gap: 4px;
-}
-
-.post-action-btn {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #64748b;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
+  margin: 0;
+  padding: 8px;
+  word-wrap: break-word;
 }
 
-.post-action-btn:hover {
-  background-color: #f1f5f9;
-  color: #4f46e5;
+/* For single image posts, you might want to make the image larger */
+.media-container.single-image {
+  max-width: 300px;
 }
 
-.post-action-btn:active {
-  transform: scale(0.95);
-}
-
-/* Responsive Design */
-@media (max-width: 480px) {
-  .post-card {
-    margin: 0 -4px;
-  }
-  
-  .post-header {
-    padding: 12px 12px 0 12px;
-  }
-  
-  .post-content {
-    padding: 12px;
-  }
-  
-  .post-event-info {
-    margin: 12px;
-  }
-  
-  .post-actions {
-    padding: 8px 12px 12px 12px;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .post-action-btn {
-    justify-content: flex-start;
-  }
+.media-container.single-image .post-media-image {
+  width: 150px;
+  height: 150px;
 }
