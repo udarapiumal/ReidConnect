@@ -40,8 +40,10 @@ const formatTimeAgo = (timestamp) => {
 
 export default function ClubDashboardTab() {
     const { user, token, clubDetails, loading } = useClub();
+    console.log('clubDetails:', clubDetails);
     const [latestPosts, setLatestPosts] = useState([]);
     const [postsLoading, setPostsLoading] = useState(false);
+    const [subCount, setSubCount] = useState(0);
     const router = useRouter();
 
     const fetchPostStats = async (postId) => {
@@ -62,6 +64,22 @@ export default function ClubDashboardTab() {
         } catch (error) {
             console.error(`Error fetching stats for post ${postId}:`, error);
             return { likeCount: 0, commentCount: 0 };
+        }
+    };
+
+    const fetchSubCount = async () => {
+        try {
+            const [subCountResponse] = await Promise.all([
+                axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+            ]);
+            console.log(subCountResponse.data);
+            setSubCount(subCountResponse.data || 0);
+
+        } catch (error) {
+            console.error(`Error fetching subCount:`, error);
+            return { subCount: 0 };
         }
     };
 
@@ -166,7 +184,9 @@ export default function ClubDashboardTab() {
         useCallback(() => {
             if (loading) return;
             fetchLatestPostsWithStats();
+            fetchSubCount();
         }, [loading, clubDetails, user, token])
+        
     );
 
     return (
@@ -197,28 +217,49 @@ export default function ClubDashboardTab() {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.profileButton}>
-                            <Image 
-                                source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                                style={styles.profileImage} 
+                            {clubDetails?.profilePicture ? (
+                                <Image
+                            source={{
+                                uri: `${BASE_URL}${clubDetails.profilePicture}`
+                            }}
+                            style={styles.profileImage}
                             />
+
+                            ) : (
+                                <Image
+                                source={require('../../../assets/images/default-profile.png')} // fallback image
+                                style={styles.profileImage}
+                                />
+                            )}
                         </TouchableOpacity>
+
                     </View>
                 </View>
 
                 {/* Club Info Header */}
                 <View style={styles.clubInfo}>
                     <View style={styles.clubAvatar}>
-                        <Image 
-                            source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                            style={styles.clubAvatarImage} 
+                    {clubDetails?.profilePicture ? (
+                        <Image
+                    source={{
+                        uri: `${BASE_URL}${clubDetails.profilePicture}`
+                    }}
+                    style={styles.clubAvatarImage}
+                    />
+                    ) : (
+                        <Image
+                        source={require('../../../assets/images/default-profile.png')} // fallback image
+                        style={styles.clubAvatarImage}
                         />
+                    )}
                     </View>
+
                     <View style={styles.clubDetails}>
                         <Text style={styles.clubName}>
                             {clubDetails?.clubName || 'Loading...'}
                         </Text>
                         <Text style={styles.subscriberCount}>
-                            {clubDetails?.subCount || '0'}
+                            {subCount || '0'}
                         </Text>
                         <Text style={styles.subscriberLabel}>Total subscribers</Text>
                     </View>

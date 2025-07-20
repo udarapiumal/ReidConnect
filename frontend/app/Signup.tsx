@@ -6,6 +6,8 @@ import React, { useEffect, useState } from "react";
 import {
     Alert,
     Image,
+    SafeAreaView,
+    StatusBar,
     StyleSheet,
     Text,
     TextInput,
@@ -32,6 +34,14 @@ export default function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [verificationCode, setVerificationCode] = useState<string>('');
     const [selectedImage, setSelectedImage] = useState<ExtendedImagePickerAsset | null>(null);
+
+    // Focus states
+    const [nameFocused, setNameFocused] = useState(false);
+    const [emailFocused, setEmailFocused] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
+    const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
+    const [contactFocused, setContactFocused] = useState(false);
+    const [verificationFocused, setVerificationFocused] = useState(false);
 
     const [step1Error, setStep1Error] = useState<boolean>(true);
     const [step2Error, setStep2Error] = useState<boolean>(true);
@@ -69,7 +79,7 @@ export default function SignUp() {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images, // Keep this for now to avoid the deprecation warning in some versions
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [1, 1],
             quality: 0.7,
@@ -201,184 +211,365 @@ export default function SignUp() {
     };
 
     return (
-        <View style={styles.container}>
-            <ProgressSteps
-                completedStepIconColor="#FF0033"
-                activeStepIconBorderColor="#c0392b"
-                activeLabelColor="#c0392b"
-                labelColor="#888"
-                progressBarColor="#FF0033"
-                completedStepNumColor="#ffffff"
-                activeStepNumColor="#ffffff"
-                disabledStepNumColor="#121212"
-            >
-                <ProgressStep label="Step 1" errors={step1Error}>
-                    <Text style={styles.title}>Sign Up</Text>
-                    <View style={styles.step}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter Your Name:"
-                            placeholderTextColor="#888"
-                            value={name}
-                            onChangeText={setName}
-                        />
-                    </View>
-                </ProgressStep>
-                <ProgressStep label="Step 2" errors={step2Error}>
-                    <View style={styles.step}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter Your E-mail:"
-                            placeholderTextColor="#888"
-                            value={email}
-                            keyboardType="email-address"
-                            onChangeText={setEmail}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Password:"
-                            placeholderTextColor="#888"
-                            value={password}
-                            secureTextEntry
-                            onChangeText={setPassword}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Re-enter Password:"
-                            placeholderTextColor="#888"
-                            value={confirmPassword}
-                            secureTextEntry
-                            onChangeText={setConfirmPassword}
-                        />
-                    </View>
-                </ProgressStep>
-                <ProgressStep label="Step 3" errors={step3Error}>
-                    <View style={styles.step}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter Your Contact Number:"
-                            placeholderTextColor="#888"
-                            value={contact_number}
-                            keyboardType="numeric"
-                            onChangeText={setContact_number}
-                        />
-                        <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
-                            <Text style={styles.imageButtonText}>
-                                {selectedImage ? "Change Profile Picture" : "Upload Profile Picture"}
-                            </Text>
-                        </TouchableOpacity>
-                        {selectedImage && (
-                            <Image
-                                source={{ uri: selectedImage.uri }}
-                                style={{ width: 100, height: 100, borderRadius: 50, marginTop: 10 }}
-                            />
-                        )}
-                    </View>
-                </ProgressStep>
-                <ProgressStep label="Step 4" onNext={handleSubmit}>
-                    <View style={styles.step}>
-                        <Picker
-                            style={styles.picker}
-                            selectedValue={academic_year}
-                            onValueChange={(itemValue: string) => setAcademic_year(itemValue)}
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F23" />
+            
+            <View style={styles.container}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Create Account</Text>
+                    <Text style={styles.headerSubtitle}>Join the Reid Connect community</Text>
+                </View>
+
+                {/* Progress Steps */}
+                <View style={styles.progressContainer}>
+                    <ProgressSteps
+                        completedStepIconColor="#6366F1"
+                        activeStepIconBorderColor="#6366F1"
+                        activeLabelColor="#6366F1"
+                        labelColor="#71717A"
+                        progressBarColor="#6366F1"
+                        completedStepNumColor="#FFFFFF"
+                        activeStepNumColor="#FFFFFF"
+                        disabledStepNumColor="#52525B"
+                        completedProgressBarColor="#6366F1"
+                        activeProgressBarColor="#6366F1"
+                        borderWidth={2}
+                        activeStepIconBorderWidth={2}
+                        marginBottom={0}
+                    >
+                        <ProgressStep label="Personal" errors={step1Error}>
+                            <View style={styles.stepContainer}>
+                                <Text style={styles.stepTitle}>Personal Information</Text>
+                                <Text style={styles.stepSubtitle}>Tell us about yourself</Text>
+                                
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            nameFocused && styles.inputFocused
+                                        ]}
+                                        placeholder="Enter Your Full Name"
+                                        placeholderTextColor="#71717A"
+                                        value={name}
+                                        onChangeText={setName}
+                                        onFocus={() => setNameFocused(true)}
+                                        onBlur={() => setNameFocused(false)}
+                                    />
+                                </View>
+                            </View>
+                        </ProgressStep>
+
+                        <ProgressStep label="Account" errors={step2Error}>
+                            <View style={styles.stepContainer}>
+                                <Text style={styles.stepTitle}>Account Details</Text>
+                                <Text style={styles.stepSubtitle}>Set up your login credentials</Text>
+                                
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            emailFocused && styles.inputFocused
+                                        ]}
+                                        placeholder="University Email Address"
+                                        placeholderTextColor="#71717A"
+                                        value={email}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        onChangeText={setEmail}
+                                        onFocus={() => setEmailFocused(true)}
+                                        onBlur={() => setEmailFocused(false)}
+                                    />
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            passwordFocused && styles.inputFocused
+                                        ]}
+                                        placeholder="Create Password"
+                                        placeholderTextColor="#71717A"
+                                        value={password}
+                                        secureTextEntry
+                                        onChangeText={setPassword}
+                                        onFocus={() => setPasswordFocused(true)}
+                                        onBlur={() => setPasswordFocused(false)}
+                                    />
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            confirmPasswordFocused && styles.inputFocused
+                                        ]}
+                                        placeholder="Confirm Password"
+                                        placeholderTextColor="#71717A"
+                                        value={confirmPassword}
+                                        secureTextEntry
+                                        onChangeText={setConfirmPassword}
+                                        onFocus={() => setConfirmPasswordFocused(true)}
+                                        onBlur={() => setConfirmPasswordFocused(false)}
+                                    />
+                                </View>
+                            </View>
+                        </ProgressStep>
+
+                        <ProgressStep label="Profile" errors={step3Error}>
+                            <View style={styles.stepContainer}>
+                                <Text style={styles.stepTitle}>Profile Setup</Text>
+                                <Text style={styles.stepSubtitle}>Add your contact and photo</Text>
+                                
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            contactFocused && styles.inputFocused
+                                        ]}
+                                        placeholder="Contact Number (10 digits)"
+                                        placeholderTextColor="#71717A"
+                                        value={contact_number}
+                                        keyboardType="numeric"
+                                        maxLength={10}
+                                        onChangeText={setContact_number}
+                                        onFocus={() => setContactFocused(true)}
+                                        onBlur={() => setContactFocused(false)}
+                                    />
+                                    
+                                    <TouchableOpacity 
+                                        onPress={pickImage} 
+                                        style={styles.imageButton}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.imageButtonText}>
+                                            {selectedImage ? "Change Profile Picture" : "Upload Profile Picture"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    
+                                    {selectedImage && (
+                                        <View style={styles.imagePreviewContainer}>
+                                            <Image
+                                                source={{ uri: selectedImage.uri }}
+                                                style={styles.imagePreview}
+                                            />
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                        </ProgressStep>
+
+                        <ProgressStep label="Academic" onNext={handleSubmit}>
+                            <View style={styles.stepContainer}>
+                                <Text style={styles.stepTitle}>Academic Information</Text>
+                                <Text style={styles.stepSubtitle}>Select your current year</Text>
+                                
+                                <View style={styles.pickerContainer}>
+                                    <Picker
+                                        style={styles.picker}
+                                        selectedValue={academic_year}
+                                        onValueChange={(itemValue: string) => setAcademic_year(itemValue)}
+                                        dropdownIconColor="#71717A"
+                                    >
+                                        <Picker.Item label="Select Academic Year" value="" color="#71717A" />
+                                        <Picker.Item label="1st Year" value="1" color="#FFFFFF" />
+                                        <Picker.Item label="2nd Year" value="2" color="#FFFFFF" />
+                                        <Picker.Item label="3rd Year" value="3" color="#FFFFFF" />
+                                        <Picker.Item label="4th Year" value="4" color="#FFFFFF" />
+                                    </Picker>
+                                </View>
+                            </View>
+                        </ProgressStep>
+
+                        <ProgressStep label="Verify" onSubmit={handleVerify}>
+                            <View style={styles.stepContainer}>
+                                <Text style={styles.stepTitle}>Email Verification</Text>
+                                <Text style={styles.stepSubtitle}>Enter the code sent to your email</Text>
+                                
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={[
+                                            styles.input,
+                                            verificationFocused && styles.inputFocused
+                                        ]}
+                                        placeholder="Enter Verification Code"
+                                        placeholderTextColor="#71717A"
+                                        value={verificationCode}
+                                        keyboardType="numeric"
+                                        onChangeText={setVerificationCode}
+                                        onFocus={() => setVerificationFocused(true)}
+                                        onBlur={() => setVerificationFocused(false)}
+                                    />
+                                    
+                                    <TouchableOpacity 
+                                        onPress={handleResend}
+                                        style={styles.resendButton}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.resendText}>
+                                            Resend Verification Code
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </ProgressStep>
+                    </ProgressSteps>
+                </View>
+
+                {/* Footer */}
+                <View style={styles.footer}>
+                    <View style={styles.optionContainer}>
+                        <Text style={styles.optionText}>Already have an account?</Text>
+                        <TouchableOpacity 
+                            onPress={() => router.push('/Login')}
+                            activeOpacity={0.7}
                         >
-                            <Picker.Item label="Select Academic Year" value="" />
-                            <Picker.Item label="1st Year" value="1" />
-                            <Picker.Item label="2nd Year" value="2" />
-                            <Picker.Item label="3rd Year" value="3" />
-                            <Picker.Item label="4th Year" value="4" />
-                        </Picker>
+                            <Text style={styles.linkText}>Sign In</Text>
+                        </TouchableOpacity>
                     </View>
-                </ProgressStep>
-                <ProgressStep label="Verify" onSubmit={handleVerify}>
-                    <View style={styles.step}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter Verification Code"
-                            placeholderTextColor="#888"
-                            value={verificationCode}
-                            onChangeText={setVerificationCode}
-                        />
-                        <Text style={styles.resendText} onPress={handleResend}>
-                            Resend Verification Code
-                        </Text>
-                    </View>
-                </ProgressStep>
-            </ProgressSteps>
-            <View style={styles.loginRedirectContainer}>
-                <Text style={styles.loginText}>
-                    Already have an account?{' '}
-                    <Text style={styles.loginLink} onPress={() => router.push('/Login')}>
-                        Log in
-                    </Text>
-                </Text>
+                </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#0F0F23',
+    },
     container: {
         flex: 1,
-        backgroundColor: '#151718',
+        paddingHorizontal: 24,
     },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 30,
-        textAlign: 'center',
-        color: '#ffffff',
-    },
-    step: {
+    header: {
         alignItems: 'center',
-        justifyContent: 'center',
-        height: 320,
+        paddingTop: 20,
+        paddingBottom: 24,
+    },
+    headerTitle: {
+        color: '#FFFFFF',
+        fontSize: 28,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 8,
+        letterSpacing: -0.5,
+    },
+    headerSubtitle: {
+        color: '#A1A1AA',
+        fontSize: 16,
+        textAlign: 'center',
+        fontWeight: '400',
+    },
+    progressContainer: {
+        flex: 1,
+    },
+    stepContainer: {
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingTop: 32,
+        paddingHorizontal: 8,
+        minHeight: 350,
+    },
+    stepTitle: {
+        color: '#FFFFFF',
+        fontSize: 24,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 8,
+        letterSpacing: -0.3,
+    },
+    stepSubtitle: {
+        color: '#A1A1AA',
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 32,
+        fontWeight: '400',
+    },
+    inputContainer: {
+        width: '100%',
+        alignItems: 'center',
     },
     input: {
         width: '100%',
-        height: 50,
-        borderWidth: 1.5,
-        borderColor: '#444',
-        borderRadius: 10,
-        paddingHorizontal: 15,
-        marginBottom: 15,
-        backgroundColor: '#1A1A1A',
+        height: 54,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        marginBottom: 16,
         fontSize: 16,
-        color: '#ffffff',
+        color: '#FFFFFF',
+        fontWeight: '400',
+    },
+    inputFocused: {
+        borderColor: '#6366F1',
+        borderWidth: 2,
+        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+    },
+    pickerContainer: {
+        width: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        marginBottom: 16,
     },
     picker: {
         width: '100%',
-        height: 50,
-        borderRadius: 10,
-        backgroundColor: '#1e1e1e',
-        color: '#ffffff',
+        height: 54,
+        color: '#FFFFFF',
     },
     imageButton: {
-        marginTop: 10,
-        padding: 10,
-        backgroundColor: '#FF0033',
-        borderRadius: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        marginTop: 8,
+        marginBottom: 16,
     },
     imageButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    imagePreviewContainer: {
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    imagePreview: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        borderWidth: 3,
+        borderColor: '#6366F1',
+    },
+    resendButton: {
+        marginTop: 16,
     },
     resendText: {
-        color: '#007BFF',
-        marginTop: 10,
+        color: '#6366F1',
+        fontSize: 14,
+        fontWeight: '600',
+        textAlign: 'center',
         textDecorationLine: 'underline',
     },
-    loginRedirectContainer: {
+    footer: {
+        paddingBottom: 24,
+        paddingTop: 16,
+    },
+    optionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        padding: 15,
-        backgroundColor: '#121212',
+        gap: 6,
     },
-    loginText: {
-        fontSize: 16,
-        color: '#cccccc',
+    optionText: {
+        color: '#71717A',
+        fontSize: 14,
+        fontWeight: '400',
     },
-    loginLink: {
-        color: '#FF0033',
-        fontWeight: 'bold',
+    linkText: {
+        color: '#6366F1',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

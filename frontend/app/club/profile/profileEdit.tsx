@@ -1,21 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
 import { useClub } from "../../context/ClubContext";
 
 const { width } = Dimensions.get('window');
+const router = useRouter();
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -52,33 +55,56 @@ export default function ProfilePage() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+                      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                         <Ionicons name="arrow-back" size={24} color="#fff" />
+                      </TouchableOpacity>
+                      
+                        <Text style={styles.title}>Profile</Text>
+                      
+                      <View style={styles.headerActions}>
+                      </View>
+                    </View>
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#000" />
         
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile settings</Text>
-        </View>
 
         <ScrollView style={styles.scrollView}>
           {/* Cover Image with Centered Profile Picture */}
           <View style={styles.coverSection}>
             <View style={styles.coverImageContainer}>
-              <Image
-                source={require("../../../assets/clubImages/profilePictures/rota_cover.jpg")}
+              {clubDetails?.profilePicture ? (
+                    <Image
+                source={{
+                    uri: `${BASE_URL}${clubDetails.coverPicture}`
+                }}
                 style={styles.coverImage}
-                resizeMode="cover"
-              />
+                />
+                ) : (
+                    <Image
+                    source={require('../../../assets/images/default-profile.png')} // fallback image
+                    style={styles.coverImage}
+                    />
+                )}
             </View>
             
             {/* Profile Picture centered on cover */}
             <View style={styles.profilePictureSection}>
               <View style={styles.profilePictureContainer}>
                 <View style={styles.profilePicture}>
-                  <Image 
-                    source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                    style={styles.profilePictureImage} 
-                  />
+                  {clubDetails?.profilePicture ? (
+                        <Image
+                    source={{
+                        uri: `${BASE_URL}${clubDetails.profilePicture}`
+                    }}
+                    style={styles.coverImage}
+                    />
+                    ) : (
+                        <Image
+                        source={require('../../../assets/images/default-profile.png')} // fallback image
+                        style={styles.coverImage}
+                        />
+                    )}
                 </View>
                 <TouchableOpacity style={styles.cameraButton}>
                   <Ionicons name="camera" size={16} color="#fff" />
@@ -186,6 +212,57 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#151718",
     },
+    header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F1F',
+    backgroundColor: '#151718',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+  },
+  searchInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: 'white',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  addButton: {
+    width: 44,
+    height: 24,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+  },
+  searchButton: {
+    width: 44,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchButtonActive: {
+    backgroundColor: '#007aff',
+    borderColor: '#007aff',
+  },
   container: {
     flex: 1,
     backgroundColor: "#151718",

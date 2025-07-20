@@ -1,5 +1,6 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,6 +20,7 @@ import { useClub } from "../../context/ClubContext";
 
 const { width: screenWidth } = Dimensions.get('window');
 const imageSize = (screenWidth - 4) / 3; // 3 columns with 2px gaps
+const router = useRouter();
 
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
@@ -43,9 +45,26 @@ export default function ClubProfileScreen() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [postCount, setPostCount] = useState(0);
+  const [subCount, setSubCount] = useState(0);
   const [eventCount, setEventCount] = useState(0);
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const fetchSubCount = async () => {
+        try {
+            const [subCountResponse] = await Promise.all([
+                axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+            ]);
+            console.log(subCountResponse.data);
+            setSubCount(subCountResponse.data || 0);
+
+        } catch (error) {
+            console.error(`Error fetching subCount:`, error);
+            return { subCount: 0 };
+        }
+    };
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -100,6 +119,7 @@ export default function ClubProfileScreen() {
   useEffect(() => {
     if (clubDetails?.id) {
       fetchCounts();
+      fetchSubCount();
     }
   }, [clubDetails]);
 
@@ -174,7 +194,11 @@ export default function ClubProfileScreen() {
       <View style={styles.detailCard}>
         <View style={styles.detailHeader}>
           <Image
-            source={require('../../../assets/clubImages/profilePictures/rota_ucsc.jpg')}
+            source={{ 
+                uri: clubDetails.imagePath.startsWith('uploads/') 
+                ? `${BASE_URL}/${clubDetails.imagePath}` 
+                : `${BASE_URL}/uploads/${clubDetails.imagePath}` 
+            }}
             style={styles.detailAvatar}
           />
           <View style={styles.detailHeaderText}>
@@ -278,13 +302,32 @@ export default function ClubProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                   <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                
+                  <Text style={styles.title}>Profile</Text>
+                
+                <View style={styles.headerActions}>
+                </View>
+              </View>
       {/* Header */}
       <View style={styles.profileHeader}>
         <View style={styles.profileTopRow}>
-          <Image
-            source={require('../../../assets/clubImages/profilePictures/rota_ucsc.jpg')}
-            style={styles.avatar}
+          {clubDetails?.profilePicture ? (
+              <Image
+          source={{
+              uri: `${BASE_URL}${clubDetails.profilePicture}`
+          }}
+          style={styles.avatar}
           />
+          ) : (
+              <Image
+              source={require('../../../assets/images/default-profile.png')} // fallback image
+              style={styles.avatar}
+              />
+          )}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{postCount}</Text>
@@ -295,7 +338,7 @@ export default function ClubProfileScreen() {
               <Text style={styles.statLabel}>events</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{clubDetails?.subCount || 0}</Text>
+              <Text style={styles.statNumber}>{subCount || 0}</Text>
               <Text style={styles.statLabel}>subscribers</Text>
             </View>
           </View>
@@ -310,7 +353,7 @@ export default function ClubProfileScreen() {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.followButton}>
-            <Text style={styles.followButtonText}>Edit Profile</Text>
+            <Text style={styles.followButtonText} onPress={() => router.push('/club/profile/profileEdit')}>Edit Profile</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.messageButton}>
             <Text style={styles.messageButtonText}>Share</Text>
@@ -413,6 +456,57 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#151718' 
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F1F',
+    backgroundColor: '#151718',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+  },
+  searchInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: 'white',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  addButton: {
+    width: 44,
+    height: 24,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+  },
+  searchButton: {
+    width: 44,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchButtonActive: {
+    backgroundColor: '#007aff',
+    borderColor: '#007aff',
   },
   
   // Profile Header
