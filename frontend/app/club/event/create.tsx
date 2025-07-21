@@ -76,6 +76,8 @@ const SLOT_ID_TO_TIME_MAPPING = {
   19: '17:00',
   20: '17:30',
 };
+const CATEGORIES = ['SPORTS', 'MUSIC', 'WELLNESS', 'COMPETITION', 'OTHER'];
+
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -106,6 +108,8 @@ export default function CreateEvent() {
   const [selectedVenueId, setSelectedVenueId] = useState(null); // optional
   const [venueMode, setVenueMode] = useState('dropdown'); // 'dropdown' | 'manual'
   const [venueName, setVenueName] = useState('');
+const [selectedCategory, setSelectedCategory] = useState('');
+
 
 
   
@@ -296,6 +300,8 @@ const generateUniqueImageName = () => {
     formData.append('targetYears', targetYears.join(','));
     formData.append('targetFaculties', targetFaculties.join(','));
     formData.append('date', formatDateForComparison(selectedDate));
+    formData.append("category", selectedCategory);
+
 
     const slotIds = getSlotIdsFromTimes(selectedTimeSlots); // convert time to slot IDs
     formData.append("slotIds", slotIds.join(','));
@@ -487,6 +493,22 @@ const generateUniqueImageName = () => {
           />
         </View>
       )}
+      <View style={styles.inputContainer}>
+  <Text style={styles.label}>Select Category *</Text>
+  <View style={styles.pickerWrapper}>
+    <Picker
+      selectedValue={selectedCategory}
+      onValueChange={(value) => setSelectedCategory(value)}
+      style={styles.picker}
+    >
+      <Picker.Item label="-- Select Category --" value="" />
+      {CATEGORIES.map(category => (
+        <Picker.Item key={category} label={category} value={category} />
+      ))}
+    </Picker>
+  </View>
+</View>
+
 
       <View style={styles.selectionContainer}>
         <Text style={styles.label}>Select Target Faculties *</Text>

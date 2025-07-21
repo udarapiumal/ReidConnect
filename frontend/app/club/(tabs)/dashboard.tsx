@@ -95,6 +95,7 @@ export default function ClubDashboardTab() {
             const postsResponse = await axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/latest`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log("Posts API response:", postsResponse.data);
 
             const posts = postsResponse.data;
             

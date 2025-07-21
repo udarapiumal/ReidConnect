@@ -13,6 +13,7 @@ import reidConnect.backend.dto.EventUpdateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
+import reidConnect.backend.enums.EventCategory;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.service.EventService;
 
@@ -44,7 +45,8 @@ public class EventController {
             @RequestParam("slotIds") List<Long> slotIds,
             @RequestParam("targetYears") List<Years> targetYears,
             @RequestParam("targetFaculties") List<Faculties> targetFaculties,
-            @RequestParam("image") MultipartFile imageFile
+            @RequestParam("image") MultipartFile imageFile,
+            @RequestParam("category") EventCategory category
     ) {
         try {
             System.out.println("📥 Received POST request to /api/events");
@@ -91,7 +93,8 @@ public class EventController {
                     savedFilePath,
                     slotIds,
                     targetYears,
-                    targetFaculties
+                    targetFaculties,
+                    category
             );
 
             EventResponseDto createdEvent = eventService.createEvent(dto);
@@ -119,7 +122,8 @@ public class EventController {
             @RequestParam("slotIds") List<Long> slotIds,
             @RequestParam("targetYears") List<Years> targetYears,
             @RequestParam("targetFaculties") List<Faculties> targetFaculties,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam("category") EventCategory category
     ) {
         try {
             if (!eventService.doAllSlotsExist(slotIds)) {
@@ -154,8 +158,8 @@ public class EventController {
                     savedFilePath,
                     slotIds,
                     targetYears,
-                    targetFaculties
-
+                    targetFaculties,
+                    category
             );
 
             EventResponseDto updatedEvent = eventService.updateEvent(id, dto);

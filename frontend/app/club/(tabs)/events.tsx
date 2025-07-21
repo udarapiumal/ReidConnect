@@ -3,9 +3,11 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import RNPickerSelect from 'react-native-picker-select';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
+
 
 const { width } = Dimensions.get('window');
 
@@ -17,6 +19,17 @@ export default function EventListScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { token, clubDetails } = useClub();
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  const categories = [
+    { label: 'All Categories', value: null },
+    { label: 'Sports', value: 'SPORTS' },
+    { label: 'Music', value: 'MUSIC' },
+    { label: 'Wellness', value: 'WELLNESS' },
+    { label: 'Competition', value: 'COMPETITION' },
+    { label: 'Other', value: 'OTHER' },
+  ];
+
 
   useEffect(() => {
     fetchEvents();
@@ -24,7 +37,7 @@ export default function EventListScreen() {
 
   useEffect(() => {
     filterEvents();
-  }, [events, searchQuery]);
+  }, [events, searchQuery, selectedCategory]);
 
   const fetchEvents = async () => {
     try {
@@ -61,17 +74,22 @@ export default function EventListScreen() {
   };
 
   const filterEvents = () => {
-    if (!searchQuery.trim()) {
-      setFilteredEvents(events);
-      return;
-    }
+  let filtered = events;
 
-    const filtered = events.filter(event =>
+  if (selectedCategory) {
+    filtered = filtered.filter(event => event.category === selectedCategory);
+  }
+
+  if (searchQuery.trim()) {
+    filtered = filtered.filter(event =>
       event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (event.venueName && event.venueName.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    setFilteredEvents(filtered);
-  };
+  }
+
+  setFilteredEvents(filtered);
+};
+
 
   const handleSearchToggle = () => {
     setSearchVisible(!searchVisible);
@@ -139,6 +157,41 @@ export default function EventListScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
+  <RNPickerSelect
+    placeholder={{ label: 'Filter by Category', value: null }}
+    value={selectedCategory}
+    onValueChange={(value) => setSelectedCategory(value)}
+    items={categories}
+    style={{
+      inputIOS: {
+        fontSize: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        color: '#333',
+        backgroundColor: '#fff',
+        paddingRight: 30,
+      },
+      inputAndroid: {
+        fontSize: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        color: '#333',
+        backgroundColor: '#fff',
+        paddingRight: 30,
+      },
+    }}
+    useNativeAndroidPickerStyle={false}
+    Icon={() => <Feather name="chevron-down" size={20} color="#666" />}
+  />
+</View>
+
 
         <ScrollView 
           contentContainerStyle={styles.eventList}

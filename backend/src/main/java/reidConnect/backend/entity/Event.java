@@ -6,8 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import reidConnect.backend.enums.AcademicRank;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
+import reidConnect.backend.enums.EventCategory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -55,6 +57,10 @@ public class Event {
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EventFaculty> targetFaculties = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventCategory category;
 
     @CreationTimestamp
     @Column(updatable = false, nullable = false)

@@ -1,8 +1,7 @@
 import './App.css';
 import Login from './components/Login';
-// import LostItemForm from './components/union/LostandFound';
 import SearchUser from './components/union/SearchUser';
-import Sidebar from './components/union/Sidebar'; // Import Navbar
+import Sidebar from './components/union/Sidebar';
 import AcademicDashboard from './components/academic/Dashboard';
 import LecturerManagement from './components/academic/LecturerManagement';
 import EventSchedule from './components/academic/EventSchedule';
@@ -13,33 +12,37 @@ import UnionDashboard from './components/union/Dashboard';
 import LostItemsGallery from './components/union/LostandFoundPosts';
 import LostItemForm from './components/union/LostandFound';
 import ClubGallery from './components/union/ClubGallery';
-import ClubDetail from './components/union/ClubDetail'; // Import the new ClubDetail component
-
+import ClubDetail from './components/union/ClubDetail';
 import AcademicSidebar from './components/academic/AcademicSidebar';
 
-// Wrapper to conditionally render Navbar
 function AppWrapper() {
   const location = useLocation();
-  const hideSidebarPaths = ['/', '/academic/dashboard', '/academic/lecturers', '/academic/events', '/academic/bookings', '/academic/reports']; // Add more paths if needed
-  const showSidebar = !hideSidebarPaths.includes(location.pathname);
+
+  // Detect current section
+  const isUnionRoute = location.pathname.startsWith('/union') || location.pathname.startsWith('/club');
+  const isAcademicRoute = location.pathname.startsWith('/academic');
 
   return (
     <>
-      {showSidebar && <Sidebar/>}
+      {/* Conditionally render sidebars */}
+      {isUnionRoute && <Sidebar />}
+      {isAcademicRoute && <AcademicSidebar />}
+
+      {/* Routes */}
       <Routes>
+        {/* Common Routes */}
         <Route path="/" element={<Login />} />
+
+        {/* Union Routes */}
         <Route path="/union/Profilemanagement" element={<SearchUser />} />
         <Route path="/union/LostandFound" element={<LostItemsGallery />} />
-        <Route path="/union/LostandFoundForm" element={<LostItemForm/>} />
-        <Route path="/union/dashboard" element={<UnionDashboard/>} />
-        <Route path="/union/Clubmanagement" element={<ClubGallery/>}/>
-        <Route path="/club/:clubId" element={<ClubDetail/>}/> {/* New route for club detail */}
-       
-      </Routes>
+        <Route path="/union/LostandFoundForm" element={<LostItemForm />} />
+        <Route path="/union/dashboard" element={<UnionDashboard />} />
+        <Route path="/union/Clubmanagement" element={<ClubGallery />} />
+        <Route path="/club/:clubId" element={<ClubDetail />} />
 
-      {showSidebar && <AcademicSidebar/>}
-      <Routes>
-         <Route path="/academic/dashboard" element={<AcademicDashboard />} />
+        {/* Academic Routes */}
+        <Route path="/academic/dashboard" element={<AcademicDashboard />} />
         <Route path="/academic/lecturers" element={<LecturerManagement />} />
         <Route path="/academic/events" element={<EventSchedule />} />
         <Route path="/academic/bookings" element={<HallBookings />} />

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8080/api/staff';
 
 const LecturerManagement = () => {
   const [activeNavItem, setActiveNavItem] = useState("Academic Staff");
@@ -9,37 +12,22 @@ const LecturerManagement = () => {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
+    code: '',
     email: '',
-    department: '',
-    phone: '',
-    specialization: '',
-    position: 'Senior Lecturer',
-    image: ''
+    degree: '',
+    faculty: 'UCSC',
+    rank: 'LECTURER'
   });
+  const [lecturers, setLecturers] = useState([]);
 
-  const [lecturers, setLecturers] = useState([
-    // Example lecturers to demo, you can replace or extend
-    {
-      id: 'SL001',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      department: 'Computer Science',
-      phone: '123-456-7890',
-      specialization: 'AI & ML',
-      position: 'Senior Lecturer',
-      image: ''
-    },
-    {
-      id: 'AL001',
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      department: 'Information Systems',
-      phone: '555-123-4567',
-      specialization: 'Database Systems',
-      position: 'Assistant Lecturer',
-      image: ''
-    }
-  ]);
+  useEffect(() => {
+    fetchLecturers();
+  }, []);
+
+  const fetchLecturers = async () => {
+    const res = await axios.get(API_URL);
+    setLecturers(res.data);
+  };
 
   const handleNavigation = (itemId) => {
     setActiveNavItem(itemId);
@@ -51,12 +39,11 @@ const LecturerManagement = () => {
     setFormData({
       id: '',
       name: '',
+      code: '',
       email: '',
-      department: '',
-      phone: '',
-      specialization: '',
-      position: 'Senior Lecturer',
-      image: ''
+      degree: '',
+      faculty: 'UCSC',
+      rank: 'LECTURER'
     });
   };
 
@@ -66,27 +53,19 @@ const LecturerManagement = () => {
     setShowAddForm(true);
   };
 
-  const handleDeleteLecturer = (lecturerId) => {
-    setLecturers(lecturers.filter(lecturer => lecturer.id !== lecturerId));
+  const handleDeleteLecturer = async (lecturerId) => {
+    await axios.delete(`${API_URL}/${lecturerId}`);
+    fetchLecturers();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const data = { ...formData };
     if (editingLecturer) {
-      setLecturers(lecturers.map(lecturer =>
-        lecturer.id === editingLecturer ? formData : lecturer
-      ));
+      await axios.put(`${API_URL}/${editingLecturer}`, data);
     } else {
-      let newId;
-      const count = (position) => lecturers.filter(l => l.position === position).length;
-      if (formData.position === 'Senior Lecturer') {
-        newId = 'SL' + String(count('Senior Lecturer') + 1).padStart(3, '0');
-      } else if (formData.position === 'Assistant Lecturer') {
-        newId = 'AL' + String(count('Assistant Lecturer') + 1).padStart(3, '0');
-      } else {
-        newId = 'IN' + String(count('Instructor') + 1).padStart(3, '0');
-      }
-      setLecturers([...lecturers, { ...formData, id: newId }]);
+      await axios.post(API_URL, data);
     }
+    fetchLecturers();
     setShowAddForm(false);
     setEditingLecturer(null);
   };
@@ -98,55 +77,9 @@ const LecturerManagement = () => {
 
   const filteredLecturers = lecturers.filter(lecturer =>
     lecturer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    lecturer.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    lecturer.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    lecturer.position.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const renderLecturerTable = (lecturerList, title) => (
-    <div className="category-section">
-      <div className="category-heading">
-        <div className="category-label">{title}</div>
-        <div className="category-count">{lecturerList.length}</div>
-      </div>
-      <div className="table-container">
-        <div className="table-header">
-          <div>Image</div>
-          <div>ID</div>
-          <div>Name</div>
-          <div>Email</div>
-          <div>Phone</div>
-          <div>Specialization</div>
-          <div>Actions</div>
-        </div>
-        <div className="table-body">
-          {lecturerList.map(lecturer => (
-            <div key={lecturer.id} className="table-row">
-              <div>
-                <img
-                  src={lecturer.image || 'https://via.placeholder.com/40'}
-                  alt={lecturer.name}
-                  className="lecturer-img"
-                />
-              </div>
-              <div>{lecturer.id}</div>
-              <div>{lecturer.name}</div>
-              <div>{lecturer.email}</div>
-              <div>{lecturer.phone}</div>
-              <div>{lecturer.specialization}</div>
-              <div className="actions">
-                <button onClick={() => handleEditLecturer(lecturer)} className="edit-btn">
-                  <i className="fa fa-edit" />
-                </button>
-                <button onClick={() => handleDeleteLecturer(lecturer.id)} className="delete-btn">
-                  <i className="fa fa-trash" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    lecturer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lecturer.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lecturer.degree.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -162,16 +95,15 @@ const LecturerManagement = () => {
 
       <div className="layout">
         <AcademicSidebar activeItem={activeNavItem} onNavigate={handleNavigation} />
-
         <main className="main-content">
-          <h1>Academic Staff Management</h1>
+          <h1>Lecturer Management</h1>
 
           {!showAddForm ? (
             <>
               <div className="controls">
                 <input
                   type="text"
-                  placeholder="Search by name, department, or specialization..."
+                  placeholder="Search by name, email, code or degree..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -180,74 +112,63 @@ const LecturerManagement = () => {
                 </button>
               </div>
 
-              {renderLecturerTable(filteredLecturers.filter(l => l.position === 'Senior Lecturer'), "Senior Lecturers")}
-              {renderLecturerTable(filteredLecturers.filter(l => l.position === 'Assistant Lecturer'), "Assistant Lecturers")}
-              {renderLecturerTable(filteredLecturers.filter(l => l.position === 'Instructor'), "Instructors")}
+              <table className="lecturer-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Email</th>
+                    <th>Faculty</th>
+                    <th>Rank</th>
+                    <th>Degree</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLecturers.map((lecturer) => (
+                    <tr key={lecturer.id}>
+                      <td>{lecturer.id}</td>
+                      <td>{lecturer.name}</td>
+                      <td>{lecturer.code}</td>
+                      <td>{lecturer.email}</td>
+                      <td>{lecturer.faculty}</td>
+                      <td>{lecturer.rank}</td>
+                      <td>{lecturer.degree}</td>
+                      <td>
+                        <button onClick={() => handleEditLecturer(lecturer)} className="edit-btn">
+                          <i className="fa fa-edit" />
+                        </button>
+                        <button onClick={() => handleDeleteLecturer(lecturer.id)} className="delete-btn">
+                          <i className="fa fa-trash" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </>
           ) : (
             <div className="form-section">
               <h2>{editingLecturer ? "Edit Lecturer" : "Add New Lecturer"}</h2>
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                <input
-                  type="text"
-                  placeholder="Name"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Department"
-                  required
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Specialization"
-                  value={formData.specialization}
-                  onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                />
-
-                <select
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                >
-                  <option>Senior Lecturer</option>
-                  <option>Assistant Lecturer</option>
-                  <option>Instructor</option>
+                <input type="text" placeholder="Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                <input type="text" placeholder="Code (3 letters)" required value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
+                <input type="email" placeholder="Email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                <input type="text" placeholder="Degree" value={formData.degree} onChange={(e) => setFormData({ ...formData, degree: e.target.value })} />
+                <select value={formData.faculty} onChange={(e) => setFormData({ ...formData, faculty: e.target.value })}>
+                  <option value="UCSC">UCSC</option>
+                  <option value="FOS">FOS</option>
+                  <option value="ALL">ALL</option>
                 </select>
-
-                {formData.image && (
-                  <div className="image-preview">
-                    <p>Preview:</p>
-                    <img
-                      src={formData.image}
-                      alt="Preview"
-                      onError={(e) => (e.target.src = 'https://via.placeholder.com/80x80?text=Invalid+URL')}
-                    />
-                  </div>
-                )}
-
+                <select value={formData.rank} onChange={(e) => setFormData({ ...formData, rank: e.target.value })}>
+                  <option value="SENIOR_LECTURER">Senior Lecturer</option>
+                  <option value="LECTURER">Lecturer</option>
+                  <option value="ASSOCIATE_PROFESSOR">Associate Professor</option>
+                  <option value="PROFESSOR">Professor</option>
+                  <option value="DEPARTMENT_HEAD">Department Head</option>
+                  <option value="ACADEMIC_SUPPORT_STAFF">Academic Support Staff</option>
+                </select>
                 <div className="form-buttons">
                   <button type="button" onClick={handleCancel}>Cancel</button>
                   <button type="submit">{editingLecturer ? 'Update' : 'Add'}</button>
@@ -257,6 +178,9 @@ const LecturerManagement = () => {
           )}
         </main>
       </div>
+    </div>
+  );
+};
 
       <style>{`
         .lecturer-management {
@@ -588,8 +512,5 @@ const LecturerManagement = () => {
           border: 2px solid #1a1a1a;
         }
       `}</style>
-    </div>
-  );
-};
 
 export default LecturerManagement;

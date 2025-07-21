@@ -22,6 +22,7 @@ public class EventMapper {
         event.setVenueName(dto.getVenueName());
         event.setDate(dto.getDate());
         event.setImagePath(dto.getImagePath());
+        event.setCategory(dto.getCategory()); // Set category
 
         // Create empty lists for now
         event.setTargetYears(new ArrayList<>());
@@ -34,10 +35,11 @@ public class EventMapper {
         event.setName(dto.getName());
         event.setDescription(dto.getDescription());
         event.setDate(dto.getDate());
+        event.setCategory(dto.getCategory()); // Update category
 
         if (venue != null) {
             event.setVenue(venue);
-            event.setVenueName(null); // optional: clear venue name if venue object is provided
+            event.setVenueName(null); // Optional: clear venue name if venue object is provided
         } else {
             event.setVenue(null);
             event.setVenueName(dto.getVenueName());
@@ -47,7 +49,6 @@ public class EventMapper {
             event.setImagePath(dto.getImagePath());
         }
     }
-
 
     public static EventResponseDto toResponseDto(Event event, List<Long> slotIds) {
         List<Years> years = event.getTargetYears().stream()
@@ -67,7 +68,8 @@ public class EventMapper {
                 slotIds,
                 event.getCreatedAt(),
                 years,
-                faculties
+                faculties,
+                event.getCategory() // Include category
         );
     }
 
@@ -92,8 +94,8 @@ public class EventMapper {
                 new ArrayList<>(), // or pass real slot IDs if available
                 event.getCreatedAt(),
                 years,
-                faculties
+                faculties,
+                event.getCategory() // Include category
         );
     }
-
 }
