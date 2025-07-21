@@ -224,16 +224,16 @@ export default function SignUp() {
                 {/* Progress Steps */}
                 <View style={styles.progressContainer}>
                     <ProgressSteps
-                        completedStepIconColor="#6366F1"
-                        activeStepIconBorderColor="#6366F1"
-                        activeLabelColor="#6366F1"
+                        completedStepIconColor="#FF453A"
+                        activeStepIconBorderColor="#FF453A"
+                        activeLabelColor="#FF453A"
                         labelColor="#71717A"
-                        progressBarColor="#6366F1"
+                        progressBarColor="#FF453A"
                         completedStepNumColor="#FFFFFF"
                         activeStepNumColor="#FFFFFF"
                         disabledStepNumColor="#52525B"
-                        completedProgressBarColor="#6366F1"
-                        activeProgressBarColor="#6366F1"
+                        completedProgressBarColor="#FF453A"
+                        activeProgressBarColor="#FF453A"
                         borderWidth={2}
                         activeStepIconBorderWidth={2}
                         marginBottom={0}
@@ -430,7 +430,7 @@ export default function SignUp() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#0F0F23',
+        backgroundColor: '#121212',
     },
     container: {
         flex: 1,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     inputFocused: {
-        borderColor: '#6366F1',
+        borderColor: '#FF453A',
         borderWidth: 2,
         backgroundColor: 'rgba(99, 102, 241, 0.05)',
     },
@@ -540,13 +540,13 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         borderWidth: 3,
-        borderColor: '#6366F1',
+        borderColor: '#FF453A',
     },
     resendButton: {
         marginTop: 16,
     },
     resendText: {
-        color: '#6366F1',
+        color: '#FF453A',
         fontSize: 14,
         fontWeight: '600',
         textAlign: 'center',
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     linkText: {
-        color: '#6366F1',
+        color: '#FF453A',
         fontSize: 14,
         fontWeight: '600',
     },

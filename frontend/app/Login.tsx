@@ -171,7 +171,7 @@ export default function Login() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#0F0F23',
+        backgroundColor: '#121212',
     },
     container: {
         flex: 1,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     inputFocused: {
-        borderColor: '#6366F1',
+        borderColor: '#FF453A',
         borderWidth: 2,
         backgroundColor: 'rgba(99, 102, 241, 0.05)',
     },
@@ -240,16 +240,16 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     forgotPasswordText: {
-        color: '#6366F1',
+        color: '#FF453A',
         fontSize: 14,
         fontWeight: '600',
     },
     loginButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: '#FF453A',
         paddingVertical: 16,
         borderRadius: 12,
         marginBottom: 32,
-        shadowColor: '#6366F1',
+        shadowColor: '#FF453A',
         shadowOffset: {
             width: 0,
             height: 8,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     linkText: {
-        color: '#6366F1',
+        color: '#FF453A',
         fontSize: 14,
         fontWeight: '600',
     },

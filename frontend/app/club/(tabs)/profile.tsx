@@ -49,22 +49,60 @@ export default function ClubProfileScreen() {
   const [eventCount, setEventCount] = useState(0);
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [postStats, setPostStats] = useState({}); // Store like/comment counts for posts
 
   const fetchSubCount = async () => {
-        try {
-            const [subCountResponse] = await Promise.all([
-                axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-            ]);
-            console.log(subCountResponse.data);
-            setSubCount(subCountResponse.data || 0);
+    try {
+      const [subCountResponse] = await Promise.all([
+        axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ]);
+      console.log(subCountResponse.data);
+      setSubCount(subCountResponse.data || 0);
+    } catch (error) {
+      console.error(`Error fetching subCount:`, error);
+      return { subCount: 0 };
+    }
+  };
 
-        } catch (error) {
-            console.error(`Error fetching subCount:`, error);
-            return { subCount: 0 };
-        }
-    };
+  const fetchPostStats = async (postId) => {
+    try {
+      const [likeCountRes, commentCountRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/posts/${postId}/likes/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+ 
+        axios.get(`${BASE_URL}/api/comments/post/${postId}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      
+      return {
+        likeCount: likeCountRes.data || 0,
+        commentCount: commentCountRes.data || 0
+      };
+    } catch (error) {
+      console.error(`Error fetching post stats for post ${postId}:`, error);
+      return { likeCount: 0, commentCount: 0 };
+    }
+  };
+
+  const fetchAllPostStats = async (postsData) => {
+    try {
+      const statsPromises = postsData.map(post => fetchPostStats(post.id));
+      const statsResults = await Promise.all(statsPromises);
+      
+      const statsMap = {};
+      postsData.forEach((post, index) => {
+        statsMap[post.id] = statsResults[index];
+      });
+      
+      setPostStats(statsMap);
+    } catch (error) {
+      console.error('Error fetching all post stats:', error);
+    }
+  };
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -72,7 +110,13 @@ export default function ClubProfileScreen() {
       const res = await axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setPosts(res.data || []);
+      const postsData = res.data || [];
+      setPosts(postsData);
+      
+      // Fetch stats for all posts
+      if (postsData.length > 0) {
+        await fetchAllPostStats(postsData);
+      }
     } catch (err) {
       console.error("Error fetching posts:", err);
     } finally {
@@ -172,6 +216,9 @@ export default function ClubProfileScreen() {
     const isEvent = selectedTab === 'events';
     const images = isEvent ? (item.imagePath ? [item.imagePath] : []) : (item.mediaPaths || []);
     
+    // Get post stats for this item (only for posts)
+    const stats = !isEvent ? postStats[item.id] || { likeCount: 0, commentCount: 0 } : null;
+    
     // Format target years and faculties for events
     const formatTargets = (targets) => {
       if (!targets || targets.length === 0) return '';
@@ -195,7 +242,7 @@ export default function ClubProfileScreen() {
         <View style={styles.detailHeader}>
           <Image
             source={{ 
-                uri: clubDetails.imagePath.startsWith('uploads/') 
+                uri: clubDetails.imagePath?.startsWith('uploads/') 
                 ? `${BASE_URL}/${clubDetails.imagePath}` 
                 : `${BASE_URL}/uploads/${clubDetails.imagePath}` 
             }}
@@ -253,6 +300,41 @@ export default function ClubProfileScreen() {
             {images.map((_, idx) => (
               <View key={idx} style={styles.indicator} />
             ))}
+          </View>
+        )}
+
+        {/* Post Actions and Stats - only for posts */}
+        {!isEvent && (
+          <View style={styles.postActions}>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="heart-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="chatbubble-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="paper-plane-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Like and Comment Count - only for posts */}
+        {!isEvent && stats && (
+          <View style={styles.postStats}>
+            {stats.likeCount > 0 && (
+              <Text style={styles.likesText}>
+                {stats.likeCount === 1 ? '1 like' : `${stats.likeCount} likes`}
+              </Text>
+            )}
+            {stats.commentCount > 0 && (
+              <TouchableOpacity>
+                <Text style={styles.commentsText}>
+                  View {stats.commentCount === 1 ? '1 comment' : `all ${stats.commentCount} comments`}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
         
@@ -728,6 +810,34 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#0095f6',
   },
+  
+  // Post Actions and Stats (new styles)
+  postActions: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  actionButton: {
+    padding: 4,
+  },
+  postStats: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  likesText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  commentsText: {
+    color: '#999',
+    fontSize: 14,
+  },
+  
   detailContent: {
     paddingHorizontal: 16,
     paddingBottom: 12,

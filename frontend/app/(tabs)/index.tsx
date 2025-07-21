@@ -85,7 +85,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F0F23',
+    backgroundColor: '#121212',
   },
   container: {
     flex: 1,
@@ -130,11 +130,11 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   primaryButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#FF453A',
     paddingVertical: 16,
     borderRadius: 12,
     marginBottom: 24,
-    shadowColor: '#6366F1',
+    shadowColor: '#FF453A',
     shadowOffset: {
       width: 0,
       height: 8,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   linkText: {
-    color: '#6366F1',
+    color: '#FF453A',
     fontSize: 14,
     fontWeight: '600',
   },

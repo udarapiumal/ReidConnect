@@ -3,15 +3,15 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { ProgressStep, ProgressSteps } from "react-native-progress-steps";
 import { BASE_URL } from "../constants/config";
@@ -125,15 +125,15 @@ export default function ClubSignUp() {
 };
 
   const progressStepStyle = {
-    activeStepIconBorderColor: '#FFFFFF',
+    activeStepIconBorderColor: '#FF453A',
     activeStepIconColor: '#1C1C1E',
-    activeLabelColor: '#FFFFFF',
-    completedStepIconColor: '#34C759',
-    completedCheckColor: '#FFFFFF',
-    disabledStepIconColor: '#48484A',
-    labelColor: '#8E8E93',
+    activeLabelColor: '#FF453A',
+    completedStepIconColor: '#FF453A',
+    completedCheckColor: '#FF453A',
+    disabledStepIconColor: '#FFFFFF',
+    labelColor: '#FFFFFF',
     progressBarColor: '#48484A',
-    completedProgressBarColor: '#34C759',
+    completedProgressBarColor: '#FF453A',
     activeStepNumColor: '#FFFFFF',
     completedStepNumColor: '#FFFFFF',
   };
@@ -146,7 +146,7 @@ export default function ClubSignUp() {
       </View>
       
       <View style={styles.progressContainer}>
-        <ProgressSteps {...progressStepStyle} borderWidth={2} activeStepIconBorderColor="#FFFFFF">
+        <ProgressSteps {...progressStepStyle} borderWidth={2} activeStepIconBorderColor="#FF453A">
           
           {/* Step 1: Club Information */}
           <ProgressStep label="Club Info" nextBtnStyle={styles.nextButton} nextBtnTextStyle={styles.nextButtonText}>
@@ -323,13 +323,13 @@ export default function ClubSignUp() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#121212",
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 20,
-    backgroundColor: "#000000",
+    backgroundColor: "#121212",
   },
   headerTitle: {
     fontSize: 28,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     aspectRatio: 16/9,
   },
   imageUploadButtonActive: {
-    borderColor: "#34C759",
+    borderColor: "#FF453A",
     borderStyle: "solid",
   },
   uploadPlaceholder: {
@@ -473,31 +473,31 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 10,
   },
   changeImageText: {
-    color: "#FFFFFF",
+    color: "#FF453A",
     fontSize: 12,
     fontWeight: "500",
     textAlign: 'center',
   },
   nextButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FF453A",
     borderRadius: 12,
     paddingVertical: 16,
     marginTop: 20,
   },
   nextButtonText: {
-    color: "#000000",
+    color: "#121212",
     fontSize: 16,
     fontWeight: "600",
   },
   submitButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FF453A",
     borderRadius: 12,
     paddingVertical: 16,
     marginTop: 32,
     alignItems: "center",
   },
   submitButtonText: {
-    color: "#000000",
+    color: "#121212",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#FF453A",
     marginBottom: 16,
     textAlign: "center",
   },
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   nextStepsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "#FF453A",
     marginBottom: 12,
   },
   nextStepsText: {

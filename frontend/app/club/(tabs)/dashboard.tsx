@@ -199,12 +199,6 @@ export default function ClubDashboardTab() {
                         </View>
                     </View>
                     <View style={styles.headerRight}>
-                        <TouchableOpacity style={styles.createButton}>
-                            <Image
-                                source={require('../../../assets/images/plus.png')}
-                                style={styles.bellIcon}
-                            />
-                        </TouchableOpacity>
 
                         <TouchableOpacity style={styles.bellButton}>
                             <Image
