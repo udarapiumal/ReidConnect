@@ -1,6 +1,6 @@
 import './App.css';
 import Login from './components/Login';
-import LostItemForm from './components/union/LostandFound';
+// import LostItemForm from './components/union/LostandFound';
 import SearchUser from './components/union/SearchUser';
 import Sidebar from './components/union/Sidebar'; // Import Navbar
 import AcademicDashboard from './components/academic/Dashboard';
@@ -10,7 +10,12 @@ import HallBookings from './components/academic/HallBookings';
 import Reports from './components/academic/Reports';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import UnionDashboard from './components/union/Dashboard';
-import '@fortawesome/fontawesome-free/css/all.min.css';
+import LostItemsGallery from './components/union/LostandFoundPosts';
+import LostItemForm from './components/union/LostandFound';
+import ClubGallery from './components/union/ClubGallery';
+import ClubDetail from './components/union/ClubDetail'; // Import the new ClubDetail component
+
+import AcademicSidebar from './components/academic/AcademicSidebar';
 
 // Wrapper to conditionally render Navbar
 function AppWrapper() {
@@ -24,9 +29,17 @@ function AppWrapper() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/union/Profilemanagement" element={<SearchUser />} />
-        <Route path="/union/LostandFound" element={<LostItemForm />} />
+        <Route path="/union/LostandFound" element={<LostItemsGallery />} />
+        <Route path="/union/LostandFoundForm" element={<LostItemForm/>} />
         <Route path="/union/dashboard" element={<UnionDashboard/>} />
-        <Route path="/academic/dashboard" element={<AcademicDashboard />} />
+        <Route path="/union/Clubmanagement" element={<ClubGallery/>}/>
+        <Route path="/club/:clubId" element={<ClubDetail/>}/> {/* New route for club detail */}
+       
+      </Routes>
+
+      {showSidebar && <AcademicSidebar/>}
+      <Routes>
+         <Route path="/academic/dashboard" element={<AcademicDashboard />} />
         <Route path="/academic/lecturers" element={<LecturerManagement />} />
         <Route path="/academic/events" element={<EventSchedule />} />
         <Route path="/academic/bookings" element={<HallBookings />} />

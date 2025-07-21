@@ -1,396 +1,400 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
-import { useNavigate } from 'react-router-dom';
 import AcademicSidebar from './AcademicSidebar';
+import { useNavigate } from 'react-router-dom';
 
 const EventSchedule = () => {
-    const navigate = useNavigate();
-    const [selectedFilter, setSelectedFilter] = useState("All courses");
-    const [currentMonth, setCurrentMonth] = useState("July 2025");
-    const [currentYear, setCurrentYear] = useState(2025);
-    const [currentMonthIndex, setCurrentMonthIndex] = useState(6); // July = 6 (0-indexed)
+  const navigate = useNavigate();
+  const [selectedFilter, setSelectedFilter] = useState("All events");
+  const [currentYear, setCurrentYear] = useState(2025);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(6); // July = 6 (0-indexed)
 
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-    const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const currentMonth = `${months[currentMonthIndex]} ${currentYear}`;
 
-    // Sample events data
-    const events = {
-        1: [{ title: "Action Pl...", type: "action" }],
-        4: [
-            { title: "Bi-weekl...", type: "biweekly" },
-            { title: "Interim R...", type: "interim" }
-        ],
-        6: [{ title: "UI Challe...", type: "ui" }],
-        7: [
-            { title: "Assignm...", type: "assignment" },
-            { title: "Uploadin...", type: "upload" }
-        ],
-        17: [{ title: "UI Challe...", type: "ui" }]
-    };
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const today = 6;
 
-    const navigatePrevMonth = () => {
-        if (currentMonthIndex === 0) {
-            setCurrentMonthIndex(11);
-            setCurrentYear(currentYear - 1);
-        } else {
-            setCurrentMonthIndex(currentMonthIndex - 1);
+  const events = {
+    1: [{ title: "Action Pl...", type: "action" }],
+    4: [
+      { title: "Bi-weekl...", type: "biweekly" },
+      { title: "Interim R...", type: "interim" }
+    ],
+    6: [{ title: "UI Challe...", type: "ui" }],
+    7: [
+      { title: "Assignm...", type: "assignment" },
+      { title: "Uploadin...", type: "upload" }
+    ],
+    17: [{ title: "UI Challe...", type: "ui" }]
+  };
+
+  const navigatePrevMonth = () => {
+    if (currentMonthIndex === 0) {
+      setCurrentMonthIndex(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonthIndex(prev => prev - 1);
+    }
+  };
+
+  const navigateNextMonth = () => {
+    if (currentMonthIndex === 11) {
+      setCurrentMonthIndex(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonthIndex(prev => prev + 1);
+    }
+  };
+
+  const generateCalendarDays = () => {
+    const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonthIndex, 1).getDay();
+    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+    const days = Array(adjustedFirstDay).fill(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+
+  return (
+    <div className="event-schedule-container">
+      <header className="header">
+        <h1 className="app-title">
+          ReidConnect <span className="highlight">AcademicAdmin</span>
+        </h1>
+        <div className="header-icons">
+          <i className="fas fa-bell icon" />
+          <i className="fas fa-user icon" />
+          <span className="admin-text">Admin</span>
+        </div>
+      </header>
+
+      <div className="content-wrapper">
+        <AcademicSidebar activeItem="Event Schedule" />
+        <main className="main-content">
+          <h2 className="page-title">Calendar</h2>
+
+          <div className="calendar-container">
+            <div className="calendar-header">
+              <select
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option>All events</option>
+                <option>Upcoming events</option>
+              </select>
+
+              <div className="month-navigation">
+                <button onClick={navigatePrevMonth} className="nav-button">
+                  ◀ {months[(currentMonthIndex + 11) % 12]}
+                </button>
+                <span className="current-month">{currentMonth}</span>
+                <button onClick={navigateNextMonth} className="nav-button">
+                  {months[(currentMonthIndex + 1) % 12]} ▶
+                </button>
+              </div>
+
+              <button className="new-event-button">
+                <i className="fas fa-plus" />
+                <span>New event</span>
+              </button>
+            </div>
+
+            <div>
+              <div className="weekdays-grid">
+                {daysOfWeek.map(day => <div key={day} className="weekday">{day}</div>)}
+              </div>
+
+              <div className="calendar-grid">
+                {calendarDays.map((day, index) => (
+                  <div key={index} className={`calendar-day${day === today ? " today" : ""}`}>
+                    {day && (
+                      <>
+                        <div className="day-number">{day}</div>
+                        {day === today && <div className="today-indicator" />}
+                        {events[day] && (
+                          <div className="events-list">
+                            {events[day].map((event, idx) => (
+                              <div key={idx} className="event-item">
+                                <span className="event-dot" />
+                                <span className="event-title">{event.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="import-export">
+              <button className="import-export-button">Import or export calendars</button>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <style>{`
+        .event-schedule-container {
+          background-color: #1a1a1a;
+          min-height: 100vh;
+          color: white;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          display: flex;
+          flex-direction: column;
         }
-        setCurrentMonth(`${months[currentMonthIndex === 0 ? 11 : currentMonthIndex - 1]} ${currentMonthIndex === 0 ? currentYear - 1 : currentYear}`);
-    };
 
-    const navigateNextMonth = () => {
-        if (currentMonthIndex === 11) {
-            setCurrentMonthIndex(0);
-            setCurrentYear(currentYear + 1);
-        } else {
-            setCurrentMonthIndex(currentMonthIndex + 1);
+        .header {
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 64px;
+          background-color: #2a2a2a;
+          border-bottom: 1px solid #333;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 16px;
+          z-index: 1001;
         }
-        setCurrentMonth(`${months[currentMonthIndex === 11 ? 0 : currentMonthIndex + 1]} ${currentMonthIndex === 11 ? currentYear + 1 : currentYear}`);
-    };
 
-    // Generate calendar days for the current month
-    const generateCalendarDays = () => {
-        const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
-        const firstDayOfMonth = new Date(currentYear, currentMonthIndex, 1).getDay();
-        const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Adjust for Monday start
-        
-        const days = [];
-        
-        // Empty cells for days before the first day of the month
-        for (let i = 0; i < adjustedFirstDay; i++) {
-            days.push(null);
+        .app-title {
+          font-size: 20px;
+          font-weight: bold;
+          color: white;
         }
-        
-        // Days of the month
-        for (let day = 1; day <= daysInMonth; day++) {
-            days.push(day);
+
+        .highlight {
+          color: #ef4444;
         }
-        
-        return days;
-    };
 
-    const calendarDays = generateCalendarDays();
-    const today = 6; // Current day highlighted in blue
+        .header-icons {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          color: white;
+        }
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <Text style={styles.appTitle}>
-                        ReidConnect <Text style={styles.academicText}>AcademicAdmin</Text>
-                    </Text>
-                </View>
-                <View style={styles.headerRight}>
-                    <View style={styles.headerIcons}>
-                        <i className="fas fa-bell" style={styles.icon}></i>
-                        <i className="fas fa-user" style={styles.icon}></i>
-                        <Text style={styles.adminText}>Admin</Text>
-                    </View>
-                </View>
-            </View>
-            
-            <View style={styles.content}>
-                <AcademicSidebar activeItem="Event Schedule" />
-                
-                <View style={styles.mainContent}>
-                    <Text style={styles.pageTitle}>Calendar</Text>
-                    
-                    {/* Calendar Section */}
-                    <View style={styles.calendarContainer}>
-                        <View style={styles.calendarHeader}>
-                            <View style={styles.filterContainer}>
-                                <select
-                                    value={selectedFilter}
-                                    onChange={e => setSelectedFilter(e.target.value)}
-                                    style={styles.filterDropdown}
-                                >
-                                    <option value="All courses">All events</option>
-                                    <option value="Upcoming events">Upcoming events</option>
-                                </select>
-                            </View>
-                            <View style={styles.calendarNavigation}>
-                                <TouchableOpacity onPress={navigatePrevMonth}>
-                                    <Text style={styles.navButtonText}>◀ June</Text>
-                                </TouchableOpacity>
-                                <Text style={styles.currentMonth}>{currentMonth}</Text>
-                                <TouchableOpacity onPress={navigateNextMonth}>
-                                    <Text style={styles.navButtonText}>August ▶</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <TouchableOpacity style={[styles.newEventBtn, { flexDirection: 'row', alignItems: 'center' }]}>
-                                <i className="fas fa-plus" style={styles.icon}></i>
-                                <Text style={styles.btnText}>New event</Text>
-                            </TouchableOpacity>
-                        </View>
+        .icon {
+          font-size: 20px;
+          cursor: pointer;
+        }
 
-                        {/* Calendar Grid */}
-                        <View style={styles.calendarGrid}>
-                            {/* Days of week header */}
-                            <View style={styles.weekHeader}>
-                                {daysOfWeek.map((day) => (
-                                    <Text key={day} style={styles.dayHeader}>{day}</Text>
-                                ))}
-                            </View>
+        .admin-text {
+          font-size: 14px;
+        }
 
-                            {/* Calendar days */}
-                            <View style={styles.calendarDays}>
-                                {calendarDays.map((day, index) => (
-                                    <View key={index} style={styles.calendarDay}>
-                                        {day && (
-                                            <>
-                                                <Text style={[
-                                                    styles.dayNumber,
-                                                    day === today && styles.todayNumber
-                                                ]}>
-                                                    {day}
-                                                </Text>
-                                                {day === today && <View style={styles.todayIndicator} />}
-                                                {events[day] && (
-                                                    <View style={styles.eventsContainer}>
-                                                        {events[day].map((event, eventIndex) => (
-                                                            <View key={eventIndex} style={styles.eventItem}>
-                                                                <View style={styles.eventDot} />
-                                                                <Text style={styles.eventText}>{event.title}</Text>
-                                                            </View>
-                                                        ))}
-                                                    </View>
-                                                )}
-                                            </>
-                                        )}
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
+        .content-wrapper {
+          display: flex;
+          padding-top: 64px; /* header height */
+          flex: 1;
+          min-height: calc(100vh - 64px);
+        }
 
-                        {/* Calendar Footer */}
-                        <View style={styles.calendarFooter}>
-                            <TouchableOpacity>
-                                <Text style={styles.footerLink}>Import or export calendars</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </View>
-        </View>
-    );
+        main.main-content {
+          flex: 1;
+          padding: 32px;
+          background-color: #1a1a1a;
+          margin-left: 200px; /* sidebar width */
+          overflow-y: auto;
+          min-height: calc(100vh - 64px);
+        }
+
+        .page-title {
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 24px;
+          color: white;
+        }
+
+        .calendar-container {
+          background-color: #2a2a2a;
+          padding: 24px;
+          border-radius: 12px;
+          min-height: 600px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .calendar-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 24px;
+          gap: 20px;
+          flex-wrap: wrap;
+        }
+
+        .filter-select {
+          background-color: #333;
+          border: 1px solid #555;
+          color: white;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          min-width: 150px;
+          cursor: pointer;
+        }
+
+        .month-navigation {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-weight: 600;
+          color: white;
+        }
+
+        .nav-button {
+          background: none;
+          border: none;
+          color: #3b82f6; /* blue-400 */
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          padding: 4px 8px;
+          border-radius: 6px;
+          transition: background-color 0.3s;
+        }
+
+        .nav-button:hover {
+          background-color: #2563eb; /* blue-600 */
+        }
+
+        .current-month {
+          font-size: 18px;
+        }
+
+        .new-event-button {
+          background-color: #ef4444;
+          color: white;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: background-color 0.3s;
+        }
+
+        .new-event-button:hover {
+          background-color: #dc2626;
+        }
+
+        .weekdays-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          color: #9ca3af; /* gray-400 */
+          font-weight: 600;
+          text-align: center;
+          margin-bottom: 12px;
+          user-select: none;
+        }
+
+        .weekday {
+          padding: 6px 0;
+          font-size: 14px;
+        }
+
+        .calendar-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 4px;
+        }
+
+        .calendar-day {
+          border: 1px solid #333;
+          min-height: 80px;
+          padding: 8px;
+          position: relative;
+          font-size: 14px;
+          color: white;
+          background-color: #1f1f1f;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .calendar-day.today {
+          font-weight: bold;
+          background-color: #2563eb; /* blue-600 */
+          color: white;
+        }
+
+        .day-number {
+          margin-bottom: 8px;
+        }
+
+        .today-indicator {
+          position: absolute;
+          top: 6px;
+          left: 6px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background-color: #3b82f6; /* blue-400 */
+          opacity: 0.6;
+          pointer-events: none;
+        }
+
+        .events-list {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          max-height: 50px;
+          overflow: hidden;
+        }
+
+        .event-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .event-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #f97316; /* orange-500 */
+          flex-shrink: 0;
+        }
+
+        .event-title {
+          font-size: 12px;
+          color: white;
+        }
+
+        .import-export {
+          margin-top: 16px;
+        }
+
+        .import-export-button {
+          background: none;
+          border: none;
+          color: #3b82f6;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 0;
+        }
+
+        .import-export-button:hover {
+          text-decoration: underline;
+        }
+      `}</style>
+    </div>
+  );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1a1a1a',
-        position: 'relative',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#2a2a2a',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 64,
-        zIndex: 1001,
-    },
-    headerLeft: {
-        flex: 1,
-    },
-    appTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-    },
-    academicText: {
-        color: '#ef4444',
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    headerIcons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    icon: {
-        fontSize: 20,
-        color: 'white',
-        marginRight: 8,
-    },
-    adminText: {
-        color: 'white',
-        fontSize: 16,
-    },
-    content: {
-        flex: 1,
-        flexDirection: 'row',
-        marginTop: 64,
-    },
-    mainContent: {
-        flex: 1,
-        padding: 32,
-        backgroundColor: '#1a1a1a',
-        marginLeft: 200,
-        minHeight: 'calc(100vh - 64px)',
-    },
-    pageTitle: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 32,
-    },
-    calendarContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        padding: 24,
-        minHeight: 600,
-    },
-    calendarHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    filterContainer: {
-        flex: 1,
-    },
-    filterDropdown: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#333',
-        padding: 8,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: '#555',
-        maxWidth: 150,
-        color: 'white',
-    },
-    filterText: {
-        color: 'white',
-        fontSize: 14,
-        marginRight: 8,
-    },
-    dropdownIcon: {
-        color: 'white',
-        fontSize: 12,
-    },
-    calendarNavigation: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 24,
-        flex: 1,
-        justifyContent: 'center',
-    },
-    navButtonText: {
-        color: '#60a5fa',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    currentMonth: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-    newEventBtn: {
-        backgroundColor: '#ef4444',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 6,
-    },
-    btnText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    calendarGrid: {
-        backgroundColor: 'transparent',
-    },
-    weekHeader: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    dayHeader: {
-        flex: 1,
-        textAlign: 'center',
-        color: '#999',
-        fontSize: 14,
-        fontWeight: '600',
-        paddingVertical: 8,
-    },
-    calendarDays: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-    },
-    calendarDay: {
-        width: '14.28%',
-        minHeight: 80,
-        padding: 4,
-        position: 'relative',
-        borderWidth: 0.5,
-        borderColor: '#333',
-    },
-    dayNumber: {
-        color: 'white',
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    todayNumber: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    todayIndicator: {
-        position: 'absolute',
-        top: 4,
-        left: 4,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#3b82f6',
-        zIndex: -1,
-    },
-    eventsContainer: {
-        gap: 2,
-    },
-    eventItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    eventDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#f97316',
-    },
-    eventText: {
-        color: '#fff',
-        fontSize: 10,
-        flex: 1,
-    },
-    calendarFooter: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 16,
-        gap: 8,
-    },
-    footerLink: {
-        color: '#60a5fa',
-        fontSize: 14,
-    },
-    footerSeparator: {
-        color: '#999',
-        fontSize: 14,
-    },
-});
 
 export default EventSchedule;

@@ -19,3 +19,4 @@ public interface UserRepository extends CrudRepository<User,Long> {
     @SuppressWarnings("override")
     Optional<User> findById(Long id);
 }
+

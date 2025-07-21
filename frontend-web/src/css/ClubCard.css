@@ -1,0 +1,183 @@
+/* Club Card (Table Row) Styles */
+.club-row {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s;
+}
+
+.club-row:hover {
+  background-color: #f8f9fa;
+}
+
+.club-row.selected {
+  background-color: #fef3c7;
+}
+
+.club-row td {
+  padding: 16px;
+  vertical-align: middle;
+}
+
+/* Club Name Cell */
+.club-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.club-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.club-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
+.club-name {
+  font-weight: 500;
+  color: #111827;
+  font-size: 14px;
+}
+
+/* Category */
+.club-category {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Location Cell */
+.location-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-flag {
+  font-size: 16px;
+}
+
+.website-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.website-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.no-website {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* Member Count */
+.member-count {
+  font-weight: 500;
+  color: #111827;
+  font-size: 14px;
+}
+
+/* Created Date */
+.created-date {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status-badge.active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.invited {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.employed {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.status-badge.hired {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.absent {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Responsive adjustments for table cells */
+@media (max-width: 1200px) {
+  .club-row td {
+    padding: 12px;
+  }
+  
+  .club-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .club-name-cell {
+    gap: 8px;
+  }
+  
+  .status-badge {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .club-row td {
+    padding: 10px 8px;
+  }
+  
+  .club-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .club-name,
+  .club-category,
+  .member-count,
+  .created-date,
+  .website-link,
+  .no-website {
+    font-size: 13px;
+  }
+  
+  .location-flag {
+    font-size: 14px;
+  }
+}
