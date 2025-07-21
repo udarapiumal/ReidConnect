@@ -7,10 +7,10 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
     const navigationItems = [
         { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
         { id: 'Academic Staff', icon: 'fa-solid fa-user-graduate', label: 'Academic Staff', route: '/academic/lecturers' },
+        { id: 'Courses', icon: 'fa-solid fa-user-graduate', label: 'Courses', route: '/academic/courses' },
         { id: 'Event Schedule', icon: 'fa-solid fa-calendar-check', label: 'Event Schedule', route: '/academic/events' },
         { id: 'Hall Bookings', icon: 'fa-solid fa-building-columns', label: 'Hall Bookings', route: '/academic/bookings' },
         { id: 'Reports', icon: 'fa-solid fa-chart-column', label: 'Reports', route: '/academic/reports' },
-        { id: 'Notifications', icon: 'fa-solid fa-bell', label: 'Notifications', route: '/academic/notifications' }
     ];
 
     const handleNavigation = (item) => {

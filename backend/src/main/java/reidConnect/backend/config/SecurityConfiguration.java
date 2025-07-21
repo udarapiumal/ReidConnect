@@ -40,6 +40,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
                         .requestMatchers("/api/staff/**").authenticated()
                         .requestMatchers("/api/venues/**").authenticated()

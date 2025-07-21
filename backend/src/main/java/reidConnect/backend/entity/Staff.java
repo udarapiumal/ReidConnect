@@ -6,6 +6,9 @@ import lombok.Setter;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.AcademicRank;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "staff")
 @Getter
@@ -35,5 +38,8 @@ public class Staff {
 
     @Column(nullable = false)
     private String degree;
+
+    @ManyToMany(mappedBy = "lecturers")
+    private Set<Course> courses = new HashSet<>();
 
 }
