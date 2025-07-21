@@ -1,812 +1,595 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView } from 'react-native';
 import AcademicSidebar from './AcademicSidebar';
 
 const LecturerManagement = () => {
-    const [activeNavItem, setActiveNavItem] = useState("Academic Staff");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [editingLecturer, setEditingLecturer] = useState(null);
-    const [formData, setFormData] = useState({
-        id: '',
-        name: '',
-        email: '',
-        department: '',
-        phone: '',
-        specialization: '',
-        position: 'Senior Lecturer',
-        image: ''
+  const [activeNavItem, setActiveNavItem] = useState("Academic Staff");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingLecturer, setEditingLecturer] = useState(null);
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    email: '',
+    department: '',
+    phone: '',
+    specialization: '',
+    position: 'Senior Lecturer',
+    image: ''
+  });
+
+  const [lecturers, setLecturers] = useState([
+    // Example lecturers to demo, you can replace or extend
+    {
+      id: 'SL001',
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      department: 'Computer Science',
+      phone: '123-456-7890',
+      specialization: 'AI & ML',
+      position: 'Senior Lecturer',
+      image: ''
+    },
+    {
+      id: 'AL001',
+      name: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      department: 'Information Systems',
+      phone: '555-123-4567',
+      specialization: 'Database Systems',
+      position: 'Assistant Lecturer',
+      image: ''
+    }
+  ]);
+
+  const handleNavigation = (itemId) => {
+    setActiveNavItem(itemId);
+  };
+
+  const handleAddLecturer = () => {
+    setShowAddForm(true);
+    setEditingLecturer(null);
+    setFormData({
+      id: '',
+      name: '',
+      email: '',
+      department: '',
+      phone: '',
+      specialization: '',
+      position: 'Senior Lecturer',
+      image: ''
     });
+  };
 
-    // Sample lecturer data organized by position
-    const [lecturers, setLecturers] = useState([
-        // Senior Lecturers
-        {
-            id: 'SL001',
-            name: 'Prof. Sarah Johnson',
-            email: 'sarah.johnson@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0124',
-            specialization: 'Data Structures & Algorithms',
-            position: 'Senior Lecturer',
-            image: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-            id: 'SL002',
-            name: 'Prof. Michael Davis',
-            email: 'michael.davis@university.edu',
-            department: 'Engineering',
-            phone: '+1-555-0126',
-            specialization: 'Machine Learning',
-            position: 'Senior Lecturer',
-            image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-            id: 'SL003',
-            name: 'Prof. Emily Chen',
-            email: 'emily.chen@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0127',
-            specialization: 'Database Systems',
-            position: 'Senior Lecturer',
-            image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-        },
-        // Assistant Lecturers
-        {
-            id: 'AL001',
-            name: 'Dr. John Smith',
-            email: 'john.smith@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0123',
-            specialization: 'Artificial Intelligence',
-            position: 'Assistant Lecturer',
-            image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-            id: 'AL002',
-            name: 'Dr. Lisa Wang',
-            email: 'lisa.wang@university.edu',
-            department: 'Engineering',
-            phone: '+1-555-0128',
-            specialization: 'Software Engineering',
-            position: 'Assistant Lecturer',
-            image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-            id: 'AL003',
-            name: 'Dr. Robert Brown',
-            email: 'robert.brown@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0129',
-            specialization: 'Computer Networks',
-            position: 'Assistant Lecturer',
-            image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
-        },
-        // Instructors
-        {
-            id: 'IN001',
-            name: 'Ms. Jennifer Taylor',
-            email: 'jennifer.taylor@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0130',
-            specialization: 'Web Development',
-            position: 'Instructor',
-            image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-            id: 'IN002',
-            name: 'Mr. David Wilson',
-            email: 'david.wilson@university.edu',
-            department: 'Engineering',
-            phone: '+1-555-0131',
-            specialization: 'Programming Fundamentals',
-            position: 'Instructor',
-            image: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?w=150&h=150&fit=crop&crop=face'
-        },
-        {
-            id: 'IN003',
-            name: 'Ms. Amy Rodriguez',
-            email: 'amy.rodriguez@university.edu',
-            department: 'Computer Science',
-            phone: '+1-555-0132',
-            specialization: 'Mobile App Development',
-            position: 'Instructor',
-            image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face'
-        }
-    ]);
+  const handleEditLecturer = (lecturer) => {
+    setEditingLecturer(lecturer.id);
+    setFormData(lecturer);
+    setShowAddForm(true);
+  };
 
-    const handleNavigation = (itemId) => {
-        setActiveNavItem(itemId);
-        // Add navigation logic here
-    };
+  const handleDeleteLecturer = (lecturerId) => {
+    setLecturers(lecturers.filter(lecturer => lecturer.id !== lecturerId));
+  };
 
-    const handleAddLecturer = () => {
-        setShowAddForm(true);
-        setEditingLecturer(null);
-        setFormData({
-            id: '',
-            name: '',
-            email: '',
-            department: '',
-            phone: '',
-            specialization: '',
-            position: 'Senior Lecturer',
-            image: ''
-        });
-    };
+  const handleSubmit = () => {
+    if (editingLecturer) {
+      setLecturers(lecturers.map(lecturer =>
+        lecturer.id === editingLecturer ? formData : lecturer
+      ));
+    } else {
+      let newId;
+      const count = (position) => lecturers.filter(l => l.position === position).length;
+      if (formData.position === 'Senior Lecturer') {
+        newId = 'SL' + String(count('Senior Lecturer') + 1).padStart(3, '0');
+      } else if (formData.position === 'Assistant Lecturer') {
+        newId = 'AL' + String(count('Assistant Lecturer') + 1).padStart(3, '0');
+      } else {
+        newId = 'IN' + String(count('Instructor') + 1).padStart(3, '0');
+      }
+      setLecturers([...lecturers, { ...formData, id: newId }]);
+    }
+    setShowAddForm(false);
+    setEditingLecturer(null);
+  };
 
-    const handleEditLecturer = (lecturer) => {
-        setEditingLecturer(lecturer.id);
-        setFormData(lecturer);
-        setShowAddForm(true);
-    };
+  const handleCancel = () => {
+    setShowAddForm(false);
+    setEditingLecturer(null);
+  };
 
-    const handleDeleteLecturer = (lecturerId) => {
-        setLecturers(lecturers.filter(lecturer => lecturer.id !== lecturerId));
-    };
+  const filteredLecturers = lecturers.filter(lecturer =>
+    lecturer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lecturer.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lecturer.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    lecturer.position.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-    const handleSubmit = () => {
-        if (editingLecturer) {
-            // Update existing lecturer
-            setLecturers(lecturers.map(lecturer => 
-                lecturer.id === editingLecturer ? formData : lecturer
-            ));
-        } else {
-            // Add new lecturer with appropriate ID prefix
-            let newId;
-            if (formData.position === 'Senior Lecturer') {
-                const seniorCount = lecturers.filter(l => l.position === 'Senior Lecturer').length;
-                newId = 'SL' + String(seniorCount + 1).padStart(3, '0');
-            } else if (formData.position === 'Assistant Lecturer') {
-                const assistantCount = lecturers.filter(l => l.position === 'Assistant Lecturer').length;
-                newId = 'AL' + String(assistantCount + 1).padStart(3, '0');
-            } else {
-                const instructorCount = lecturers.filter(l => l.position === 'Instructor').length;
-                newId = 'IN' + String(instructorCount + 1).padStart(3, '0');
-            }
-            setLecturers([...lecturers, { ...formData, id: newId }]);
-        }
-        setShowAddForm(false);
-        setEditingLecturer(null);
-    };
+  const renderLecturerTable = (lecturerList, title) => (
+    <div className="category-section">
+      <div className="category-heading">
+        <div className="category-label">{title}</div>
+        <div className="category-count">{lecturerList.length}</div>
+      </div>
+      <div className="table-container">
+        <div className="table-header">
+          <div>Image</div>
+          <div>ID</div>
+          <div>Name</div>
+          <div>Email</div>
+          <div>Phone</div>
+          <div>Specialization</div>
+          <div>Actions</div>
+        </div>
+        <div className="table-body">
+          {lecturerList.map(lecturer => (
+            <div key={lecturer.id} className="table-row">
+              <div>
+                <img
+                  src={lecturer.image || 'https://via.placeholder.com/40'}
+                  alt={lecturer.name}
+                  className="lecturer-img"
+                />
+              </div>
+              <div>{lecturer.id}</div>
+              <div>{lecturer.name}</div>
+              <div>{lecturer.email}</div>
+              <div>{lecturer.phone}</div>
+              <div>{lecturer.specialization}</div>
+              <div className="actions">
+                <button onClick={() => handleEditLecturer(lecturer)} className="edit-btn">
+                  <i className="fa fa-edit" />
+                </button>
+                <button onClick={() => handleDeleteLecturer(lecturer.id)} className="delete-btn">
+                  <i className="fa fa-trash" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
-    const handleCancel = () => {
-        setShowAddForm(false);
-        setEditingLecturer(null);
-    };
+  return (
+    <div className="lecturer-management">
+      <header className="header">
+        <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
+        <div className="admin-info">
+          <i className="fa fa-bell" />
+          <i className="fa fa-user" />
+          <span>Admin</span>
+        </div>
+      </header>
 
-    const filteredLecturers = lecturers.filter(lecturer =>
-        lecturer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lecturer.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lecturer.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lecturer.position.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+      <div className="layout">
+        <AcademicSidebar activeItem={activeNavItem} onNavigate={handleNavigation} />
 
-    // Group lecturers by position
-    const seniorLecturers = filteredLecturers.filter(lecturer => lecturer.position === 'Senior Lecturer');
-    const assistantLecturers = filteredLecturers.filter(lecturer => lecturer.position === 'Assistant Lecturer');
-    const instructors = filteredLecturers.filter(lecturer => lecturer.position === 'Instructor');
+        <main className="main-content">
+          <h1>Academic Staff Management</h1>
 
-    const renderLecturerTable = (lecturerList, title, bgColor) => (
-        <View style={styles.categorySection}>
-            {/* Category Heading Outside Table */}
-            <View style={styles.categoryHeading}>
-                <View style={[styles.categoryIndicator, { backgroundColor: bgColor }]}></View>
-                <Text style={styles.categoryLabel}>{title}</Text>
-                <View style={styles.categoryCount}>
-                    <Text style={styles.countText}>{lecturerList.length}</Text>
-                </View>
-            </View>
-            
-            {/* Table Container */}
-            <View style={styles.tableContainer}>
-                <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, styles.imageColumn]}>Image</Text>
-                    <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
-                    <Text style={[styles.tableHeaderText, styles.nameColumn]}>Name</Text>
-                    <Text style={[styles.tableHeaderText, styles.emailColumn]}>Email</Text>
-                    <Text style={[styles.tableHeaderText, styles.phoneColumn]}>Phone</Text>
-                    <Text style={[styles.tableHeaderText, styles.specializationColumn]}>Specialization</Text>
-                    <Text style={[styles.tableHeaderText, styles.actionsColumn]}>Actions</Text>
-                </View>
-                <ScrollView style={styles.tableBody}>
-                    {lecturerList.map((lecturer) => (
-                        <View key={lecturer.id} style={styles.tableRow}>
-                            <View style={[styles.imageColumn, styles.imageContainer]}>
-                                <img 
-                                    src={lecturer.image || 'https://via.placeholder.com/40x40?text=No+Image'} 
-                                    alt={lecturer.name}
-                                    style={styles.lecturerImage}
-                                />
-                            </View>
-                            <Text style={[styles.tableCellText, styles.idColumn]}>{lecturer.id}</Text>
-                            <Text style={[styles.tableCellText, styles.nameColumn]}>{lecturer.name}</Text>
-                            <Text style={[styles.tableCellText, styles.emailColumn]}>{lecturer.email}</Text>
-                            <Text style={[styles.tableCellText, styles.phoneColumn]}>{lecturer.phone}</Text>
-                            <Text style={[styles.tableCellText, styles.specializationColumn]}>{lecturer.specialization}</Text>
-                            <View style={[styles.actionsColumn, styles.actionsContainer]}>
-                                <TouchableOpacity 
-                                    style={styles.editBtn}
-                                    onPress={() => handleEditLecturer(lecturer)}
-                                >
-                                    <i className="fa-solid fa-edit" style={styles.actionIcon}></i>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={styles.deleteBtn}
-                                    onPress={() => handleDeleteLecturer(lecturer.id)}
-                                >
-                                    <i className="fa-solid fa-trash" style={styles.actionIcon}></i>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ))}
-                    {lecturerList.length === 0 && (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyText}>No {title.toLowerCase()} found</Text>
-                        </View>
-                    )}
-                </ScrollView>
-            </View>
-        </View>
-    );
+          {!showAddForm ? (
+            <>
+              <div className="controls">
+                <input
+                  type="text"
+                  placeholder="Search by name, department, or specialization..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button onClick={handleAddLecturer}>
+                  <i className="fa fa-plus" /> Add New
+                </button>
+              </div>
 
-    return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <Text style={styles.appTitle}>
-                        ReidConnect <Text style={styles.academicText}>AcademicAdmin</Text>
-                    </Text>
-                </View>
-                <View style={styles.headerRight}>
-                    <View style={styles.headerIcons}>
-                        <i className="fa-solid fa-bell" style={styles.icon}></i>
-                        <i className="fa-solid fa-user" style={styles.icon}></i>
-                        <Text style={styles.adminText}>Admin</Text>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.content}>
-                {/* Sidebar */}
-                <AcademicSidebar 
-                    activeItem={activeNavItem} 
-                    onNavigate={handleNavigation}
+              {renderLecturerTable(filteredLecturers.filter(l => l.position === 'Senior Lecturer'), "Senior Lecturers")}
+              {renderLecturerTable(filteredLecturers.filter(l => l.position === 'Assistant Lecturer'), "Assistant Lecturers")}
+              {renderLecturerTable(filteredLecturers.filter(l => l.position === 'Instructor'), "Instructors")}
+            </>
+          ) : (
+            <div className="form-section">
+              <h2>{editingLecturer ? "Edit Lecturer" : "Add New Lecturer"}</h2>
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Department"
+                  required
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Specialization"
+                  value={formData.specialization}
+                  onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Image URL"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                 />
 
-                {/* Main Content */}
-                <View style={styles.mainContent}>
-                    <Text style={styles.pageTitle}>Academic Staff Management</Text>
+                <select
+                  value={formData.position}
+                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                >
+                  <option>Senior Lecturer</option>
+                  <option>Assistant Lecturer</option>
+                  <option>Instructor</option>
+                </select>
 
-                    {!showAddForm ? (
-                        <>
-                            {/* Controls Section */}
-                            <View style={styles.controlsSection}>
-                                <View style={styles.searchContainer}>
-                                    <TextInput
-                                        style={styles.searchInput}
-                                        placeholder="Search lecturers by name, department, or specialization..."
-                                        placeholderTextColor="#999"
-                                        value={searchQuery}
-                                        onChangeText={setSearchQuery}
-                                    />
-                                </View>
-                                <TouchableOpacity 
-                                    style={styles.addBtn}
-                                    onPress={handleAddLecturer}
-                                >
-                                    <i className="fa-solid fa-plus" style={styles.btnIcon}></i>
-                                    <Text style={styles.btnText}>Add New</Text>
-                                </TouchableOpacity>
-                            </View>
+                {formData.image && (
+                  <div className="image-preview">
+                    <p>Preview:</p>
+                    <img
+                      src={formData.image}
+                      alt="Preview"
+                      onError={(e) => (e.target.src = 'https://via.placeholder.com/80x80?text=Invalid+URL')}
+                    />
+                  </div>
+                )}
 
-                            {/* Lecturers Categories */}
-                            <View style={styles.categoriesContainer}>
-                                {renderLecturerTable(seniorLecturers, "Senior Lecturers", "#fff")}
-                                {renderLecturerTable(assistantLecturers, "Assistant Lecturers", "#fff")}
-                                {renderLecturerTable(instructors, "Instructors", "#fff")}
-                            </View>
-                        </>
-                    ) : (
-                        /* Add/Edit Form */
-                        <View style={styles.formContainer}>
-                            <Text style={styles.formTitle}>
-                                {editingLecturer ? 'Edit Lecturer' : 'Add New Lecturer'}
-                            </Text>
+                <div className="form-buttons">
+                  <button type="button" onClick={handleCancel}>Cancel</button>
+                  <button type="submit">{editingLecturer ? 'Update' : 'Add'}</button>
+                </div>
+              </form>
+            </div>
+          )}
+        </main>
+      </div>
 
-                            <View style={styles.formGrid}>
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Name *</Text>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        value={formData.name}
-                                        onChangeText={(text) => setFormData({...formData, name: text})}
-                                        placeholder="Enter lecturer name"
-                                        placeholderTextColor="#999"
-                                    />
-                                </View>
+      <style>{`
+        .lecturer-management {
+          background-color: #1a1a1a;
+          min-height: 100vh;
+          color: white;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          display: flex;
+          flex-direction: column;
+        }
 
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Email *</Text>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        value={formData.email}
-                                        onChangeText={(text) => setFormData({...formData, email: text})}
-                                        placeholder="Enter email address"
-                                        placeholderTextColor="#999"
-                                    />
-                                </View>
+        .header {
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 64px;
+          background-color: #2a2a2a;
+          border-bottom: 1px solid #333;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 16px;
+          z-index: 1001;
+        }
 
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Department *</Text>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        value={formData.department}
-                                        onChangeText={(text) => setFormData({...formData, department: text})}
-                                        placeholder="Enter department"
-                                        placeholderTextColor="#999"
-                                    />
-                                </View>
+        .title {
+          font-weight: bold;
+          font-size: 20px;
+          color: white;
+        }
 
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Phone</Text>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        value={formData.phone}
-                                        onChangeText={(text) => setFormData({...formData, phone: text})}
-                                        placeholder="Enter phone number"
-                                        placeholderTextColor="#999"
-                                    />
-                                </View>
+        .title .highlight {
+          color: #ef4444;
+        }
 
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Position *</Text>
-                                    <View style={styles.positionSelector}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.positionOption,
-                                                formData.position === 'Senior Lecturer' && styles.positionOptionSelected
-                                            ]}
-                                            onPress={() => setFormData({...formData, position: 'Senior Lecturer'})}
-                                        >
-                                            <Text style={[
-                                                styles.positionOptionText,
-                                                formData.position === 'Senior Lecturer' && styles.positionOptionTextSelected
-                                            ]}>Senior Lecturer</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.positionOption,
-                                                formData.position === 'Assistant Lecturer' && styles.positionOptionSelected
-                                            ]}
-                                            onPress={() => setFormData({...formData, position: 'Assistant Lecturer'})}
-                                        >
-                                            <Text style={[
-                                                styles.positionOptionText,
-                                                formData.position === 'Assistant Lecturer' && styles.positionOptionTextSelected
-                                            ]}>Assistant Lecturer</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.positionOption,
-                                                formData.position === 'Instructor' && styles.positionOptionSelected
-                                            ]}
-                                            onPress={() => setFormData({...formData, position: 'Instructor'})}
-                                        >
-                                            <Text style={[
-                                                styles.positionOptionText,
-                                                formData.position === 'Instructor' && styles.positionOptionTextSelected
-                                            ]}>Instructor</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
+        .admin-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          color: white;
+        }
 
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Image URL</Text>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        value={formData.image}
-                                        onChangeText={(text) => setFormData({...formData, image: text})}
-                                        placeholder="Enter image URL"
-                                        placeholderTextColor="#999"
-                                    />
-                                    {formData.image && (
-                                        <View style={styles.imagePreviewContainer}>
-                                            <Text style={styles.previewLabel}>Preview:</Text>
-                                            <img 
-                                                src={formData.image} 
-                                                alt="Preview"
-                                                style={styles.imagePreview}
-                                                onError={(e) => {
-                                                    e.target.src = 'https://via.placeholder.com/80x80?text=Invalid+URL';
-                                                }}
-                                            />
-                                        </View>
-                                    )}
-                                </View>
+        .admin-info i {
+          font-size: 20px;
+          cursor: pointer;
+        }
 
-                                <View style={styles.formGroup}>
-                                    <Text style={styles.formLabel}>Specialization</Text>
-                                    <TextInput
-                                        style={styles.formInput}
-                                        value={formData.specialization}
-                                        onChangeText={(text) => setFormData({...formData, specialization: text})}
-                                        placeholder="Enter specialization"
-                                        placeholderTextColor="#999"
-                                    />
-                                </View>
-                            </View>
+        .admin-info span {
+          font-size: 14px;
+        }
 
-                            <View style={styles.formActions}>
-                                <TouchableOpacity 
-                                    style={styles.cancelBtn}
-                                    onPress={handleCancel}
-                                >
-                                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={styles.submitBtn}
-                                    onPress={handleSubmit}
-                                >
-                                    <Text style={styles.submitBtnText}>
-                                        {editingLecturer ? 'Update' : 'Add'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    )}
-                </View>
-            </View>
-        </View>
-    );
+        .layout {
+          display: flex;
+          padding-top: 64px; /* header height */
+          flex: 1;
+          min-height: calc(100vh - 64px);
+        }
+
+        main.main-content {
+          flex: 1;
+          padding: 32px;
+          background-color: #1a1a1a;
+          margin-left: 200px; /* width of sidebar */
+          overflow-y: auto;
+          min-height: calc(100vh - 64px);
+        }
+
+        main.main-content h1 {
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 24px;
+          color: white;
+        }
+
+        .controls {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .controls input[type="text"] {
+          background-color: #333;
+          border: none;
+          border-radius: 8px;
+          padding: 8px 12px;
+          color: white;
+          font-size: 14px;
+          flex-grow: 1;
+          min-width: 240px;
+          outline: none;
+          transition: background-color 0.3s;
+        }
+
+        .controls input[type="text"]:focus {
+          background-color: #444;
+        }
+
+        .controls button {
+          background-color: #ef4444;
+          border: none;
+          border-radius: 8px;
+          padding: 10px 18px;
+          color: white;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: background-color 0.3s;
+        }
+
+        .controls button i {
+          font-size: 16px;
+        }
+
+        .controls button:hover {
+          background-color: #dc2626;
+        }
+
+        /* Category sections */
+        .category-section {
+          margin-bottom: 40px;
+        }
+
+        .category-heading {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .category-label {
+          font-weight: 700;
+          font-size: 18px;
+          color: white;
+        }
+
+        .category-count {
+          font-size: 14px;
+          color: #9ca3af;
+          font-weight: 600;
+        }
+
+        /* Table */
+        .table-container {
+          background-color: #2a2a2a;
+          border-radius: 12px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.6);
+          overflow-x: auto;
+          border: 1px solid #444;
+        }
+
+        .table-header, .table-row {
+          display: grid;
+          grid-template-columns: 60px 60px 1.5fr 2fr 1.2fr 1.8fr 120px;
+          align-items: center;
+          padding: 12px 16px;
+          gap: 12px;
+          color: #d1d5db;
+        }
+
+        .table-header {
+          font-weight: 700;
+          font-size: 14px;
+          background-color: #333;
+          border-bottom: 1px solid #444;
+          text-transform: uppercase;
+          user-select: none;
+        }
+
+        .table-row {
+          border-bottom: 1px solid #444;
+          color: white;
+          font-size: 14px;
+          transition: background-color 0.3s;
+        }
+
+        .table-row:hover {
+          background-color: #3b3b3b;
+        }
+
+        .lecturer-img {
+          width: 40px;
+          height: 40px;
+          object-fit: cover;
+          border-radius: 50%;
+          border: 1px solid #555;
+        }
+
+        .actions {
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+        }
+
+        .actions button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #9ca3af;
+          font-size: 18px;
+          padding: 4px;
+          border-radius: 6px;
+          transition: background-color 0.3s, color 0.3s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+        }
+
+        .actions button.edit-btn:hover {
+          background-color: #2563eb;
+          color: white;
+        }
+
+        .actions button.delete-btn:hover {
+          background-color: #dc2626;
+          color: white;
+        }
+
+        /* Form section */
+        .form-section {
+          background-color: #2a2a2a;
+          padding: 24px;
+          border-radius: 12px;
+          max-width: 480px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.7);
+          color: white;
+        }
+
+        .form-section h2 {
+          margin-top: 0;
+          margin-bottom: 24px;
+          font-weight: 700;
+          font-size: 24px;
+        }
+
+        .form-section form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .form-section input,
+        .form-section select {
+          padding: 10px 14px;
+          border-radius: 8px;
+          border: none;
+          font-size: 14px;
+          outline: none;
+          background-color: #333;
+          color: white;
+          transition: background-color 0.3s;
+        }
+
+        .form-section input:focus,
+        .form-section select:focus {
+          background-color: #444;
+        }
+
+        .image-preview {
+          margin-top: 8px;
+          text-align: center;
+        }
+
+        .image-preview p {
+          margin-bottom: 8px;
+          font-size: 14px;
+          color: #9ca3af;
+        }
+
+        .image-preview img {
+          max-width: 80px;
+          max-height: 80px;
+          border-radius: 12px;
+          object-fit: cover;
+          border: 1px solid #555;
+        }
+
+        .form-buttons {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-top: 12px;
+        }
+
+        .form-buttons button {
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          min-width: 80px;
+        }
+
+        .form-buttons button[type="button"] {
+          background-color: #444;
+          color: white;
+        }
+
+        .form-buttons button[type="button"]:hover {
+          background-color: #555;
+        }
+
+        .form-buttons button[type="submit"] {
+          background-color: #ef4444;
+          color: white;
+        }
+
+        .form-buttons button[type="submit"]:hover {
+          background-color: #dc2626;
+        }
+
+        /* Scrollbar */
+        main.main-content::-webkit-scrollbar {
+          width: 8px;
+        }
+        main.main-content::-webkit-scrollbar-track {
+          background: #1a1a1a;
+        }
+        main.main-content::-webkit-scrollbar-thumb {
+          background-color: #444;
+          border-radius: 20px;
+          border: 2px solid #1a1a1a;
+        }
+      `}</style>
+    </div>
+  );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1a1a1a',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#2a2a2a',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1001,
-        height: 64,
-    },
-    headerLeft: {
-        flex: 1,
-    },
-    appTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-    },
-    academicText: {
-        color: '#ef4444',
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    headerIcons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    icon: {
-        fontSize: 20,
-        color: 'white',
-        marginRight: 8,
-    },
-    adminText: {
-        color: 'white',
-        fontSize: 16,
-    },
-    content: {
-        flex: 1,
-        flexDirection: 'row',
-        marginTop: 64,
-    },
-    mainContent: {
-        flex: 1,
-        padding: 32,
-        backgroundColor: '#1a1a1a',
-        marginLeft: 200,
-        minHeight: 'calc(100vh - 64px)',
-    },
-    pageTitle: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 32,
-    },
-    controlsSection: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-        gap: 16,
-    },
-    searchContainer: {
-        flex: 1,
-    },
-    searchInput: {
-        backgroundColor: '#333',
-        color: 'white',
-        borderWidth: 1,
-        borderColor: '#555',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 14,
-    },
-    addBtn: {
-        backgroundColor: '#ef4444',
-        padding: 12,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    btnIcon: {
-        color: 'white',
-        fontSize: 14,
-    },
-    btnText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    categoriesContainer: {
-        gap: 32,
-    },
-    categorySection: {
-        marginBottom: 24,
-    },
-    categoryHeading: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        gap: 12,
-    },
-    categoryIndicator: {
-        width: 4,
-        height: 24,
-        borderRadius: 2,
-    },
-    categoryLabel: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: 'white',
-        flex: 1,
-    },
-    categoryCount: {
-        backgroundColor: '#333',
-        paddingVertical: 4,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-    },
-    countText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    tableContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        backgroundColor: '#333',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#555',
-    },
-    tableHeaderText: {
-        color: 'white',
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    tableBody: {
-        maxHeight: 300,
-    },
-    emptyState: {
-        padding: 32,
-        alignItems: 'center',
-    },
-    emptyText: {
-        color: '#999',
-        fontSize: 14,
-        fontStyle: 'italic',
-    },
-    tableRow: {
-        flexDirection: 'row',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        alignItems: 'center',
-    },
-    tableCellText: {
-        color: '#ccc',
-        fontSize: 14,
-    },
-    imageColumn: {
-        width: 60,
-    },
-    imageContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    lecturerImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        objectFit: 'cover',
-        border: '2px solid #555',
-    },
-    idColumn: {
-        width: 100,
-    },
-    nameColumn: {
-        width: 200,
-    },
-    emailColumn: {
-        width: 250,
-    },
-    phoneColumn: {
-        width: 140,
-    },
-    specializationColumn: {
-        width: 200,
-    },
-    actionsColumn: {
-        width: 100,
-    },
-    actionsContainer: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    editBtn: {
-        backgroundColor: '#3b82f6',
-        padding: 8,
-        borderRadius: 6,
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    deleteBtn: {
-        backgroundColor: '#ef4444',
-        padding: 8,
-        borderRadius: 6,
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    actionIcon: {
-        color: 'white',
-        fontSize: 12,
-    },
-    formContainer: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        padding: 32,
-    },
-    formTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 32,
-    },
-    formGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 24,
-        marginBottom: 32,
-    },
-    formGroup: {
-        width: '45%',
-        minWidth: 250,
-    },
-    formLabel: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 8,
-    },
-    formInput: {
-        backgroundColor: '#333',
-        color: 'white',
-        borderWidth: 1,
-        borderColor: '#555',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 14,
-    },
-    positionSelector: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-    },
-    positionOption: {
-        backgroundColor: '#333',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#555',
-    },
-    positionOptionSelected: {
-        backgroundColor: '#ef4444',
-        borderColor: '#ef4444',
-    },
-    positionOptionText: {
-        color: '#ccc',
-        fontSize: 14,
-    },
-    positionOptionTextSelected: {
-        color: 'white',
-        fontWeight: '500',
-    },
-    formActions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 16,
-    },
-    cancelBtn: {
-        backgroundColor: '#555',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-    },
-    cancelBtnText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    submitBtn: {
-        backgroundColor: '#ef4444',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-    },
-    submitBtnText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    imagePreviewContainer: {
-        marginTop: 12,
-        alignItems: 'center',
-        padding: 12,
-        backgroundColor: '#333',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#555',
-    },
-    previewLabel: {
-        color: '#ccc',
-        fontSize: 12,
-        marginBottom: 8,
-    },
-    imagePreview: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        objectFit: 'cover',
-        border: '2px solid #555',
-    },
-});
 
 export default LecturerManagement;

@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 
 const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
     const navigate = useNavigate();
-    
+
     const navigationItems = [
         { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
         { id: 'Academic Staff', icon: 'fa-solid fa-user-graduate', label: 'Academic Staff', route: '/academic/lecturers' },
@@ -24,121 +23,104 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
     };
 
     return (
-        <View style={styles.sidebar}>
-            {/* Top section with navigation items */}
-            <View style={styles.topSection}>
-                {/* Navigation Items */}
-                <View style={styles.navigationList}>
-                    {navigationItems.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={[
-                                styles.navItem,
-                                activeItem === item.id && styles.navItemActive
-                            ]}
-                            onPress={() => handleNavigation(item)}
-                        >
-                            <i className={`fa ${item.icon}`} style={styles.navIcon}></i>
-                            <Text style={[
-                                styles.navText,
-                                activeItem === item.id && styles.navTextActive
-                            ]}>
-                                {item.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
+        <div style={styles.sidebar}>
+            <div style={styles.topSection}>
+                {navigationItems.map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => handleNavigation(item)}
+                        style={{
+                            ...styles.navItem,
+                            ...(activeItem === item.id ? styles.navItemActive : {})
+                        }}
+                    >
+                        <i className={item.icon} style={styles.navIcon}></i>
+                        <span style={{
+                            ...styles.navText,
+                            ...(activeItem === item.id ? styles.navTextActive : {})
+                        }}>
+                            {item.label}
+                        </span>
+                    </button>
+                ))}
+            </div>
 
-            {/* Bottom section with logout button */}
-            <View style={styles.bottomSection}>
-                <TouchableOpacity style={styles.logoutButton}>
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+            <div style={styles.bottomSection}>
+                <button style={styles.logoutButton}>
+                    <span style={styles.logoutText}>Logout</span>
+                </button>
+            </div>
+        </div>
     );
 };
 
-const styles = StyleSheet.create({
+const styles = {
     sidebar: {
-        width: 200,
+        width: '200px',
         backgroundColor: '#151718',
-        paddingVertical: 24,
-        paddingHorizontal: 16,
+        padding: '24px 16px',
         height: 'calc(100vh - 64px)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRightWidth: 1,
-        borderRightColor: '#333',
+        borderRight: '1px solid #333',
         position: 'fixed',
-        top: 64,
+        top: '64px',
         left: 0,
         zIndex: 1000,
     },
     topSection: {
-        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
     },
     bottomSection: {
-        marginTop: 'auto',
-        paddingTop: 50,
-    },
-    navigationList: {
-        flexDirection: 'row',
-        gap: 4,
-        flexWrap: 'wrap',
+        paddingTop: '50px',
     },
     navItem: {
-        flexDirection: 'row',
+        display: 'flex',
         alignItems: 'center',
-        justifyContent: 'left',
-        width: 180,
-        height: 48,
-        borderRadius: 8,
-        gap: 12,
-        marginRight: 8,
-        marginBottom: 8,
+        width: '100%',
+        height: '48px',
+        borderRadius: '8px',
         backgroundColor: 'transparent',
+        border: 'none',
+        color: 'white',
+        gap: '12px',
+        paddingLeft: '12px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        textAlign: 'left',
     },
     navItemActive: {
         backgroundColor: '#2a2a2a',
     },
     navIcon: {
-        fontSize: 16,
-        width: 20,
+        fontSize: '16px',
+        width: '20px',
         textAlign: 'center',
-        color: 'white', // Ensure icon color is white
     },
     navText: {
-        fontSize: 14,
-        color: '#ffffff',
         fontWeight: '400',
     },
     navTextActive: {
-        color: '#ffffff',
         fontWeight: '500',
     },
     logoutButton: {
-        flexDirection: 'row',
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#ef4444',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        gap: 8,
+        padding: '12px 16px',
+        borderRadius: '8px',
+        border: 'none',
+        cursor: 'pointer',
     },
     logoutText: {
         color: '#ffffff',
-        fontSize: 14,
+        fontSize: '14px',
         fontWeight: '500',
-    },
-    logoutIcon: {
-        color: 'white', // Ensure logout icon is white
-        fontSize: 14,
-        fontWeight: '500',
-    },
-});
+    }
+};
 
 export default AcademicSidebar;

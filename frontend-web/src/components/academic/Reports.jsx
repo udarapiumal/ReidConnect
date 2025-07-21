@@ -1,411 +1,418 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import AcademicSidebar from './AcademicSidebar';
+import AcademicSidebar from './AcademicSidebar'; // Assuming this is a web React component
 
 export default function Reports() {
-    const [activeNavItem, setActiveNavItem] = useState("Reports");
+  const [activeNavItem, setActiveNavItem] = useState("Reports");
 
-    const handleNavigation = (itemId) => {
-        setActiveNavItem(itemId);
-    };
+  const handleNavigation = (itemId) => {
+    setActiveNavItem(itemId);
+  };
 
-    // Sample documents data
-    const documents = [
-        {
-            id: 1,
-            name: "Academic Staff Performance Report Q2 2025",
-            category: "Performance Reports",
-            uploadDate: "2025-07-15",
-            fileSize: "2.5 MB",
-            status: "Published",
-            downloadCount: 45,
-            fileType: "PDF"
-        },
-        {
-            id: 2,
-            name: "Student Enrollment Statistics 2025",
-            category: "Statistical Reports",
-            uploadDate: "2025-07-10",
-            fileSize: "1.8 MB",
-            status: "Draft",
-            downloadCount: 0,
-            fileType: "Excel"
-        },
-        {
-            id: 3,
-            name: "Hall Utilization Analysis Report",
-            category: "Facility Reports",
-            uploadDate: "2025-07-08",
-            fileSize: "3.2 MB",
-            status: "Published",
-            downloadCount: 23,
-            fileType: "PDF"
-        },
-        {
-            id: 4,
-            name: "Event Management Summary June 2025",
-            category: "Event Reports",
-            uploadDate: "2025-07-01",
-            fileSize: "1.1 MB",
-            status: "Published",
-            downloadCount: 67,
-            fileType: "Word"
-        },
-        {
-            id: 5,
-            name: "Budget Allocation Report 2025-2026",
-            category: "Financial Reports",
-            uploadDate: "2025-06-28",
-            fileSize: "4.7 MB",
-            status: "Review",
-            downloadCount: 12,
-            fileType: "PDF"
+  // Sample documents data
+  const documents = [
+    {
+      id: 1,
+      name: "Academic Staff Performance Report Q2 2025",
+      category: "Performance Reports",
+      uploadDate: "2025-07-15",
+      fileSize: "2.5 MB",
+      status: "Published",
+      downloadCount: 45,
+      fileType: "PDF"
+    },
+    {
+      id: 2,
+      name: "Student Enrollment Statistics 2025",
+      category: "Statistical Reports",
+      uploadDate: "2025-07-10",
+      fileSize: "1.8 MB",
+      status: "Draft",
+      downloadCount: 0,
+      fileType: "Excel"
+    },
+    {
+      id: 3,
+      name: "Hall Utilization Analysis Report",
+      category: "Facility Reports",
+      uploadDate: "2025-07-08",
+      fileSize: "3.2 MB",
+      status: "Published",
+      downloadCount: 23,
+      fileType: "PDF"
+    },
+    {
+      id: 4,
+      name: "Event Management Summary June 2025",
+      category: "Event Reports",
+      uploadDate: "2025-07-01",
+      fileSize: "1.1 MB",
+      status: "Published",
+      downloadCount: 67,
+      fileType: "Word"
+    },
+    {
+      id: 5,
+      name: "Budget Allocation Report 2025-2026",
+      category: "Financial Reports",
+      uploadDate: "2025-06-28",
+      fileSize: "4.7 MB",
+      status: "Review",
+      downloadCount: 12,
+      fileType: "PDF"
+    }
+  ];
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Published': return '#22c55e'; // green
+      case 'Draft': return '#fbbf24'; // yellow
+      case 'Review': return '#f97316'; // orange
+      default: return '#6b7280'; // gray
+    }
+  };
+
+  const getFileTypeIcon = (fileType) => {
+    switch (fileType) {
+      case 'PDF': return 'fa-file-pdf';
+      case 'Excel': return 'fa-file-excel';
+      case 'Word': return 'fa-file-word';
+      default: return 'fa-file';
+    }
+  };
+
+  return (
+    <div className="container">
+      {/* Header */}
+      <header className="header">
+        <div className="header-left">
+          <h1 className="app-title">
+            ReidConnect <span className="academic-text">AcademicAdmin</span>
+          </h1>
+        </div>
+        <div className="header-right">
+          <div className="header-icons">
+            <i className="fas fa-bell icon"></i>
+            <i className="fas fa-user icon"></i>
+          </div>
+          <span className="admin-text">Admin</span>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="content">
+        <AcademicSidebar activeItem={activeNavItem} onNavigate={handleNavigation} />
+
+        <main className="main-content">
+          {/* Page Header */}
+          <div className="page-header">
+            <h2 className="page-title">Reports & Documents</h2>
+            <button className="upload-btn">
+              <i className="fas fa-upload btn-icon"></i>
+              <span className="btn-text">Upload</span>
+            </button>
+          </div>
+
+          {/* Statistics Cards */}
+          <section className="stats-section">
+            <div className="stats-card">
+              <i className="fas fa-file-alt stats-icon"></i>
+              <div className="stats-content">
+                <div className="stats-number">{documents.length}</div>
+                <div className="stats-label">Total Documents</div>
+              </div>
+            </div>
+
+            <div className="stats-card">
+              <i className="fas fa-eye stats-icon"></i>
+              <div className="stats-content">
+                <div className="stats-number">{documents.reduce((sum, doc) => sum + doc.downloadCount, 0)}</div>
+                <div className="stats-label">Total Downloads</div>
+              </div>
+            </div>
+
+            <div className="stats-card">
+              <i className="fas fa-check-circle stats-icon"></i>
+              <div className="stats-content">
+                <div className="stats-number">{documents.filter(doc => doc.status === 'Published').length}</div>
+                <div className="stats-label">Published</div>
+              </div>
+            </div>
+
+            <div className="stats-card">
+              <i className="fas fa-clock stats-icon"></i>
+              <div className="stats-content">
+                <div className="stats-number">{documents.filter(doc => doc.status === 'Draft' || doc.status === 'Review').length}</div>
+                <div className="stats-label">Pending</div>
+              </div>
+            </div>
+          </section>
+
+          {/* Documents Table */}
+          <section className="documents-section">
+            <div className="table-header">
+              <div className="table-cell table-cell-docname">Document Name</div>
+              <div className="table-cell">Upload Date</div>
+              <div className="table-cell">Size</div>
+              <div className="table-cell">Status</div>
+              <div className="table-cell">Actions</div>
+            </div>
+
+            {documents.map(document => (
+              <div key={document.id} className="table-row">
+                <div className="table-cell document-info">
+                  <i className={`fas ${getFileTypeIcon(document.fileType)} file-icon`}></i>
+                  <div className="document-details">
+                    <div className="document-name">{document.name}</div>
+                    <div className="document-type">{document.fileType}</div>
+                  </div>
+                </div>
+                <div className="table-cell">{document.uploadDate}</div>
+                <div className="table-cell">{document.fileSize}</div>
+                <div className="table-cell status-container">
+                  <span
+                    className="status-badge"
+                    style={{ backgroundColor: getStatusColor(document.status) }}
+                  >
+                    {document.status}
+                  </span>
+                </div>
+                <div className="table-cell actions-container">
+                  <button className="action-btn" title="Download">
+                    <i className="fas fa-download action-icon"></i>
+                  </button>
+                  <button className="action-btn" title="Delete">
+                    <i className="fas fa-trash action-icon"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </section>
+        </main>
+      </div>
+
+      {/* Add your CSS below or import a CSS file */}
+      <style>{`
+        /* Container */
+        .container {
+          background-color: #1a1a1a;
+          min-height: 100vh;
+          color: white;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-    ];
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            default: return '#6b7280';
+        /* Header */
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px;
+          background-color: #2a2a2a;
+          border-bottom: 1px solid #333;
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 64px;
+          z-index: 1001;
         }
-    };
-
-    const getFileTypeIcon = (fileType) => {
-        switch (fileType) {
-            case 'PDF': return 'fa-file-pdf';
-            case 'Excel': return 'fa-file-excel';
-            case 'Word': return 'fa-file-word';
-            default: return 'fa-file';
+        .header-left {
+          flex: 1;
         }
-    };
-
-    return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <Text style={styles.appTitle}>
-                        ReidConnect <Text style={styles.academicText}>AcademicAdmin</Text>
-                    </Text>
-                </View>
-                <View style={styles.headerRight}>
-                    <View style={styles.headerIcons}>
-                        <i className="fas fa-bell" style={styles.icon}></i>
-                        <i className="fas fa-user" style={styles.icon}></i>
-                    </View>
-                    <Text style={styles.adminText}>Admin</Text>
-                </View>
-            </View>
-
-            {/* Content */}
-            <View style={styles.content}>
-                <AcademicSidebar activeItem={activeNavItem} onNavigate={handleNavigation} />
-                
-                <ScrollView style={styles.mainContent}>
-                    {/* Page Header */}
-                    <View style={styles.pageHeader}>
-                        <Text style={styles.pageTitle}>Reports & Documents</Text>
-                        <TouchableOpacity style={styles.uploadBtn}>
-                            <i className="fas fa-upload" style={styles.btnIcon}></i>
-                            <Text style={styles.btnText}>Upload</Text>
-                        </TouchableOpacity>
-                    </View>
-
-
-
-                    {/* Statistics Cards */}
-                    <View style={styles.statsSection}>
-                        <View style={styles.statsCard}>
-                            <i className="fas fa-file-alt" style={styles.statsIcon}></i>
-                            <View style={styles.statsContent}>
-                                <Text style={styles.statsNumber}>{documents.length}</Text>
-                                <Text style={styles.statsLabel}>Total Documents</Text>
-                            </View>
-                        </View>
-                        
-                        <View style={styles.statsCard}>
-                            <i className="fas fa-eye" style={styles.statsIcon}></i>
-                            <View style={styles.statsContent}>
-                                <Text style={styles.statsNumber}>{documents.reduce((sum, doc) => sum + doc.downloadCount, 0)}</Text>
-                                <Text style={styles.statsLabel}>Total Downloads</Text>
-                            </View>
-                        </View>
-                        
-                        <View style={styles.statsCard}>
-                            <i className="fas fa-check-circle" style={styles.statsIcon}></i>
-                            <View style={styles.statsContent}>
-                                <Text style={styles.statsNumber}>{documents.filter(doc => doc.status === 'Published').length}</Text>
-                                <Text style={styles.statsLabel}>Published</Text>
-                            </View>
-                        </View>
-                        
-                        <View style={styles.statsCard}>
-                            <i className="fas fa-clock" style={styles.statsIcon}></i>
-                            <View style={styles.statsContent}>
-                                <Text style={styles.statsNumber}>{documents.filter(doc => doc.status === 'Draft' || doc.status === 'Review').length}</Text>
-                                <Text style={styles.statsLabel}>Pending</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Documents Table */}
-                    <View style={styles.documentsSection}>
-                        <View style={styles.tableHeader}>
-                            <Text style={styles.tableHeaderText}>Document Name</Text>
-                            <Text style={styles.tableHeaderText}>Upload Date</Text>
-                            <Text style={styles.tableHeaderText}>Size</Text>
-                            <Text style={styles.tableHeaderText}>Status</Text>
-                            <Text style={styles.tableHeaderText}>Actions</Text>
-                        </View>
-
-                        {documents.map((document) => (
-                            <View key={document.id} style={styles.tableRow}>
-                                <View style={styles.documentInfo}>
-                                    <i className={`fas ${getFileTypeIcon(document.fileType)}`} style={styles.fileIcon}></i>
-                                    <View style={styles.documentDetails}>
-                                        <Text style={styles.documentName}>{document.name}</Text>
-                                        <Text style={styles.documentType}>{document.fileType}</Text>
-                                    </View>
-                                </View>
-                                
-                                <Text style={styles.tableCell}>{document.uploadDate}</Text>
-                                <Text style={styles.tableCell}>{document.fileSize}</Text>
-                                
-                                <View style={styles.statusContainer}>
-                                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(document.status) }]}>
-                                        <Text style={styles.statusText}>{document.status}</Text>
-                                    </View>
-                                </View>
-                                
-                                <View style={styles.actionsContainer}>
-                                    <TouchableOpacity style={styles.actionBtn}>
-                                        <i className="fas fa-download" style={styles.actionIcon}></i>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.actionBtn}>
-                                        <i className="fas fa-trash" style={styles.actionIcon}></i>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                </ScrollView>
-            </View>
-        </View>
-    );
+        .app-title {
+          font-size: 24px;
+          font-weight: bold;
+          margin: 0;
+          color: white;
+        }
+        .academic-text {
+          color: #ef4444;
+        }
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          color: white;
+        }
+        .header-icons {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .icon {
+          font-size: 20px;
+          color: white;
+          cursor: pointer;
+        }
+        .admin-text {
+          font-size: 16px;
+        }
+        /* Content */
+        .content {
+          display: flex;
+          margin-top: 64px;
+        }
+        /* Main Content */
+        .main-content {
+          flex: 1;
+          padding: 32px;
+          background-color: #1a1a1a;
+          margin-left: 200px; /* Assuming sidebar width */
+          min-height: calc(100vh - 64px);
+          overflow-y: auto;
+        }
+        /* Page Header */
+        .page-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+        }
+        .page-title {
+          font-size: 32px;
+          font-weight: bold;
+          margin: 0;
+        }
+        .upload-btn {
+          background-color: #ef4444;
+          border: none;
+          color: white;
+          padding: 12px 16px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+        }
+        .upload-btn:hover {
+          background-color: #dc2626;
+        }
+        .btn-icon {
+          font-size: 14px;
+        }
+        /* Stats Section */
+        .stats-section {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 32px;
+          flex-wrap: wrap;
+        }
+        .stats-card {
+          flex: 1 1 200px;
+          background-color: #2a2a2a;
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          border: 1px solid #333;
+        }
+        .stats-icon {
+          font-size: 24px;
+          color: #60a5fa;
+          flex-shrink: 0;
+        }
+        .stats-content {
+          flex: 1;
+        }
+        .stats-number {
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 4px;
+        }
+        .stats-label {
+          font-size: 14px;
+          color: #ccc;
+        }
+        /* Documents Section */
+        .documents-section {
+          background-color: #2a2a2a;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #333;
+        }
+        .table-header, .table-row {
+          display: flex;
+          padding: 16px 20px;
+          align-items: center;
+          color: #ccc;
+          font-size: 14px;
+        }
+        .table-header {
+          background-color: #333;
+          font-weight: 600;
+          color: #ccc;
+        }
+        .table-cell {
+          flex: 1;
+          text-align: left;
+          overflow-wrap: anywhere;
+        }
+        .table-cell-docname {
+          flex: 2;
+        }
+        .document-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex: 2;
+          color: white;
+          font-weight: 500;
+        }
+        .file-icon {
+          font-size: 20px;
+          width: 24px;
+          text-align: center;
+          color: white;
+          flex-shrink: 0;
+        }
+        .document-details {
+          display: flex;
+          flex-direction: column;
+        }
+        .document-name {
+          font-size: 14px;
+          margin-bottom: 2px;
+        }
+        .document-type {
+          font-size: 12px;
+          color: #888;
+        }
+        .status-container {
+          flex: 1;
+          text-align: left;
+        }
+        .status-badge {
+          padding: 4px 8px;
+          border-radius: 12px;
+          color: white;
+          font-weight: 500;
+          font-size: 12px;
+          display: inline-block;
+          min-width: 80px;
+          text-align: center;
+        }
+        .actions-container {
+          flex: 1;
+          display: flex;
+          gap: 8px;
+          justify-content: flex-start;
+        }
+        .action-btn {
+          background-color: #333;
+          border: none;
+          padding: 8px;
+          border-radius: 6px;
+          color: #ccc;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+        }
+        .action-btn:hover {
+          background-color: #555;
+          color: white;
+        }
+      `}</style>
+    </div>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1a1a1a',
-        position: 'relative',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#2a2a2a',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 64,
-        zIndex: 1001,
-    },
-    headerLeft: {
-        flex: 1,
-    },
-    appTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-    },
-    academicText: {
-        color: '#ef4444',
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    headerIcons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    icon: {
-        fontSize: 20,
-        color: 'white',
-        marginRight: 8,
-    },
-    adminText: {
-        color: 'white',
-        fontSize: 16,
-    },
-    content: {
-        flex: 1,
-        flexDirection: 'row',
-        marginTop: 64,
-    },
-    mainContent: {
-        flex: 1,
-        padding: 32,
-        backgroundColor: '#1a1a1a',
-        marginLeft: 200,
-        minHeight: 'calc(100vh - 64px)',
-    },
-    pageHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    pageTitle: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: 'white',
-    },
-    uploadBtn: {
-        backgroundColor: '#ef4444',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    btnIcon: {
-        color: 'white',
-        fontSize: 14,
-    },
-    btnText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    statsSection: {
-        flexDirection: 'row',
-        gap: 16,
-        marginBottom: 32,
-    },
-    statsCard: {
-        flex: 1,
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        padding: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-        borderWidth: 1,
-        borderColor: '#333',
-    },
-    statsIcon: {
-        fontSize: 24,
-        color: '#60a5fa',
-    },
-    statsContent: {
-        flex: 1,
-    },
-    statsNumber: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 4,
-    },
-    statsLabel: {
-        fontSize: 14,
-        color: '#ccc',
-    },
-    documentsSection: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#333',
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        backgroundColor: '#333',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-    },
-    tableHeaderText: {
-        color: '#ccc',
-        fontSize: 14,
-        fontWeight: '600',
-        flex: 1,
-        textAlign: 'left',
-    },
-    tableRow: {
-        flexDirection: 'row',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        alignItems: 'center',
-    },
-    documentInfo: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    fileIcon: {
-        fontSize: 20,
-        color: '#fff',
-        width: 24,
-        textAlign: 'center',
-    },
-    documentDetails: {
-        flex: 1,
-    },
-    documentName: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 2,
-    },
-    documentType: {
-        color: '#888',
-        fontSize: 12,
-    },
-    tableCell: {
-        color: '#ccc',
-        fontSize: 14,
-        flex: 1,
-        textAlign: 'left',
-    },
-    statusContainer: {
-        flex: 1,
-        alignItems: 'flex-start',
-    },
-    statusBadge: {
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 12,
-    },
-    statusText: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    actionsContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        gap: 8,
-        justifyContent: 'flex-start',
-    },
-    actionBtn: {
-        padding: 8,
-        borderRadius: 6,
-        backgroundColor: '#333',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    actionIcon: {
-        color: '#ccc',
-        fontSize: 14,
-    },
-});
