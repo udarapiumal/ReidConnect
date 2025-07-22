@@ -6,11 +6,11 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
 
     const navigationItems = [
         { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
-        { id: 'Academic Staff', icon: 'fa-solid fa-user-graduate', label: 'Academic Staff', route: '/academic/lecturers' },
-        { id: 'Courses', icon: 'fa-solid fa-user-graduate', label: 'Courses', route: '/academic/courses' },
-        { id: 'Event Schedule', icon: 'fa-solid fa-calendar-check', label: 'Event Schedule', route: '/academic/events' },
-        { id: 'Hall Bookings', icon: 'fa-solid fa-building-columns', label: 'Hall Bookings', route: '/academic/bookings' },
-        { id: 'Reports', icon: 'fa-solid fa-chart-column', label: 'Reports', route: '/academic/reports' },
+        { id: 'Academic Staff', icon: 'fa-solid fa-users', label: 'Academic Staff', route: '/academic/lecturers' },
+        { id: 'Courses', icon: 'fa-solid fa-book', label: 'Courses', route: '/academic/courses' },
+        { id: 'Event Schedule', icon: 'fa-solid fa-calendar-days', label: 'Event Schedule', route: '/academic/events' },
+        { id: 'Hall Bookings', icon: 'fa-solid fa-building', label: 'Hall Bookings', route: '/academic/bookings' },
+        { id: 'Reports', icon: 'fa-solid fa-chart-bar', label: 'Reports', route: '/academic/reports' },
     ];
 
     const handleNavigation = (item) => {
@@ -47,6 +47,10 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
 
             <div style={styles.bottomSection}>
                 <button style={styles.logoutButton}>
+                    <i
+                        className="fa-solid fa-right-from-bracket"
+                        style={{ marginRight: '10px', fontSize: '16px', color: '#fff' }}
+                    ></i>
                     <span style={styles.logoutText}>Logout</span>
                 </button>
             </div>
@@ -118,8 +122,9 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#dc2626',
+        backgroundColor: '#FF453A',
         padding: '12px 16px',
+        marginBottom: '10px',
         borderRadius: '8px',
         border: 'none',
         cursor: 'pointer',

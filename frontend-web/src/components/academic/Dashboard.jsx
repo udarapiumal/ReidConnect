@@ -33,7 +33,7 @@ export default function Dashboard() {
                         clearInterval(lectureInterval);
                         return 200;
                     }
-                    return prev + 8;
+                    return prev + 4;
                 });
             }, 50);
 
@@ -44,7 +44,7 @@ export default function Dashboard() {
                         clearInterval(bookingInterval);
                         return 50;
                     }
-                    return prev + 2;
+                    return prev + 1;
                 });
             }, 50);
 
@@ -55,7 +55,7 @@ export default function Dashboard() {
                         clearInterval(eventInterval);
                         return 100;
                     }
-                    return prev + 4;
+                    return prev + 2;
                 });
             }, 50);
 
