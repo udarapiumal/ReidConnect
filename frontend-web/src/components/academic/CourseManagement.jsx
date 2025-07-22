@@ -351,24 +351,14 @@ const CourseManagement = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Credits</label>
-                    <Select
-                      options={creditOptions}
-                      value={creditOptions.find(opt => opt.value === formData.credits)}
-                      onChange={(selectedOption) => setFormData({ ...formData, credits: selectedOption.value })}
-                      placeholder="Select credits..."
-                      styles={customSelectStyles}
-                      isSearchable={false}
-                      isClearable={false}
-                      theme={(theme) => ({
-                        ...theme,
-                        colors: {
-                          ...theme.colors,
-                          primary: '#FF453A',
-                          primary75: 'rgba(249, 115, 22, 0.75)',
-                          primary50: 'rgba(249, 115, 22, 0.5)',
-                          primary25: 'rgba(249, 115, 22, 0.25)',
-                        },
-                      })}
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      placeholder="Enter credits (1-10)"
+                      required
+                      value={formData.credits}
+                      onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 1 })}
                     />
                   </div>
 
@@ -689,7 +679,7 @@ const CourseManagement = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
+          z-index: 1002;
           padding: 20px;
         }
 
@@ -759,7 +749,7 @@ const CourseManagement = () => {
 
         .form-row {
           display: grid;
-          grid-template-columns: 200px 1fr;
+          grid-template-columns: 1fr 1fr;
           gap: 20px;
         }
 
