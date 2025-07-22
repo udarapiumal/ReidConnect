@@ -11,7 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,27 +31,27 @@ interface UserType {
 // API function to fetch events
 const getAllEvents = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/api/events`);
+    const response = await axiosInstance.get(`${BASE_URL}/api/events`);
     console.log('Events:', response.data);
     
-    // Get user info for status checking
-    const token = await AsyncStorage.getItem("token");
     let userId = null;
-    if (token) {
-      try {
-        const decoded = jwtDecode<UserType>(token);
-        userId = decoded.id;
-      } catch (error) {
-        console.error('Failed to decode token:', error);
-      }
-    }
+try {
+  const token = await AsyncStorage.getItem("token");
+  if (token) {
+    const decoded = jwtDecode<UserType>(token);
+    userId = decoded.id;
+  }
+} catch (error) {
+  console.error('Failed to decode token:', error);
+}
+
     
     // Fetch attendance counts and user status for each event
     const eventsWithCounts = await Promise.all(
       response.data.map(async (event: any) => {
         try {
           // Fetch attendance counts
-          const countsResponse = await axios.get(`${BASE_URL}/api/events/${event.id}/attendance/counts`);
+          const countsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${event.id}/attendance/counts`);
           const rawCounts = countsResponse.data;
           console.log(`Raw counts for event ${event.id}:`, rawCounts);
           
@@ -66,7 +66,7 @@ const getAllEvents = async () => {
           let userStatus = 'none';
           if (userId && token) {
             try {
-              const userStatusResponse = await axios.get(
+              const userStatusResponse = await axiosInstance.get(
                 `${BASE_URL}/api/events/${event.id}/attendance/user/${userId}`,
                 {
                   headers: {

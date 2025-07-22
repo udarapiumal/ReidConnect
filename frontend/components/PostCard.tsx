@@ -65,14 +65,25 @@ export function PostCard({ post, onPress }: PostCardProps) {
     }
   };
 
-  // Handle different image source types
+  // Handle different image source types with better debugging
   const getImageSource = (image: string | number | undefined) => {
     if (typeof image === 'string') {
+      console.log(`PostCard - Image URL for post ${post.id}:`, image);
       return { uri: image };
     } else if (typeof image === 'number') {
       return image; // This is a require() result
     }
     return undefined;
+  };
+
+  // Image error handler
+  const handleImageError = (error: any) => {
+    console.error(`Image load error for post ${post.id}:`, error);
+    console.log(`Failed image URL:`, post.image);
+  };
+
+  const handleImageLoad = () => {
+    console.log(`Image loaded successfully for post ${post.id}`);
   };
 
   return (
@@ -82,6 +93,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
           source={getImageSource(post.avatar)}
           style={[styles.avatar, { backgroundColor: placeholderColor }]}
           contentFit="cover"
+          onError={handleImageError}
         />
         <View style={styles.headerText}>
           <ThemedText style={styles.clubName}>{post.club}</ThemedText>
@@ -101,6 +113,10 @@ export function PostCard({ post, onPress }: PostCardProps) {
           source={getImageSource(post.image)}
           style={[styles.contentImage, { backgroundColor: placeholderColor }]}
           contentFit="cover"
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          placeholder={placeholderColor}
+          transition={200}
         />
       )}
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from 'axios';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -10,7 +9,8 @@ import { ThemedView } from '@/components/ThemedView';
 import { PostCard, PostData } from '@/components/PostCard';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { BASE_URL } from '@/constants/config';
-import {jwtDecode} from "jwt-decode";
+import axiosInstance from '../../api/axiosInstance';
+import { jwtDecode } from 'jwt-decode';
 
 // Helper function to format time ago from timestamp
 const formatTimeAgo = (timestamp: string) => {
@@ -25,11 +25,11 @@ const formatTimeAgo = (timestamp: string) => {
   if (days > 0) {
     return `${days} day${days !== 1 ? 's' : ''} ago`;
   }
-  
+
   if (totalHours > 0) {
     return `${totalHours} hour${totalHours !== 1 ? 's' : ''} ago`;
   }
-  
+
   return `${totalMinutes} minute${totalMinutes !== 1 ? 's' : ''} ago`;
 };
 
@@ -44,13 +44,11 @@ export default function CommunityPage() {
   const placeholderColor = useThemeColor({ light: '#888', dark: '#aaa' }, 'text');
   const backgroundColor = useThemeColor({}, 'background');
 
-  // Fetch posts from API
   useFocusEffect(
     useCallback(() => {
       const fetchPosts = async () => {
         try {
           setLoading(true);
-          // Get token from AsyncStorage
           const storedToken = await AsyncStorage.getItem('token');
           if (!storedToken) {
             console.warn('No authentication token found');
@@ -58,13 +56,12 @@ export default function CommunityPage() {
             return;
           }
 
-          // Debug info
           try {
             const decoded = jwtDecode(storedToken);
             console.log('Token info:', {
               userId: decoded.id,
               role: decoded.role,
-              exp: new Date(decoded.exp * 1000).toLocaleString(), // Convert exp to readable date
+              exp: new Date(decoded.exp * 1000).toLocaleString(),
               tokenPreview: storedToken.substring(0, 20) + '...'
             });
           } catch (decodeError) {
@@ -73,26 +70,21 @@ export default function CommunityPage() {
 
           setToken(storedToken);
 
-          console.log('Requesting from URL:', `${BASE_URL}/api/posts`);
+          console.log('Requesting from URL:', '/api/posts');
 
-          // Fetch posts from API
-          const response = await axios.get(`${BASE_URL}/api/posts`, {
-            headers: {
-              Authorization: `Bearer ${storedToken}`
-            }
-          });
-
+          const response = await axiosInstance.get('/api/posts');
 
           console.log('Fetched posts:', response.data);
 
-          // Transform API data to PostData format
           const formattedPosts: PostData[] = response.data.map(post => {
-            const imageUrl = post.mediaPaths && post.mediaPaths.length > 0 
-              ? `${BASE_URL}/api/posts/uploads/${post.mediaPaths[0]}`
+            const imageUrl = post.mediaPaths && post.mediaPaths.length > 0
+              ? post.mediaPaths[0].startsWith('uploads/')
+                ? `${BASE_URL}/${post.mediaPaths[0]}`
+                : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
               : null;
-            
+
             console.log('Post:', post.id, 'Image URL:', imageUrl, 'Media paths:', post.mediaPaths);
-            
+
             return {
               id: post.id,
               club: post.clubName || 'Unknown Club',
@@ -119,8 +111,7 @@ export default function CommunityPage() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <SafeAreaView edges={['top']}>
 
           {/* Header */}
@@ -164,32 +155,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 16,
-  },
-  createPostContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  createPostInput: {
-    flex: 1,
-    minHeight: 40,
-    fontSize: 16,
-  },
-  postButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
   },
   feedContainer: {
     paddingBottom: 16,

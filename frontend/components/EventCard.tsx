@@ -54,7 +54,7 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
   const primaryColor = useThemeColor({}, 'tint');
   const secondaryTextColor = useThemeColor({}, 'icon');
 
-  const imageSource = event.imagePath ? { uri: `${BASE_URL}/api/posts/uploads/${event.imagePath}` } : require('@/assets/images/event1.png');
+  const imageSource = event.imagePath ? { uri: `${BASE_URL}/${event.imagePath}` } : require('@/assets/images/event1.png');
 
   const handleLikePress = () => {
     setIsLiked(!isLiked);
