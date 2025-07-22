@@ -8,7 +8,7 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
         { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
         { id: 'Academic Staff', icon: 'fa-solid fa-users', label: 'Academic Staff', route: '/academic/lecturers' },
         { id: 'Courses', icon: 'fa-solid fa-book', label: 'Courses', route: '/academic/courses' },
-        { id: 'Event Schedule', icon: 'fa-solid fa-calendar-days', label: 'Event Schedule', route: '/academic/events' },
+        { id: 'Event Schedule', icon: 'fa-solid fa-calendar-days', label: 'Events', route: '/academic/events' },
         { id: 'Hall Bookings', icon: 'fa-solid fa-building', label: 'Hall Bookings', route: '/academic/bookings' },
         { id: 'Reports', icon: 'fa-solid fa-chart-bar', label: 'Reports', route: '/academic/reports' },
     ];
