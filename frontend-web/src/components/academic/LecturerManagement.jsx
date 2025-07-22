@@ -157,8 +157,9 @@ const LecturerManagement = () => {
               </table>
             </>
           ) : (
-            <div className="form-section">
-              <h2>{editingLecturer ? "Edit Lecturer" : "Add New Lecturer"}</h2>
+            <div className="form-overlay">
+              <div className="form-section">
+                <h2>{editingLecturer ? "Edit Lecturer" : "Add New Lecturer"}</h2>
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                 <input type="text" placeholder="Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                 <input type="text" placeholder="Code (3 letters)" required value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
@@ -194,6 +195,7 @@ const LecturerManagement = () => {
                   <button type="submit">{editingLecturer ? 'Update' : 'Add'}</button>
                 </div>
               </form>
+            </div>
             </div>
           )}
         </main>
@@ -447,15 +449,32 @@ const LecturerManagement = () => {
           transform: scale(1.1);
         }
 
+        .form-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+
         .form-section {
           background: rgba(255, 255, 255, 0.02);
           padding: 32px;
           border-radius: 20px;
           max-width: 500px;
+          width: 100%;
           box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(20px);
+          position: relative;
         }
 
         .form-section h2 {
