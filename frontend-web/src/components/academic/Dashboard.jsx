@@ -79,7 +79,8 @@ export default function Dashboard() {
 
     const timelineEvents = [
         { date: "Thu, 10 July", time: "10:00", type: "AI Seminar", location: "Room 101 • CS Dept", status: "Pending" },
-        { date: "Tue, 15 July", time: "14:00", type: "Guest Lecture", location: "Room 202 • Engineering", status: "Approved" }
+        { date: "Tue, 15 July", time: "14:00", type: "Guest Lecture", location: "Room 202 • Engineering", status: "Approved" },
+        { date: "Wed, 16 July", time: "09:30", type: "Workshop", location: "Lab 305 • IT Dept", status: "Canceled" }
     ];
 
     const calendarDays = [
@@ -93,14 +94,12 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard-container">
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <h1 className="app-title">ReidConnect <span className="highlight">AcademicAdmin</span></h1>
-                </div>
-                <div className="header-right">
-                    <i className="fas fa-bell header-icon"></i>
-                    <i className="fas fa-user header-icon"></i>
-                    <span className="admin-text">Admin</span>
+            <header className="header">
+                <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
+                <div className="admin-info">
+                    <i className="fa fa-bell" />
+                    <i className="fa fa-user" />
+                    <span>Admin</span>
                 </div>
             </header>
 
@@ -131,11 +130,13 @@ export default function Dashboard() {
                                         <span className="event-date">{event.date}</span>
                                         <div className="event-details">
                                             <i className="fas fa-clipboard event-icon"></i>
-                                            <span className="event-time">{event.time}</span>
                                             <div className="event-info">
-                                                <div>
-                                                    <span className="event-type">{event.type}</span><br />
-                                                    <span className="event-location">{event.location}</span>
+                                                <div className="event-main">
+                                                    <div className="event-header">
+                                                        <span className="event-time">{event.time}</span>
+                                                        <span className="event-type">{event.type}</span>
+                                                        <span className="event-location">{event.location}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className={`status-badge ${event.status.toLowerCase()}`}>
@@ -201,86 +202,94 @@ export default function Dashboard() {
             {/* Embedded CSS */}
             <style>{`
                 .dashboard-container {
-                    background-color: #1a1a1a;
+                    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
                     min-height: 100vh;
                     color: white;
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    letter-spacing: -0.01em;
                 }
-                .dashboard-header {
+                .header {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 70px;
+                    background: rgba(20, 20, 20, 0.95);
+                    backdrop-filter: blur(20px);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     padding: 0 24px;
-                    background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                    position: fixed;
-                    top: 0; left: 0; right: 0;
-                    height: 70px;
                     z-index: 1001;
                     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
                 }
-                .header-left {
-                    flex: 1;
-                }
-                .app-title {
-                    font-size: 26px;
+                .title {
                     font-weight: 700;
-                    margin: 0;
+                    font-size: 22px;
                     color: white;
-                    letter-spacing: -0.5px;
+                    letter-spacing: -0.02em;
                 }
-                .highlight {
-                    color: #ef4444;
-                    font-weight: 600;
+                .title .highlight {
+                    color: #FF453A;
+                    background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
                 }
-                .header-right {
+                .admin-info {
                     display: flex;
                     align-items: center;
                     gap: 20px;
-                    color: white;
+                    color: rgba(255, 255, 255, 0.8);
                 }
-                .header-icon {
+                .admin-info i {
                     font-size: 18px;
                     cursor: pointer;
+                    transition: all 0.3s ease;
                     padding: 8px;
                     border-radius: 8px;
-                    transition: all 0.2s ease;
-                    opacity: 0.8;
                 }
-                .header-icon:hover {
-                    background-color: rgba(255, 255, 255, 0.1);
-                    opacity: 1;
+                .admin-info i:hover {
+                    color: #FF453A;
+                    background: rgba(249, 115, 22, 0.1);
                 }
-                .admin-text {
-                    font-size: 14px;
+                .admin-info span {
+                    font-size: 15px;
                     font-weight: 500;
-                    opacity: 0.9;
                 }
                 .dashboard-content {
                     display: flex;
-                    margin-top: 70px;
+                    padding-top: 70px;
+                    flex: 1;
+                    min-height: calc(100vh - 70px);
                 }
                 main.dashboard-main {
                     flex: 1;
-                    padding: 20px;
-                    background-color: #1a1a1a;
-                    margin-left: 200px; /* Sidebar width */
+                    padding: 40px;
+                    background: transparent;
+                    margin-left: 200px;
+                    overflow-y: auto;
                     min-height: calc(100vh - 70px);
-                    overflow: hidden;
-                    max-width: calc(100vw - 200px);
                 }
                 .page-title {
-                    font-size: 24px;
-                    font-weight: 600;
-                    margin-bottom: 24px;
-                    color: #ffffff;
-                    letter-spacing: -0.3px;
+                    font-size: 32px;
+                    font-weight: 800;
+                    margin-bottom: 32px;
+                    color: white;
+                    letter-spacing: -0.03em;
+                    background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
                 }
                 .dashboard-grid {
                     display: grid;
                     grid-template-columns: 1fr 350px;
                     gap: 20px;
-                    margin-bottom: 24px;
+                    margin-bottom: 32px;
                     height: fit-content;
                 }
                 /* Timeline Section */
@@ -305,41 +314,46 @@ export default function Dashboard() {
                 }
                 .section-header h3 {
                     margin: 0;
-                    font-size: 18px;
-                    font-weight: 600;
+                    font-size: 20px;
+                    font-weight: 700;
                     color: #ffffff;
+                    letter-spacing: -0.02em;
                 }
                 .controls {
                     display: flex;
                     gap: 12px;
                 }
                 .controls span {
-                    color: #9ca3af;
-                    font-size: 12px;
+                    color: rgba(255, 255, 255, 0.6);
+                    font-size: 13px;
                     font-weight: 500;
-                    background-color: rgba(255, 255, 255, 0.05);
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    background-color: rgba(255, 255, 255, 0.03);
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    letter-spacing: -0.01em;
                 }
                 .search-input {
-                    padding: 10px 12px;
-                    margin-bottom: 16px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    background-color: rgba(255, 255, 255, 0.05);
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 12px;
+                    padding: 14px 18px;
                     color: white;
-                    font-size: 13px;
+                    font-size: 15px;
                     font-weight: 400;
-                    transition: all 0.2s ease;
+                    margin-bottom: 16px;
+                    transition: all 0.3s ease;
+                    backdrop-filter: blur(10px);
+                    outline: none;
                 }
                 .search-input::placeholder {
-                    color: #9ca3af;
+                    color: rgba(255, 255, 255, 0.4);
+                    font-weight: 400;
                 }
                 .search-input:focus {
-                    outline: none;
-                    border-color: #ef4444;
-                    background-color: rgba(255, 255, 255, 0.08);
+                    background: rgba(255, 255, 255, 0.05);
+                    border-color: rgba(249, 115, 22, 0.3);
+                    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
                 }
                 .timeline-events {
                     flex: 1;
@@ -372,60 +386,77 @@ export default function Dashboard() {
                     align-items: center;
                     gap: 12px;
                 }
-                .event-time {
-                    font-weight: 600;
+                .event-icon {
+                    color: #ef4444;
                     font-size: 14px;
+                    opacity: 0.9;
                     flex-shrink: 0;
-                    color: #ffffff;
-                    min-width: 40px;
-                    order: 2;
                 }
                 .event-info {
                     display: flex;
                     align-items: center;
                     gap: 10px;
                     flex: 1;
-                    order: 3;
                 }
-                .event-icon {
-                    color: #ef4444;
-                    font-size: 14px;
-                    opacity: 0.9;
-                    order: 1;
+                .event-main {
+                    flex: 1;
+                }
+                .event-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                }
+                .event-time {
+                    font-weight: 600;
+                    font-size: 12px;
+                    color: #ffffff;
+                    letter-spacing: -0.01em;
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 2px 6px;
+                    border-radius: 4px;
                 }
                 .event-type {
                     font-weight: 600;
-                    font-size: 14px;
-                    display: block;
+                    font-size: 15px;
                     color: #ffffff;
-                    margin-bottom: 2px;
+                    letter-spacing: -0.01em;
                 }
                 .event-location {
-                    font-size: 11px;
-                    color: #9ca3af;
+                    font-size: 12px;
+                    color: rgba(255, 255, 255, 0.6);
                     font-weight: 400;
+                    margin-left: 4px;
                 }
                 .status-badge {
-                    padding: 4px 10px;
+                    padding: 6px 12px;
                     border-radius: 16px;
                     font-weight: 600;
-                    font-size: 10px;
+                    font-size: 11px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     min-width: 70px;
                     text-align: center;
                     border: 1px solid transparent;
-                    order: 4;
+                    flex-shrink: 0;
                 }
                 .status-badge.pending {
-                    background: #60a5fa;
+                    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
                     color: #ffffff;
-                    border: 1px solid #252525;
+                    border: 1px solid rgba(96, 165, 250, 0.3);
+                    box-shadow: 0 2px 8px rgba(96, 165, 250, 0.2);
                 }
                 .status-badge.approved {
-                    background: #ef4444;
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                     color: white;
-                    border: 1px solid #ef4444;
+                    border: 1px solid rgba(16, 185, 129, 0.3);
+                    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+                }
+                .status-badge.canceled {
+                    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+                    color: white;
+                    border: 1px solid rgba(107, 114, 128, 0.3);
+                    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
                 }
                 /* Calendar Section */
                 .calendar-section {
@@ -462,9 +493,10 @@ export default function Dashboard() {
                     border-color: rgba(255, 255, 255, 0.5);
                 }
                 .current-month {
-                    font-weight: 600;
+                    font-weight: 700;
                     color: white;
-                    font-size: 14px;
+                    font-size: 16px;
+                    letter-spacing: -0.02em;
                 }
                 .calendar-grid {
                     display: flex;
@@ -475,9 +507,9 @@ export default function Dashboard() {
                     grid-template-columns: repeat(7, 1fr);
                     text-align: center;
                     font-weight: 600;
-                    color: #9ca3af;
+                    color: rgba(255, 255, 255, 0.6);
                     margin-bottom: 10px;
-                    font-size: 11px;
+                    font-size: 12px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
@@ -488,7 +520,7 @@ export default function Dashboard() {
                 }
                 .calendar-day {
                     background-color: rgba(255, 255, 255, 0.03);
-                    padding: 10px 6px;
+                    padding: 12px 6px;
                     border-radius: 8px;
                     position: relative;
                     color: white;
@@ -497,7 +529,8 @@ export default function Dashboard() {
                     cursor: pointer;
                     transition: all 0.2s ease;
                     border: 1px solid rgba(255, 255, 255, 0.05);
-                    font-size: 12px;
+                    font-size: 13px;
+                    letter-spacing: -0.01em;
                 }
                 .calendar-day:hover {
                     background-color: rgba(255, 255, 255, 0.08);
@@ -580,17 +613,18 @@ export default function Dashboard() {
                     display: block;
                 }
                 .stat-card h3 {
-                    margin: 0 0 6px 0;
-                    font-size: 28px;
-                    font-weight: 700;
+                    margin: 0 0 8px 0;
+                    font-size: 32px;
+                    font-weight: 800;
                     color: #ffffff;
                     line-height: 1;
+                    letter-spacing: -0.02em;
                 }
                 .stat-card p {
                     margin: 0;
-                    color: #9ca3af;
+                    color: rgba(255, 255, 255, 0.6);
                     font-weight: 500;
-                    font-size: 12px;
+                    font-size: 13px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
@@ -608,15 +642,15 @@ export default function Dashboard() {
                 @media (max-width: 768px) {
                     main.dashboard-main {
                         margin-left: 0;
-                        padding: 16px 12px;
+                        padding: 20px 12px;
                         max-width: 100vw;
                     }
-                    .dashboard-header {
+                    .header {
                         padding: 0 16px;
                     }
                     .page-title {
-                        font-size: 20px;
-                        margin-bottom: 16px;
+                        font-size: 24px;
+                        margin-bottom: 24px;
                     }
                     .dashboard-grid {
                         gap: 12px;
