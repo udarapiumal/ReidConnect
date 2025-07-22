@@ -214,12 +214,20 @@ export default function PostDetailScreen() {
           }}
         >
           {post.mediaPaths.map((path, index) => (
+            // <Image
+            //   key={index}
+            //   source={{ 
+            //     uri: path.startsWith('uploads/')
+            //       ? `${BASE_URL}/${path}`
+            //       : `${BASE_URL}/uploads/${path}`
+            //   }}
+            //   style={styles.postImage}
+            //   resizeMode="cover"
+            // />
             <Image
               key={index}
               source={{ 
-                uri: path.startsWith('uploads/')
-                  ? `${BASE_URL}/${path}`
-                  : `${BASE_URL}/uploads/${path}`
+                uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732' // Mock photo for testing
               }}
               style={styles.postImage}
               resizeMode="cover"
@@ -253,7 +261,7 @@ export default function PostDetailScreen() {
               {getInitials(comment.userName)}
             </Text>
           </View>
-          
+
           <View style={styles.commentContent}>
             <View style={styles.commentHeader}>
               <Text style={styles.commentAuthor}>{comment.userName}</Text>

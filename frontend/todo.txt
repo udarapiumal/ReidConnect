@@ -1,0 +1,3 @@
+category page
+show posts in event page
+club subscribe

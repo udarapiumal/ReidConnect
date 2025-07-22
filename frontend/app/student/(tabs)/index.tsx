@@ -1,49 +1,123 @@
+// page structure
+// featured events
+// your next event
+// upcoming events this week
+// community feed
+// for you
+//
+
+import { Platform, StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import axios from 'axios';
+import { jwtDecode } from "jwt-decode";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { EventCard, EventData } from '@/components/EventCard';
 import { PostCard, PostData } from '@/components/PostCard';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { BASE_URL } from '@/constants/config';
 
-// Mock data
-const featuredEvents: EventData[] = [
-  {
-    id: '1',
-    title: 'Mind Matters - Phase 2',
-    category: 'Wellness',
-    date: 'Today, 10:30 AM',
-    location: 'Google Meet',
-    image: require('@/assets/images/event1.png'),
-    club: 'Rotaract Club of UOC',
-  },
-  {
-    id: '2',
-    title: "ROTA අවුරුදු '25",
-    category: 'Cultural',
-    date: 'Apr 14, 2025',
-    location: 'University of Colombo',
-    image: require('@/assets/images/event2.png'),
-    club: 'Rotaract Club of UOC',
-  },
-  {
-    id: '3',
-    title: 'Food & Wine Festival',
-    category: 'Food',
-    date: 'Jul 22, 2025',
-    location: 'Downtown Plaza',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop',
-  },
-];
+interface UserType {
+  id: string;
+  sub: string;
+  role: string;
+}
+
+// API function to fetch events
+const getAllEvents = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/events`);
+    console.log('Events:', response.data);
+    
+    // Get user info for status checking
+    const token = await AsyncStorage.getItem("token");
+    let userId = null;
+    if (token) {
+      try {
+        const decoded = jwtDecode<UserType>(token);
+        userId = decoded.id;
+      } catch (error) {
+        console.error('Failed to decode token:', error);
+      }
+    }
+    
+    // Fetch attendance counts and user status for each event
+    const eventsWithCounts = await Promise.all(
+      response.data.map(async (event: any) => {
+        try {
+          // Fetch attendance counts
+          const countsResponse = await axios.get(`${BASE_URL}/api/events/${event.id}/attendance/counts`);
+          const rawCounts = countsResponse.data;
+          console.log(`Raw counts for event ${event.id}:`, rawCounts);
+          
+          // Map API response to expected format
+          const mappedCounts = {
+            going: rawCounts.goingCount || 0,
+            interested: rawCounts.interestedCount || 0
+          };
+          console.log(`Mapped counts for event ${event.id}:`, mappedCounts);
+          
+          // Fetch user status if logged in
+          let userStatus = 'none';
+          if (userId && token) {
+            try {
+              const userStatusResponse = await axios.get(
+                `${BASE_URL}/api/events/${event.id}/attendance/user/${userId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                }
+              );
+              const responseData = userStatusResponse.data;
+              const rawStatus = responseData.status;
+              userStatus = rawStatus ? rawStatus.toLowerCase() : 'none';
+              console.log(`User status for event ${event.id}:`, rawStatus, '-> normalized:', userStatus);
+            } catch (error: any) {
+              if (error.response?.status === 404) {
+                console.log(`User has not registered for event ${event.id} yet`);
+              } else {
+                console.error(`Failed to fetch user status for event ${event.id}:`, error);
+              }
+              userStatus = 'none';
+            }
+          }
+          
+          return {
+            ...event,
+            ...mappedCounts,
+            statusOfUser: userStatus,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch counts for event ${event.id}:`, error);
+          return {
+            ...event,
+            going: 0,
+            interested: 0,
+            statusOfUser: 'none',
+          };
+        }
+      })
+    );
+    
+    console.log('Events with counts and user status:', eventsWithCounts);
+    return eventsWithCounts;
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    throw error;
+  }
+};
 
 const communityPosts: PostData[] = [
   {
     id: '1',
     club: 'Gavel Club of University of Colombo',
-    avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=1974&auto=format&fit=crop',
+    avatar: require('@/assets/images/event1.png'),
     time: '1 day ago',
     text: 'New blog post out now! "Why you should live away from home at least once in your life".',
     image: require('@/assets/images/event2.png'),
@@ -53,45 +127,128 @@ const communityPosts: PostData[] = [
   {
     id: '2',
     club: 'Hiking Adventures',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=988&auto=format&fit=crop',
+    avatar: require('@/assets/images/event2.png'),
     time: '3 days ago',
     text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
-    image: 'https://web.facebook.com/photo/?fbid=1286606236803625&set=a.491433232987600',
+    image: require('@/assets/images/event1.png'),
     likes: 67,
     comments: 15,
-  },
-];
-
-const upcomingEvents: EventData[] = [
-  {
-    id: '4',
-    title: 'Yoga in the Park',
-    category: 'Fitness',
-    date: 'Tomorrow, 8:00 AM',
-    location: 'Riverside Park',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2020&auto=format&fit=crop',
-  },
-  {
-    id: '5',
-    title: 'Indie Film Screening',
-    category: 'Arts',
-    date: 'Jul 8, 7:00 PM',
-    location: 'Art House Cinema',
-    image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=2070&auto=format&fit=crop',
-  },
-  {
-    id: '6',
-    title: 'Farmers Market',
-    category: 'Food',
-    date: 'Saturday, 9:00 AM',
-    location: 'Town Square',
-    image: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=2070&auto=format&fit=crop',
   },
 ];
 
 export default function HomePage() {
   const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
+  const router = useRouter();
+
+  // State for events
+  const [featuredEvents, setFeaturedEvents] = useState<EventData[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventData[]>([]);
+  const [nextEvents, setNextEvents] = useState<EventData[]>([]);
+  const [popularEvents, setPopularEvents] = useState<EventData[]>([]);
+  const [nearbyEvents, setNearbyEvents] = useState<EventData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch events when component mounts
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const eventsData = await getAllEvents();
+        
+        // Categorize events based on different criteria
+        
+        // Featured Events - events with high engagement or marked as featured
+        const featured = eventsData
+          .filter((event: any) => event.featured || (event.going + event.interested) > 50)
+          .slice(0, 3);
+        
+        // Your Next Event - events user is going to or interested in
+        const next = eventsData
+          .filter((event: any) => 
+            event.statusOfUser === 'going' || event.statusOfUser === 'interested'
+          )
+          .sort((a: any, b: any) => {
+            // Prioritize 'going' events over 'interested'
+            if (a.statusOfUser === 'going' && b.statusOfUser === 'interested') return -1;
+            if (a.statusOfUser === 'interested' && b.statusOfUser === 'going') return 1;
+            // Then sort by date
+            return new Date(a.date).getTime() - new Date(b.date).getTime();
+          })
+          .slice(0, 5);
+        
+        // Upcoming Events - events happening soon (sorted by date)
+        const upcoming = eventsData
+          .filter((event: any) => {
+            const eventDate = new Date(event.date);
+            const now = new Date();
+            const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            // Filter for events within the next week
+            return eventDate > now && eventDate < oneWeekFromNow;
+          })
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 5);
+        
+        // Popular Events - most 5 events with the highest engagement
+        // (interested)
+        const popular = eventsData
+          .filter((event: any) => event.interested > 0)
+          .sort((a: any, b: any) => b.interested - a.interested)
+          .slice(0, 5);
+
+        // Nearby Events - events in specific venues or categories
+        const nearby = eventsData
+          .filter((event: any) => 
+            event.venueName?.toLowerCase().includes('university') ||
+            event.venueName?.toLowerCase().includes('colombo') ||
+            event.venueName?.toLowerCase().includes('campus')
+          )
+          .slice(0, 5);
+        
+        // Set state with categorized events, fallback to all events if categories are empty
+        setFeaturedEvents(featured.length > 0 ? featured : eventsData.slice(0, 3));
+        setNextEvents(next); // Show empty if no events with user attendance
+        setUpcomingEvents(upcoming);
+        setPopularEvents(popular);
+        setNearbyEvents(nearby.length > 0 ? nearby : eventsData.slice(0, 5));
+        
+      } catch (error) {
+        console.error('Failed to fetch events, using empty arrays:', error);
+        // Use empty arrays if API fails
+        setFeaturedEvents([]);
+        setNextEvents([]);
+        setUpcomingEvents([]);
+        setPopularEvents([]);
+        setNearbyEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const handleEventPress = (eventId: number) => {
+    router.push(`/student/pages/EventPage?id=${eventId}`);
+  };
+
+  // const handlePostPress = (postId: string) => {
+  //   router.push(`/student/pages/PostPage?id=${postId}`);
+  // };
+
+  const handleCommunitySeeMorePress = () => {
+    router.push(`/student/community`);
+  };
+
+  // Show loading spinner while fetching events
+  if (loading) {
+    return (
+      <ThemedView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" />
+        <ThemedText style={styles.loadingText}>Loading events...</ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
       <ThemedView style={styles.container}>
@@ -118,13 +275,74 @@ export default function HomePage() {
 
           {/* Featured Events */}
           <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Events</ThemedText>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Featured Events</ThemedText>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.featuredEventsContainer}>
               {featuredEvents.map(event => (
-                  <EventCard key={event.id} event={event} size="large" />
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      size="large" 
+                      onPress={() => handleEventPress(event.id)}
+                    />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Your Next Event */}
+          {nextEvents.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>Your Next Event</ThemedText>
+              <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredEventsContainer}>
+                {nextEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="very_large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Upcoming Event */}
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Events</ThemedText>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredEventsContainer}>
+              {upcomingEvents.map(event => (
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      size="large" 
+                      onPress={() => handleEventPress(event.id)}
+                    />
+                ))}
+            </ScrollView>
+          </View>
+
+          {/* Popular Event */}
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>Popular Events</ThemedText>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredEventsContainer}>
+              {popularEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
               ))}
             </ScrollView>
           </View>
@@ -133,7 +351,7 @@ export default function HomePage() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <ThemedText type="subtitle" style={styles.sectionTitle}>Community Feed</ThemedText>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleCommunitySeeMorePress}>
                 <ThemedText style={[styles.seeAllButton, { color: tint }]}>See All</ThemedText>
               </TouchableOpacity>
             </View>
@@ -145,8 +363,13 @@ export default function HomePage() {
           {/* Upcoming Events */}
           <View style={styles.section}>
             <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Near You</ThemedText>
-            {upcomingEvents.map(event => (
-                <EventCard key={event.id} event={event} size="small" />
+            {nearbyEvents.map(event => (
+                <EventCard 
+                  key={event.id} 
+                  event={event} 
+                  size="large" 
+                  onPress={() => handleEventPress(event.id)}
+                />
             ))}
           </View>
 
@@ -161,6 +384,14 @@ export default function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   scrollView: {
     flex: 1,

@@ -3,6 +3,7 @@ package reidConnect.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -49,8 +50,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
-                        .requestMatchers("/api/club/**").authenticated()
-
+                        .requestMatchers("/api/posts/**").authenticated() // This should come after the specific /uploads/** rule
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

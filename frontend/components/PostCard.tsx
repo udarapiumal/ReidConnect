@@ -1,19 +1,21 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { BASE_URL } from '@/constants/config';
+import { useAuth } from '@/app/context/AuthContext';
 
 export type PostData = {
   id: string;
   club: string;
-  avatar: string;
+  avatar: string | number;
   time: string;
   text: string;
-  image?: string;
+  image?: string | number;
   likes: number;
   comments: number;
 };
@@ -24,16 +26,60 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, onPress }: PostCardProps) {
+  const { user, token } = useAuth();
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes);
+  const [isLiking, setIsLiking] = useState(false);
+
   const shadowColor = useThemeColor({}, 'text');
   const secondaryTextColor = useThemeColor({}, 'icon');
-  const borderColor = useThemeColor({}, 'border');
+  const borderColor = useThemeColor({}, 'tabIconDefault');
   const placeholderColor = useThemeColor({}, 'tabIconDefault');
+
+  const handleLike = async () => {
+    if (!user || !token || isLiking) return;
+
+    setIsLiking(true);
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/posts/${post.id}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      if (response.ok) {
+        setIsLiked(!isLiked);
+        setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+      } else {
+        Alert.alert('Error', 'Failed to like the post');
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+      Alert.alert('Error', 'Network error occurred');
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  // Handle different image source types
+  const getImageSource = (image: string | number | undefined) => {
+    if (typeof image === 'string') {
+      return { uri: image };
+    } else if (typeof image === 'number') {
+      return image; // This is a require() result
+    }
+    return undefined;
+  };
 
   return (
     <ThemedView style={[styles.container, { shadowColor: shadowColor }]}>
       <View style={styles.header}>
         <Image
-          source={{ uri: post.avatar }}
+          source={getImageSource(post.avatar)}
           style={[styles.avatar, { backgroundColor: placeholderColor }]}
           contentFit="cover"
         />
@@ -52,17 +98,25 @@ export function PostCard({ post, onPress }: PostCardProps) {
 
       {post.image && (
         <Image
-          source={{ uri: post.image }}
+          source={getImageSource(post.image)}
           style={[styles.contentImage, { backgroundColor: placeholderColor }]}
           contentFit="cover"
         />
       )}
 
       <View style={[styles.actions, { borderTopColor: borderColor }]}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Feather name="thumbs-up" size={18} color={secondaryTextColor} />
-          <ThemedText style={[styles.actionText, { color: secondaryTextColor }]}>
-            {post.likes}
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={handleLike}
+          disabled={isLiking}
+        >
+          <Feather 
+            name={isLiked ? "thumbs-up" : "thumbs-up"} 
+            size={18} 
+            color={isLiked ? '#007AFF' : secondaryTextColor} 
+          />
+          <ThemedText style={[styles.actionText, { color: isLiked ? '#007AFF' : secondaryTextColor }]}>
+            {likesCount}
           </ThemedText>
         </TouchableOpacity>
 

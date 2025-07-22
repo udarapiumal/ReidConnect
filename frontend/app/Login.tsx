@@ -49,7 +49,7 @@ export default function Login() {
             // Redirect based on embedded role
             switch (decoded.role) {
                 case "student":
-                    router.push("/student/");
+                    router.push("/student");
                     break;
                 case "club":
                     router.push("/club/dashboard");

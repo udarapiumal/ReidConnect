@@ -38,6 +38,7 @@ const formatTimeAgo = (timestamp) => {
     return result.trim() + ' ago';
 };
 
+
 export default function ClubDashboardTab() {
     const { user, token, clubDetails, loading } = useClub();
     console.log('clubDetails:', clubDetails);

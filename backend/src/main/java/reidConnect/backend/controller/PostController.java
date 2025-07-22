@@ -31,7 +31,7 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     public ResponseEntity<String> createPost(
             @RequestParam("clubId") Long clubId,
             @RequestParam("description") String description,
@@ -92,7 +92,7 @@ public class PostController {
 
 
     //Get all posts
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
         List<PostResponseDto> posts = postService.getAllPosts();
@@ -117,7 +117,7 @@ public class PostController {
     }
 
     // Get the latest 3 posts by club ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @GetMapping("/club/{clubId}/latest")
     public ResponseEntity<List<PostResponseDto>> getLatestThreePostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getLatestThreePostsByClubId(clubId);
@@ -126,7 +126,7 @@ public class PostController {
 
 
     //Update a post by ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @PutMapping("/{id}")
     public ResponseEntity<String> updatePost(@PathVariable Long id, @RequestBody PostUpdateDto dto) {
         postService.updatePost(id, dto);
@@ -134,7 +134,7 @@ public class PostController {
     }
 
     //Delete a post by ID
-    @PreAuthorize("hasRole('CLUB')")
+    @PreAuthorize("hasRole('ROLE_CLUB')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePost(@PathVariable Long id) {
         postService.deletePost(id);
@@ -142,6 +142,7 @@ public class PostController {
     }
 
     // Add a like to a post
+    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
     @PostMapping("/{postId}/like")
     public ResponseEntity<String> likePost(
             @PathVariable Long postId,
@@ -190,6 +191,38 @@ public class PostController {
     }
 
 
+    // Serve uploaded images - accessible to all users (including students)
+    @GetMapping("/uploads/{filename:.+}")
+    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+        try {
+            Path file = Paths.get("src/main/resources/static/uploads").resolve(filename);
+            Resource resource = new UrlResource(file.toUri());
+            
+            if (resource.exists() || resource.isReadable()) {
+                // Determine content type based on file extension
+                String contentType = "application/octet-stream";
+                if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+                    contentType = "image/jpeg";
+                } else if (filename.toLowerCase().endsWith(".png")) {
+                    contentType = "image/png";
+                } else if (filename.toLowerCase().endsWith(".gif")) {
+                    contentType = "image/gif";
+                } else if (filename.toLowerCase().endsWith(".webp")) {
+                    contentType = "image/webp";
+                }
+                
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, contentType)
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600") // Cache for 1 hour
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error serving image: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
 }
 

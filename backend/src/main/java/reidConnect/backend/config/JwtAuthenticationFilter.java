@@ -82,7 +82,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Only bypass filter for auth endpoints and public resources
         String path = request.getServletPath();
-        return path.startsWith("/auth/");
+        return path.startsWith("/auth/") || 
+               path.startsWith("/test") || 
+               path.startsWith("/uploads/") ||
+               path.startsWith("/api/posts/uploads/"); // Allow public access to image serving
     }
 }

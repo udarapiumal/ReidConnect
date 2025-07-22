@@ -35,6 +35,7 @@ public class PostMapper {
         return new PostResponseDto(
                 post.getId(),
                 post.getClub().getId(),
+                post.getClub().getClub_name(),
                 post.getCreatedAt(),
                 post.getDescription(),
                 paths,

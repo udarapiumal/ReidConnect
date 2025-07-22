@@ -7,10 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
 import reidConnect.backend.dto.PostResponseDto;
+import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.EventCategory;
@@ -28,6 +30,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 public class EventController {
 
     private final EventService eventService;
@@ -294,5 +297,21 @@ public class EventController {
     }
 
 
+    // Get Attendance Counts (Interested and Going)
+    @GetMapping("/{eventId}/attendance/counts")
+    public ResponseEntity<EventAttendanceCountDto> getEventAttendanceCounts(
+            @PathVariable Long eventId) {
+        EventAttendanceCountDto counts = eventService.getEventAttendanceCounts(eventId);
+        return ResponseEntity.ok(counts);
+    }
+
+    // Get User's Attendance Status for an Event
+    @GetMapping("/{eventId}/attendance/user/{userId}")
+    public ResponseEntity<UserEventAttendanceDto> getUserEventAttendanceStatus(
+            @PathVariable Long eventId,
+            @PathVariable Long userId) {
+        UserEventAttendanceDto userAttendance = eventService.getUserEventAttendanceStatus(eventId, userId);
+        return ResponseEntity.ok(userAttendance);
+    }
 
 }

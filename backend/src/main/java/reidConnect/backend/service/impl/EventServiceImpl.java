@@ -2,10 +2,12 @@ package reidConnect.backend.service.impl;
 
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
 import reidConnect.backend.dto.PostResponseDto;
+import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
@@ -18,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -286,4 +289,39 @@ public class EventServiceImpl implements EventService {
 
 
 
+
+    @Override
+    public EventAttendanceCountDto getEventAttendanceCounts(Long eventId) {
+        // Check if event exists
+        if (!eventRepository.existsById(eventId)) {
+            throw new RuntimeException("Event not found");
+        }
+
+        long interestedCount = attendanceRepository.countByEventIdAndStatus(eventId, EventAttendanceStatus.INTERESTED);
+        long goingCount = attendanceRepository.countByEventIdAndStatus(eventId, EventAttendanceStatus.GOING);
+
+        return new EventAttendanceCountDto(eventId, interestedCount, goingCount);
+    }
+
+    @Override
+    public UserEventAttendanceDto getUserEventAttendanceStatus(Long eventId, Long userId) {
+        // Check if event exists
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        // Check if user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Find attendance record
+        Optional<EventAttendance> attendanceOpt = attendanceRepository.findByEventAndUser(event, user);
+
+        if (attendanceOpt.isPresent()) {
+            EventAttendance attendance = attendanceOpt.get();
+            return new UserEventAttendanceDto(eventId, userId, attendance.getStatus(), true);
+        } else {
+            // User has not marked attendance for this event
+            return new UserEventAttendanceDto(eventId, userId, null, false);
+        }
+    }
 }

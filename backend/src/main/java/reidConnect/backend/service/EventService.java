@@ -1,14 +1,14 @@
 package reidConnect.backend.service;
 
+import java.util.List;
+import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
-import reidConnect.backend.dto.PostResponseDto;
+import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
-
-import java.util.List;
 
 public interface EventService {
     EventResponseDto createEvent(EventRequestDto dto);
@@ -34,5 +34,8 @@ public interface EventService {
     long countRecentEventsByClubId(Long clubId);
 
 
+    
+    EventAttendanceCountDto getEventAttendanceCounts(Long eventId);
+    UserEventAttendanceDto getUserEventAttendanceStatus(Long eventId, Long userId);
 
 }
