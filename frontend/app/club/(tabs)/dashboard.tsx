@@ -41,8 +41,10 @@ const formatTimeAgo = (timestamp) => {
 
 export default function ClubDashboardTab() {
     const { user, token, clubDetails, loading } = useClub();
+    console.log('clubDetails:', clubDetails);
     const [latestPosts, setLatestPosts] = useState([]);
     const [postsLoading, setPostsLoading] = useState(false);
+    const [subCount, setSubCount] = useState(0);
     const router = useRouter();
 
     const fetchPostStats = async (postId) => {
@@ -66,6 +68,22 @@ export default function ClubDashboardTab() {
         }
     };
 
+    const fetchSubCount = async () => {
+        try {
+            const [subCountResponse] = await Promise.all([
+                axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+            ]);
+            console.log(subCountResponse.data);
+            setSubCount(subCountResponse.data || 0);
+
+        } catch (error) {
+            console.error(`Error fetching subCount:`, error);
+            return { subCount: 0 };
+        }
+    };
+
     const fetchLatestPostsWithStats = async () => {
         if (!clubDetails?.id || !token) {
             console.warn("Missing clubDetails or user token");
@@ -78,6 +96,7 @@ export default function ClubDashboardTab() {
             const postsResponse = await axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/latest`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log("Posts API response:", postsResponse.data);
 
             const posts = postsResponse.data;
             
@@ -94,7 +113,6 @@ export default function ClubDashboardTab() {
             );
 
             setLatestPosts(postsWithStats);
-            console.log("Latest posts with stats:", postsWithStats);
         } catch (error) {
             console.error("Error fetching latest posts:", error);
         } finally {
@@ -167,13 +185,10 @@ export default function ClubDashboardTab() {
     useFocusEffect(
         useCallback(() => {
             if (loading) return;
-
-            console.log("clubDetails after loading:", clubDetails);
-            console.log("user after loading:", user);
-            console.log("token: ", token);
-
             fetchLatestPostsWithStats();
+            fetchSubCount();
         }, [loading, clubDetails, user, token])
+        
     );
 
     return (
@@ -186,12 +201,6 @@ export default function ClubDashboardTab() {
                         </View>
                     </View>
                     <View style={styles.headerRight}>
-                        <TouchableOpacity style={styles.createButton}>
-                            <Image
-                                source={require('../../../assets/images/plus.png')}
-                                style={styles.bellIcon}
-                            />
-                        </TouchableOpacity>
 
                         <TouchableOpacity style={styles.bellButton}>
                             <Image
@@ -204,28 +213,49 @@ export default function ClubDashboardTab() {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.profileButton}>
-                            <Image 
-                                source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                                style={styles.profileImage} 
+                            {clubDetails?.profilePicture ? (
+                                <Image
+                            source={{
+                                uri: `${BASE_URL}${clubDetails.profilePicture}`
+                            }}
+                            style={styles.profileImage}
                             />
+
+                            ) : (
+                                <Image
+                                source={require('../../../assets/images/default-profile.png')} // fallback image
+                                style={styles.profileImage}
+                                />
+                            )}
                         </TouchableOpacity>
+
                     </View>
                 </View>
 
                 {/* Club Info Header */}
                 <View style={styles.clubInfo}>
                     <View style={styles.clubAvatar}>
-                        <Image 
-                            source={require("../../../assets/clubImages/profilePictures/rota_ucsc.jpg")} 
-                            style={styles.clubAvatarImage} 
+                    {clubDetails?.profilePicture ? (
+                        <Image
+                    source={{
+                        uri: `${BASE_URL}${clubDetails.profilePicture}`
+                    }}
+                    style={styles.clubAvatarImage}
+                    />
+                    ) : (
+                        <Image
+                        source={require('../../../assets/images/default-profile.png')} // fallback image
+                        style={styles.clubAvatarImage}
                         />
+                    )}
                     </View>
+
                     <View style={styles.clubDetails}>
                         <Text style={styles.clubName}>
                             {clubDetails?.clubName || 'Loading...'}
                         </Text>
                         <Text style={styles.subscriberCount}>
-                            {clubDetails?.subCount || '0'}
+                            {subCount || '0'}
                         </Text>
                         <Text style={styles.subscriberLabel}>Total subscribers</Text>
                     </View>

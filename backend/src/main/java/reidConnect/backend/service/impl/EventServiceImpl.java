@@ -6,6 +6,7 @@ import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.EventAttendanceStatus;
@@ -15,6 +16,8 @@ import reidConnect.backend.mapper.EventMapper;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.EventService;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -158,6 +161,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventResponseDto> getEventsByClubId(Long clubId) {
+        List<Event> events = eventRepository.findAllByClub_IdOrderByCreatedAtDesc(clubId);
+        return events.stream()
+                .map(EventMapper::mapToEventResponseDto)
+                .toList();
+    }
+
+
+    @Override
     public List<EventResponseDto> getAllEvents() {
         return eventRepository.findAll().stream()
                 .map(event -> {
@@ -238,6 +250,45 @@ public class EventServiceImpl implements EventService {
 
         attendanceRepository.deleteByEventAndUser(event, user);
     }
+    @Override
+    public long countGoingAttendance(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.GOING);
+    }
+
+    @Override
+    public long countInterestedAttendance(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return attendanceRepository.countByEventAndStatus(event, EventAttendanceStatus.INTERESTED);
+    }
+
+    @Override
+    public long countAllEvents() {
+        return eventRepository.count();
+    }
+
+    @Override
+    public long countEventsInLast28Days() {
+        LocalDate today = LocalDate.now();
+        LocalDate cutoffDate = today.minusDays(28);
+        return eventRepository.countByCreatedAtAfter(cutoffDate.atStartOfDay());
+    }
+
+    @Override
+    public long countAllEventsByClubId(Long clubId) {
+        return eventRepository.countByClub_Id(clubId);
+    }
+
+    @Override
+    public long countRecentEventsByClubId(Long clubId) {
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(28);
+        return eventRepository.countByClub_IdAndCreatedAtAfter(clubId, fromDate);
+    }
+
+
+
 
     @Override
     public EventAttendanceCountDto getEventAttendanceCounts(Long eventId) {

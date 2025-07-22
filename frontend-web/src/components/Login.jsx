@@ -28,11 +28,9 @@ export default function Login() {
                 return;
             }
 
-            // Save token (replace AsyncStorage with localStorage in web)
             localStorage.setItem("token", token);
             alert("Login successful!");
 
-            // Navigate based on role
             if (decoded.role === "union") {
                 navigate("/union/dashboard");
             } else if (decoded.role === "academic") {
@@ -52,7 +50,7 @@ export default function Login() {
             <h2 style={styles.title}>Login</h2>
             <input
                 type="email"
-                placeholder="Email"
+                placeholder="Enter Your E-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={styles.input}
@@ -67,6 +65,9 @@ export default function Login() {
             <button onClick={handleLogin} style={styles.button}>
                 Login
             </button>
+            <p style={styles.redirectText}>
+                Don't have an account? <a href="/signup" style={styles.link}>Sign up</a>
+            </p>
         </div>
     );
 }
@@ -74,34 +75,51 @@ export default function Login() {
 const styles = {
     container: {
         maxWidth: "400px",
-        margin: "auto",
+        margin: "5rem auto",
         padding: "2rem",
-        border: "1px solid #ddd",
-        borderRadius: "8px",
-        backgroundColor: "#f9f9f9",
-        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-        marginTop: "5rem"
+        backgroundColor: "#151718",
+        borderRadius: "10px",
+        color: "#ffffff",
+        boxShadow: "0 0 15px rgba(0,0,0,0.3)",
     },
     title: {
+        fontSize: "28px",
+        fontWeight: "bold",
+        marginBottom: "30px",
         textAlign: "center",
-        marginBottom: "1.5rem"
+        color: "#ffffff",
     },
     input: {
         width: "100%",
-        padding: "12px",
-        marginBottom: "1rem",
-        borderRadius: "6px",
-        border: "1.5px solid #ccc",
-        fontSize: "16px"
+        height: "50px",
+        border: "1.5px solid #444",
+        borderRadius: "10px",
+        padding: "0 15px",
+        marginBottom: "15px",
+        backgroundColor: "#1A1A1A",
+        fontSize: "16px",
+        color: "#ffffff",
     },
     button: {
         width: "100%",
-        padding: "12px",
-        backgroundColor: "#007bff",
-        color: "#fff",
+        height: "50px",
+        backgroundColor: "#FF0033",
+        color: "#ffffff",
         fontWeight: "bold",
         border: "none",
-        borderRadius: "6px",
-        cursor: "pointer"
-    }
+        borderRadius: "10px",
+        fontSize: "16px",
+        cursor: "pointer",
+        transition: "background-color 0.3s ease",
+    },
+    redirectText: {
+        marginTop: "20px",
+        textAlign: "center",
+        color: "#cccccc",
+    },
+    link: {
+        color: "#FF0033",
+        fontWeight: "bold",
+        textDecoration: "none",
+    },
 };

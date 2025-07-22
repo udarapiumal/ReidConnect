@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import reidConnect.backend.enums.EventCategory;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
 
@@ -26,5 +27,5 @@ public class EventUpdateDto {
     private List<Long> slotIds;
     private List<Years> targetYears;
     private List<Faculties> targetFaculties;
-
+    private EventCategory category;
 }

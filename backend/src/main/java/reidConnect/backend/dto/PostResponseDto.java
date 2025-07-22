@@ -20,5 +20,6 @@ public class PostResponseDto {
     private LocalDateTime createdAt;
     private String description;
     private List<String> mediaPaths;
+    private Long eventId;
 
 }

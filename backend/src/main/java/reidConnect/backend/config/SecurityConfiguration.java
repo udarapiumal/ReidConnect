@@ -29,6 +29,7 @@ public class SecurityConfiguration {
         this.authenticationProvider = authenticationProvider;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -38,14 +39,11 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
-                        .requestMatchers("/api/posts/uploads/**").permitAll() // Allow public access to image serving
-                        .requestMatchers(HttpMethod.GET, "/api/events").permitAll() // Allow public access to GET all events
-                        .requestMatchers(HttpMethod.GET, "/api/events/conflicts").permitAll() // Allow public access to conflicts endpoint
-                        .requestMatchers(HttpMethod.GET, "/api/events/{id}").permitAll() // Allow public access to GET single event
-                        .requestMatchers(HttpMethod.GET, "/api/events/{eventId}/attendance/counts").permitAll() // Allow public access to attendance counts
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll() // Allow public access to attendance counts
+                        .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated()
+                        .requestMatchers("/api/staff/**").authenticated()
                         .requestMatchers("/api/venues/**").authenticated()
                         .requestMatchers("/api/comments/**").authenticated()
                         .requestMatchers("/lost/**").authenticated()

@@ -46,7 +46,6 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        console.log("🛠️ API response club details:", res.data);
 
         setClubDetails(res.data);
       } catch (err) {

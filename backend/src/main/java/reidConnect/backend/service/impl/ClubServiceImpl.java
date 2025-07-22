@@ -66,7 +66,6 @@ public class ClubServiceImpl implements ClubService {
         club.setWebsite(updatedClubDto.getWebsite());
         club.setProfile_picture(updatedClubDto.getProfilePicture());
         club.setBio(updatedClubDto.getBio());
-        club.setSub_count(updatedClubDto.getSubCount());
 
         // Update the user if changed (optional)
         if (!club.getUser().getId().equals(updatedClubDto.getUserId())) {

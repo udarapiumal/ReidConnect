@@ -11,9 +11,11 @@ import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
+import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
+import reidConnect.backend.enums.EventCategory;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.service.EventService;
 
@@ -46,7 +48,8 @@ public class EventController {
             @RequestParam("slotIds") List<Long> slotIds,
             @RequestParam("targetYears") List<Years> targetYears,
             @RequestParam("targetFaculties") List<Faculties> targetFaculties,
-            @RequestParam("image") MultipartFile imageFile
+            @RequestParam("image") MultipartFile imageFile,
+            @RequestParam("category") EventCategory category
     ) {
         try {
             System.out.println("📥 Received POST request to /api/events");
@@ -93,7 +96,8 @@ public class EventController {
                     savedFilePath,
                     slotIds,
                     targetYears,
-                    targetFaculties
+                    targetFaculties,
+                    category
             );
 
             EventResponseDto createdEvent = eventService.createEvent(dto);
@@ -121,7 +125,8 @@ public class EventController {
             @RequestParam("slotIds") List<Long> slotIds,
             @RequestParam("targetYears") List<Years> targetYears,
             @RequestParam("targetFaculties") List<Faculties> targetFaculties,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam("category") EventCategory category
     ) {
         try {
             if (!eventService.doAllSlotsExist(slotIds)) {
@@ -156,8 +161,8 @@ public class EventController {
                     savedFilePath,
                     slotIds,
                     targetYears,
-                    targetFaculties
-
+                    targetFaculties,
+                    category
             );
 
             EventResponseDto updatedEvent = eventService.updateEvent(id, dto);
@@ -175,6 +180,15 @@ public class EventController {
     public ResponseEntity<List<EventResponseDto>> getAllEvents() {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
+
+    // Get all events by club ID
+    @PreAuthorize("hasAnyRole('CLUB', 'STUDENT', 'UNION')")
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<EventResponseDto>> getEventsByClubId(@PathVariable Long clubId) {
+        List<EventResponseDto> events = eventService.getEventsByClubId(clubId);
+        return ResponseEntity.ok(events);
+    }
+
 
     // ✅ GET EVENT BY ID
     @GetMapping("/{id}")
@@ -241,6 +255,47 @@ public class EventController {
         eventService.removeAttendance(eventId, userId);
         return ResponseEntity.ok("✅ Attendance removed");
     }
+
+    // Get count of GOING attendees
+    @GetMapping("/{eventId}/attendance/going")
+    public ResponseEntity<Long> getGoingCount(@PathVariable Long eventId) {
+        long count = eventService.countGoingAttendance(eventId);
+        return ResponseEntity.ok(count);
+    }
+
+    // Get count of INTERESTED attendees
+    @GetMapping("/{eventId}/attendance/interested")
+    public ResponseEntity<Long> getInterestedCount(@PathVariable Long eventId) {
+        long count = eventService.countInterestedAttendance(eventId);
+        return ResponseEntity.ok(count);
+    }
+
+    // Count all events
+    @GetMapping("/count")
+    public ResponseEntity<Long> countAllEvents() {
+        return ResponseEntity.ok(eventService.countAllEvents());
+    }
+
+    // Count events from last 28 days
+    @GetMapping("/count/recent")
+    public ResponseEntity<Long> countEventsInLast28Days() {
+        return ResponseEntity.ok(eventService.countEventsInLast28Days());
+    }
+
+    @GetMapping("/count/{clubId}")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    public ResponseEntity<Long> countAllEventsByClubId(@PathVariable Long clubId) {
+        long count = eventService.countAllEventsByClubId(clubId);
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/count/recent/{clubId}")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    public ResponseEntity<Long> countRecentEventsByClubId(@PathVariable Long clubId) {
+        long count = eventService.countRecentEventsByClubId(clubId);
+        return ResponseEntity.ok(count);
+    }
+
 
     // Get Attendance Counts (Interested and Going)
     @GetMapping("/{eventId}/attendance/counts")

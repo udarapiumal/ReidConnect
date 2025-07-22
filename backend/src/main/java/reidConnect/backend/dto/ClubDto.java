@@ -17,7 +17,7 @@ public class ClubDto {
     private Long userId;
     private String website;
     private String profilePicture;
+    private String coverPicture;
     private String bio;
-    private Integer subCount;
 
 }

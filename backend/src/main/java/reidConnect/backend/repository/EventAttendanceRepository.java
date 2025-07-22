@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface EventAttendanceRepository extends JpaRepository<EventAttendance, Long> {
     Optional<EventAttendance> findByEventAndUser(Event event, User user);
     void deleteByEventAndUser(Event event, User user);
+    long countByEventAndStatus(Event event, EventAttendanceStatus status);
     
     @Query("SELECT COUNT(ea) FROM EventAttendance ea WHERE ea.event.id = :eventId AND ea.status = :status")
     long countByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") EventAttendanceStatus status);
