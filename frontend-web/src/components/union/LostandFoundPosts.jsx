@@ -1,24 +1,56 @@
-import React, { useState } from "react";
-import { Search, Calendar, MapPin, Phone, User, Tag, Plus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Calendar, MapPin, Phone, User, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function LostItemsGallery() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [lostItems, setLostItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Sample data for lost items
-  const sampleItems = [
-    // ... (keep your existing sampleItems array)
+  const categories = [
+    "All",
+    "electronics",
+    "bags",
+    "accessories",
+    "books",
+    "clothing",
+    "keys",
+    "documents",
   ];
 
-  const categories = ["All", "Electronics", "Bags", "Accessories", "Books", "Clothing", "Keys", "Documents"];
+  const navigate = useNavigate();
 
-  const filteredItems = sampleItems.filter(item => {
-    const matchesSearch = item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  useEffect(() => {
+    const fetchLostItems = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:8080/lost/lost-items", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        setLostItems(response.data);
+        console.log(response.data);
+      } catch (error) {
+        console.error("Error fetching lost items:", error);
+      }
+    };
+
+    fetchLostItems();
+  }, []);
+
+  // Filter items based on search and category
+  const filteredItems = lostItems.filter((item) => {
+    const matchesCategory =
+      selectedCategory === "All" ||
+      (item.category && item.category.toLowerCase() === selectedCategory.toLowerCase());
+
+    const matchesSearch =
+      item.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesCategory && matchesSearch;
   });
 
   const openModal = (item) => {
@@ -28,32 +60,29 @@ function LostItemsGallery() {
   const closeModal = () => {
     setSelectedItem(null);
   };
-const navigate=useNavigate();
-  const handleCreatePost = () => {
-    navigate("/union/LostandFoundForm"); // navigates to the About component
-  };
 
+  const handleCreatePost = () => {
+    navigate("/union/LostandFoundForm");
+  };
+  const handleDelete = async (id) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`http://localhost:8080/lost/lost-items/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setLostItems(prevItems => prevItems.filter(item => item.id !== id));
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    alert("Failed to delete the post");
+  }
+};
+
+console.log(filteredItems)
   return (
     <div className="app-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h2 className="logo">Reid Connect</h2>
-        <ul className="nav-links">
-          <li>
-            <a href="/" className="">Home</a>
-          </li>
-          <li>
-            <a href="/union/LostandFound" className="active">Lost and Found</a>
-          </li>
-          <li>
-            <a href="/union/Profilemanagement" className="">Profile Management</a>
-          </li>
-        </ul>
-      </div>
-
       {/* Main Content */}
-      <div className="main-content">
-        <div className="gallery-header">
+      <main className="main-content">
+        <header className="gallery-header">
           <div className="header-text">
             <h1>Active Lost Item Posts</h1>
             <p>Browse through recent lost items reported by the community</p>
@@ -76,171 +105,177 @@ const navigate=useNavigate();
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="category-filter"
             >
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </option>
               ))}
             </select>
-            
-            {/* Add the Create Post button here */}
+
             <button className="create-post-btn" onClick={handleCreatePost}>
               <Plus size={18} />
               Create Post
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* ... rest of your component remains the same ... */}
-      </div>
+        {/* Items grid */}
+        {filteredItems.length === 0 ? (
+          <div className="no-results">
+            <h3>No lost items found</h3>
+            <p>Try changing your search or filter.</p>
+          </div>
+        ) : (
+          <div className="gallery-grid">
+            {filteredItems.map((item) => (
+              
+              <div
+                key={item.id}
+                className="gallery-card"
+                onClick={() => openModal(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && openModal(item)}
+              >
+                <img
+                  src={item.imageUrl}
+                  alt={item.itemName}
+                  className="gallery-image"
+                  loading="lazy"
+                />
+                <div className="gallery-info">
+                  <div className="gallery-actions">
+  <button
+    className="edit-btn"
+    onClick={(e) => {
+      e.stopPropagation(); // Prevent modal opening
+      navigate(`/union/LostandFoundForm?id=${item.id}`);
+    }}
+  >
+    Edit
+  </button>
 
-      {/* Modal */}
-      {selectedItem && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>×</button>
-            
-            <div className="modal-image">
-              <img src={selectedItem.image} alt={selectedItem.itemName} />
-            </div>
-            
-            <div className="modal-details">
-              <div className="modal-header">
-                <h2>{selectedItem.itemName}</h2>
-                <span className="modal-category">{selectedItem.category}</span>
-              </div>
-              
-              <p className="modal-description">{selectedItem.description}</p>
-              
-              <div className="modal-info">
-                <div className="info-item">
-                  <MapPin size={20} />
-                  <div>
-                    <strong>Last Seen Location</strong>
-                    <p>{selectedItem.location}</p>
-                  </div>
-                </div>
-                
-                <div className="info-item">
-                  <Calendar size={20} />
-                  <div>
-                    <strong>Date Lost</strong>
-                    <p>{selectedItem.dateLost}</p>
-                  </div>
-                </div>
-                
-                <div className="info-item">
-                  <User size={20} />
-                  <div>
-                    <strong>Posted by</strong>
-                    <p>{selectedItem.posterName}</p>
-                  </div>
-                </div>
-                
-                <div className="info-item">
-                  <Phone size={20} />
-                  <div>
-                    <strong>Contact Number</strong>
-                    <p>{selectedItem.contactNumber}</p>
-                  </div>
+  <button
+    className="delete-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      if (window.confirm("Are you sure you want to delete this item?")) {
+        handleDelete(item.id);
+      }
+    }}
+  >
+    Delete
+  </button>
+</div>
+
+                  <h3>{item.itemName}</h3>
+                  <p className="gallery-category">{item.category}</p>
                 </div>
               </div>
-              
-              <div className="modal-actions">
-                <button className="contact-btn">
-                  <Phone size={18} />
-                  Contact Owner
-                </button>
+            ))}
+          </div>
+        )}
+
+        {/* Modal */}
+        {selectedItem && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="modal-close" onClick={closeModal}>
+                ×
+              </button>
+
+              <div className="modal-image">
+                <img
+                  src={`http://localhost:8080/${selectedItem.imageUrl}`}
+                  alt={selectedItem.itemName}
+                />
+              </div>
+
+              <div className="modal-details">
+                <div className="modal-header">
+                  <h2>{selectedItem.itemName}</h2>
+                  <span className="modal-category">{selectedItem.category}</span>
+                </div>
+
+                <p className="modal-description">{selectedItem.description}</p>
+
+                <div className="modal-info">
+                  <div className="info-item">
+                    <MapPin size={20} />
+                    <div>
+                      <strong>Last Seen Location</strong>
+                      <p>{selectedItem.location}</p>
+                    </div>
+                  </div>
+
+                  <div className="info-item">
+                    <Calendar size={20} />
+                    <div>
+                      <strong>Date Lost</strong>
+                      <p>{selectedItem.dateLost}</p>
+                    </div>
+                  </div>
+
+                  <div className="info-item">
+                    <User size={20} />
+                    <div>
+                      <strong>Posted by</strong>
+                      <p>{selectedItem.posterName}</p>
+                    </div>
+                  </div>
+
+                  <div className="info-item">
+                    <Phone size={20} />
+                    <div>
+                      <strong>Contact Number</strong>
+                      <p>{selectedItem.contactNumber}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button className="contact-btn">
+                    <Phone size={18} />
+                    Contact Owner
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
 
       <style jsx>{`
-        .app-container {
-          margin: 0;
-          padding: 0;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-          background-color: #f8fafc;
-          color: #1e293b;
-          min-height: 100vh;
-        }
-
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 100vh;
-          width: 220px;
-          background-color: #151718;
-          padding: 2rem 1rem;
-          display: flex;
-          flex-direction: column;
-          border-right: 2px solid #FF0033;
-          z-index: 1000;
-        }
-
-        .logo {
-          color: #FF0033;
-          font-size: 1.75rem;
-          font-weight: bold;
-          margin-bottom: 2rem;
-          text-align: center;
-        }
-
-        .nav-links {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-
-        .nav-links a {
-          color: #ffffff;
-          font-size: 1rem;
-          font-weight: 500;
-          text-decoration: none;
-          padding: 0.75rem 1rem;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-          display: block;
-        }
-
-        .nav-links a:hover {
-          background-color: #1e1e1e;
-          color: #FF0033;
-        }
-
-        .nav-links a.active {
-          background-color: #1e1e1e;
-          color: #FF0033;
-        }
-
+        /* Main content - Dark Theme */
         .main-content {
-          margin-left: 220px;
-          min-height: 100vh;
+          margin-left: 200px;
           padding: 2rem;
-          background-color: #f8fafc;
+          min-height: 100vh;
+          background-color: #1a1c1e;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+            Oxygen, Ubuntu, Cantarell, sans-serif;
+          color: #ffffff;
         }
 
+        /* Gallery header */
         .gallery-header {
-          background: white;
-          border-radius: 16px;
+          background: #151718;
+          border-radius: 8px;
           padding: 2rem;
           margin-bottom: 2rem;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          border: 1px solid #333;
         }
 
         .header-text h1 {
           font-size: 2rem;
-          font-weight: 800;
-          color: #1e293b;
+          font-weight: 600;
           margin-bottom: 0.5rem;
+          color: #ffffff;
         }
 
         .header-text p {
-          color: #64748b;
+          color: #a1a1a1;
           margin-bottom: 2rem;
         }
 
@@ -248,7 +283,41 @@ const navigate=useNavigate();
           display: flex;
           gap: 1rem;
           align-items: center;
+          flex-wrap: wrap;
         }
+          .gallery-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem 1rem;
+  gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+  flex: 1;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2563eb;
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
 
         .search-bar {
           position: relative;
@@ -261,212 +330,164 @@ const navigate=useNavigate();
           left: 1rem;
           top: 50%;
           transform: translateY(-50%);
-          color: #64748b;
+          color: #a1a1a1;
           z-index: 2;
         }
 
         .search-input {
           width: 100%;
           padding: 0.75rem 1rem 0.75rem 3rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 10px;
+          border: 1px solid #333;
+          border-radius: 8px;
           font-size: 0.95rem;
-          transition: all 0.2s ease;
+          transition: border-color 0.2s ease;
+          background-color: #2a2a2a;
+          color: #ffffff;
         }
 
         .search-input:focus {
           outline: none;
-          border-color: #dc2626;
-          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+          border-color: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
 
         .category-filter {
           padding: 0.75rem 1rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 10px;
-          background: white;
+          border: 1px solid #333;
+          border-radius: 8px;
+          background: #2a2a2a;
+          color: #ffffff;
           font-size: 0.95rem;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: border-color 0.2s ease;
         }
 
         .category-filter:focus {
           outline: none;
-          border-color: #dc2626;
+          border-color: #ef4444;
         }
 
-        /* Add styles for the Create Post button */
         .create-post-btn {
-          background: linear-gradient(135deg, #dc2626, #ef4444);
+          background: #ef4444;
           color: white;
           border: none;
           padding: 0.75rem 1.5rem;
-          border-radius: 10px;
-          font-weight: 600;
+          border-radius: 8px;
+          font-weight: 500;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 0.5rem;
           transition: all 0.2s ease;
           white-space: nowrap;
+          font-size: 14px;
         }
 
         .create-post-btn:hover {
-          background: linear-gradient(135deg, #b91c1c, #dc2626);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+          background: #dc2626;
         }
 
-        .results-info {
-          margin-bottom: 1.5rem;
-          color: #64748b;
-          font-weight: 500;
-        }
-
-        .gallery-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 2rem;
-          margin-bottom: 2rem;
-        }
-
-        .item-card {
-          background: white;
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-
-        .item-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
-        }
-
-        .item-image {
-          position: relative;
-          height: 200px;
-          overflow: hidden;
-        }
-
-        .item-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .category-badge {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          background: rgba(220, 38, 38, 0.9);
-          color: white;
-          padding: 0.5rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .item-content {
-          padding: 1.5rem;
-        }
-
-        .item-title {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #1e293b;
-          margin-bottom: 0.75rem;
-        }
-
-        .item-description {
-          color: #64748b;
-          line-height: 1.5;
-          margin-bottom: 1rem;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .item-details {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .detail-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #64748b;
-          font-size: 0.9rem;
-        }
-
-        .item-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding-top: 1rem;
-          border-top: 1px solid #e2e8f0;
-        }
-
-        .poster-info {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #374151;
-          font-weight: 500;
-        }
-
-        .time-posted {
-          color: #9ca3af;
-          font-size: 0.85rem;
-        }
-
+        /* No results message */
         .no-results {
           text-align: center;
           padding: 4rem 2rem;
-          background: white;
-          border-radius: 16px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          background: #151718;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          border: 1px solid #333;
         }
 
         .no-results h3 {
           font-size: 1.5rem;
-          color: #374151;
           margin-bottom: 0.5rem;
+          color: #ffffff;
         }
 
         .no-results p {
-          color: #64748b;
+          color: #a1a1a1;
         }
 
+        /* Gallery grid */
+        .gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 1.5rem;
+        }
+
+        .gallery-card {
+          background-color: #151718;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgb(0 0 0 / 0.25);
+          cursor: pointer;
+          transition: transform 0.2s ease;
+          border: 1px solid #333;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .gallery-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 6px 12px rgb(239 68 68 / 0.5);
+        }
+
+        .gallery-image {
+          width: 100%;
+          height: 150px;
+          object-fit: cover;
+          border-bottom: 1px solid #333;
+          flex-shrink: 0;
+        }
+
+        .gallery-info {
+          padding: 1rem;
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .gallery-info h3 {
+          color: #ffffff;
+          margin: 0 0 0.25rem;
+          font-size: 1.1rem;
+        }
+
+        .gallery-category {
+          background-color: #ef4444;
+          color: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          width: fit-content;
+          text-transform: capitalize;
+        }
+
+        /* Modal styles */
         .modal-overlay {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
+          background-color: rgba(0, 0, 0, 0.7);
           display: flex;
-          align-items: center;
           justify-content: center;
-          z-index: 2000;
-          padding: 2rem;
+          align-items: center;
+          z-index: 1000;
         }
 
         .modal-content {
-          background: white;
-          border-radius: 20px;
-          max-width: 600px;
-          width: 100%;
+          background-color: #151718;
+          border-radius: 8px;
+          width: 90%;
+          max-width: 800px;
           max-height: 90vh;
           overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid #333;
           position: relative;
         }
 
@@ -474,24 +495,19 @@ const navigate=useNavigate();
           position: absolute;
           top: 1rem;
           right: 1rem;
-          background: rgba(0, 0, 0, 0.5);
-          color: white;
+          background: none;
           border: none;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
           font-size: 1.5rem;
+          color: #a1a1a1;
           cursor: pointer;
           z-index: 10;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         .modal-image {
+          width: 100%;
           height: 300px;
           overflow: hidden;
-          border-radius: 20px 20px 0 0;
+          background-color: #2a2a2a;
         }
 
         .modal-image img {
@@ -501,151 +517,121 @@ const navigate=useNavigate();
         }
 
         .modal-details {
-          padding: 2rem;
+          padding: 1.5rem;
         }
 
         .modal-header {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
+          align-items: center;
           margin-bottom: 1rem;
         }
 
         .modal-header h2 {
-          font-size: 1.75rem;
-          font-weight: 800;
-          color: #1e293b;
+          color: #ffffff;
+          font-size: 1.5rem;
+          margin: 0;
         }
 
         .modal-category {
-          background: #dc2626;
+          background-color: #ef4444;
           color: white;
-          padding: 0.5rem 1rem;
+          padding: 0.25rem 0.75rem;
           border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
+          font-size: 0.8rem;
+          font-weight: 500;
+          text-transform: capitalize;
         }
 
         .modal-description {
-          color: #64748b;
+          color: #e5e5e5;
+          margin-bottom: 1.5rem;
           line-height: 1.6;
-          margin-bottom: 2rem;
-          font-size: 1.05rem;
         }
 
         .modal-info {
-          display: flex;
-          flex-direction: column;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
           gap: 1.5rem;
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
         }
 
         .info-item {
           display: flex;
+          gap: 0.75rem;
           align-items: flex-start;
-          gap: 1rem;
         }
 
         .info-item svg {
-          color: #dc2626;
-          margin-top: 0.25rem;
+          color: #ef4444;
           flex-shrink: 0;
+          margin-top: 0.25rem;
         }
 
         .info-item strong {
+          color: #ffffff;
+          font-weight: 500;
           display: block;
-          color: #374151;
-          font-weight: 600;
           margin-bottom: 0.25rem;
         }
 
         .info-item p {
-          color: #64748b;
+          color: #a1a1a1;
           margin: 0;
         }
 
         .modal-actions {
-          padding-top: 1.5rem;
-          border-top: 2px solid #f1f5f9;
+          display: flex;
+          justify-content: flex-end;
         }
 
         .contact-btn {
-          background: linear-gradient(135deg, #dc2626, #ef4444);
+          background-color: #ef4444;
           color: white;
           border: none;
-          padding: 1rem 2rem;
-          border-radius: 10px;
-          font-weight: 600;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 500;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          width: 100%;
-          justify-content: center;
-          transition: all 0.2s ease;
+          transition: background-color 0.2s ease;
         }
 
         .contact-btn:hover {
-          background: linear-gradient(135deg, #b91c1c, #dc2626);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+          background-color: #dc2626;
         }
 
         @media (max-width: 768px) {
-          .sidebar {
-            width: 100%;
-            height: auto;
-            flex-direction: row;
-            justify-content: space-around;
-            border-right: none;
-            border-bottom: 2px solid #FF0033;
-            position: relative;
-          }
-
-          .nav-links {
-            flex-direction: row;
-            gap: 1rem;
-          }
-
-          .logo {
-            margin-bottom: 0;
-            font-size: 1.25rem;
-          }
-
           .main-content {
             margin-left: 0;
             padding: 1rem;
           }
 
-          .gallery-header {
-            padding: 1.5rem;
-          }
-
           .controls {
             flex-direction: column;
-            gap: 1rem;
+            align-items: stretch;
           }
 
-          .search-bar {
+          .search-bar,
+          .category-filter,
+          .create-post-btn {
+            width: 100%;
             max-width: none;
           }
 
-          .create-post-btn {
-            width: 100%;
-            justify-content: center;
-          }
-
-          .gallery-grid {
+          .modal-info {
             grid-template-columns: 1fr;
-            gap: 1.5rem;
           }
 
-          .modal-overlay {
-            padding: 1rem;
+          .modal-content {
+            width: 95%;
+            flex-direction: column;
           }
 
-          .modal-details {
-            padding: 1.5rem;
+          .modal-image {
+            height: 200px;
           }
         }
       `}</style>

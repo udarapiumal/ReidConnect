@@ -59,7 +59,7 @@ const ClubDetail = () => {
 
   return (
     <div className="club-detail-container">
-      <h2>Posts for Club {clubId}</h2>
+     
       {loadingPosts ? (
         <p>Loading posts...</p>
       ) : errorPosts ? (
@@ -74,20 +74,7 @@ const ClubDetail = () => {
         </div>
       )}
 
-      <h2 style={{ marginTop: '32px' }}>Events for Club {clubId}</h2>
-      {loadingEvents ? (
-        <p>Loading events...</p>
-      ) : errorEvents ? (
-        <p>{errorEvents}</p>
-      ) : events.length === 0 ? (
-        <p>No events found for this club.</p>
-      ) : (
-        <div className="events-list">
-          {events.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-      )}
+     
     </div>
   );
 };
