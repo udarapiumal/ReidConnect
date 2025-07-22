@@ -69,8 +69,8 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
         <div className="club-name-cell">
           <div className="club-avatar">
             <img
-              src={club.profile_picture || "/default-profile.png"}
-              alt={`${club.club_name || 'Club'} profile`}
+              src={club.profilePicture ? `http://localhost:8080${club.profilePicture}` : "/default-profile.png"}
+              alt={`${club.clubName || 'Club'} profile`}
               className="club-image"
               onError={(e) => {
                 e.target.onerror = null;
@@ -78,7 +78,7 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
               }}
             />
           </div>
-          <span className="club-name">{club.club_name || 'Unnamed Club'}</span>
+          <span className="club-name">{club.clubName || 'Unnamed Club'}</span>
         </div>
       </td>
             

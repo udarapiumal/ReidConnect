@@ -37,4 +37,8 @@ public class Post {
     @JoinColumn(name = "event_id", referencedColumnName = "id", nullable = true)
     private Event event;
 
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
+
 }
