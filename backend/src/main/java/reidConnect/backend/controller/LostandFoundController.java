@@ -27,5 +27,16 @@ public class LostandFoundController {
         List<LostandFoundResponseDto> items = lostandFoundService.getAllLostItems();
         return ResponseEntity.ok(items);
     }
+    @DeleteMapping("/lost-items/{id}")
+    public ResponseEntity<String> deleteLostItem(@PathVariable Long id) {
+        lostandFoundService.deleteLostItem(id);
+        return ResponseEntity.ok("Lost item deleted successfully");
+    }
+    @PutMapping("/lost-items/{id}")
+    public ResponseEntity<String> updateLostItem(@PathVariable Long id, @ModelAttribute LostandFoundDto dto) {
+        lostandFoundService.updateLostItem(id, dto);
+        return ResponseEntity.ok("Lost item updated successfully");
+    }
+
 
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../css/ClubCard.css';
 
-const baseUrl = 'http://localhost:8080';
+const baseUrl = 'http://localhost:8080/';
 const ClubCard = ({ club, isSelected, onSelect }) => {
   const navigate = useNavigate();
 

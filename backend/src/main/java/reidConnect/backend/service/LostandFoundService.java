@@ -37,7 +37,7 @@ public class LostandFoundService {
 
             try {
 
-                Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads");
+                Path uploadDir = Paths.get(System.getProperty("user.dir"), "src", "main", "resources", "static", "uploads");
                 Files.createDirectories(uploadDir);
 
                 Path filePath = uploadDir.resolve(fileName);
@@ -55,7 +55,7 @@ public class LostandFoundService {
 
         return items.stream().map(item -> {
             String imageUrl = item.getImagePath() != null
-                    ? "http://localhost:8080/" + item.getImagePath()  // or your actual base path
+                    ? "http://localhost:8080/uploads/" + item.getImagePath()  // or your actual base path
                     : null;
 
             return new LostandFoundResponseDto(
@@ -71,4 +71,35 @@ public class LostandFoundService {
             );
         }).toList();
     }
+    public void deleteLostItem(Long id) {
+        lostandFoundRepository.deleteById(id);
+    }
+    public void updateLostItem(Long id, LostandFoundDto dto) {
+        LostandFound item = lostandFoundRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        item.setItemName(dto.getItemName());
+        item.setCategory(dto.getCategory());
+        item.setDescription(dto.getDescription());
+        item.setLocation(dto.getLocation());
+        item.setDateLost(dto.getDateLost());
+        item.setPosterName(dto.getPosterName());
+        item.setContactNumber(dto.getContactNumber());
+
+        if (dto.getImage() != null && !dto.getImage().isEmpty()) {
+            String fileName = UUID.randomUUID() + "_" + dto.getImage().getOriginalFilename();
+            try {
+                Path uploadDir = Paths.get(System.getProperty("user.dir"), "src", "main", "resources", "static", "uploads");
+                Files.createDirectories(uploadDir);
+                Path filePath = uploadDir.resolve(fileName);
+                dto.getImage().transferTo(filePath.toFile());
+                item.setImagePath(fileName);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to update image", e);
+            }
+        }
+
+        lostandFoundRepository.save(item);
+    }
+
 }

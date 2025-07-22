@@ -64,6 +64,19 @@ function LostItemsGallery() {
   const handleCreatePost = () => {
     navigate("/union/LostandFoundForm");
   };
+  const handleDelete = async (id) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`http://localhost:8080/lost/lost-items/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setLostItems(prevItems => prevItems.filter(item => item.id !== id));
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    alert("Failed to delete the post");
+  }
+};
+
 console.log(filteredItems)
   return (
     <div className="app-container">
@@ -131,6 +144,30 @@ console.log(filteredItems)
                   loading="lazy"
                 />
                 <div className="gallery-info">
+                  <div className="gallery-actions">
+  <button
+    className="edit-btn"
+    onClick={(e) => {
+      e.stopPropagation(); // Prevent modal opening
+      navigate(`/union/LostandFoundForm?id=${item.id}`);
+    }}
+  >
+    Edit
+  </button>
+
+  <button
+    className="delete-btn"
+    onClick={(e) => {
+      e.stopPropagation();
+      if (window.confirm("Are you sure you want to delete this item?")) {
+        handleDelete(item.id);
+      }
+    }}
+  >
+    Delete
+  </button>
+</div>
+
                   <h3>{item.itemName}</h3>
                   <p className="gallery-category">{item.category}</p>
                 </div>
@@ -248,6 +285,39 @@ console.log(filteredItems)
           align-items: center;
           flex-wrap: wrap;
         }
+          .gallery-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem 1rem;
+  gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+  flex: 1;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2563eb;
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
 
         .search-bar {
           position: relative;
