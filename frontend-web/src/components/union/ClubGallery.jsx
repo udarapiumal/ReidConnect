@@ -107,66 +107,65 @@ const ClubGallery = () => {
           </div>
         ) : (
           <table className="clubs-table">
-            <thead>
-              <tr>
-                <th className="checkbox-col">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="table-checkbox"
-                  />
-                </th>
-                <th className="name-col">
-                  <div className="header-content">
-                    <span>Name</span>
-                    <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M3.5 9.5L6 7l2.5 2.5"/>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div className="header-content">
-                    <span>Category</span>
-                    <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M3.5 9.5L6 7l2.5 2.5"/>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div className="header-content">
-                    <span>Website</span>
-                    <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M3.5 9.5L6 7l2.5 2.5"/>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div className="header-content">
-                    <span>Members</span>
-                    <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M3.5 9.5L6 7l2.5 2.5"/>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div className="header-content">
-                    <span>Created</span>
-                    <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M3.5 9.5L6 7l2.5 2.5"/>
-                    </svg>
-                  </div>
-                </th>
-                <th>
-                  <div className="header-content">
-                    <span>Status</span>
-                    <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                      <path d="M3.5 9.5L6 7l2.5 2.5"/>
-                    </svg>
-                  </div>
-                </th>
-              </tr>
-            </thead>
+           <thead>
+  <tr>
+    {/* Remove this Category column */}
+    {/* <th>
+      <div className="header-content">
+        <span>Category</span>
+        <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M3.5 9.5L6 7l2.5 2.5"/>
+        </svg>
+      </div>
+    </th> */}
+
+    <th className="name-col">
+      <div className="header-content">
+        <span>Name</span>
+        <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M3.5 9.5L6 7l2.5 2.5"/>
+        </svg>
+      </div>
+    </th>
+    
+    <th>
+      <div className="header-content">
+        <span>Website</span>
+        <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M3.5 9.5L6 7l2.5 2.5"/>
+        </svg>
+      </div>
+    </th>
+
+    <th>
+      <div className="header-content">
+        <span>Members</span>
+        <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M3.5 9.5L6 7l2.5 2.5"/>
+        </svg>
+      </div>
+    </th>
+
+    <th>
+      <div className="header-content">
+        <span>Bio</span>
+        <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M3.5 9.5L6 7l2.5 2.5"/>
+        </svg>
+      </div>
+    </th>
+
+    <th>
+      <div className="header-content">
+        <span>Status</span>
+        <svg className="sort-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M3.5 9.5L6 7l2.5 2.5"/>
+        </svg>
+      </div>
+    </th>
+  </tr>
+</thead>
+
             <tbody>
               {clubs.map((club) => (
                 <ClubCard 

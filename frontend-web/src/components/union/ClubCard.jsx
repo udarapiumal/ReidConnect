@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../css/ClubCard.css';
 
+const baseUrl = 'http://localhost:8080';
 const ClubCard = ({ club, isSelected, onSelect }) => {
   const navigate = useNavigate();
 
@@ -50,86 +51,79 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
   };
 
   return (
-    <tr 
-      className={`club-row ${isSelected ? 'selected' : ''}`}
-      onClick={handleRowClick}
-      style={{ cursor: 'pointer' }}
-    >
-      <td className="checkbox-col">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={handleCheckboxClick}
-          onClick={handleCheckboxClick}
-          className="table-checkbox"
+   <tr className={`club-row ${isSelected ? 'selected' : ''}`} onClick={handleRowClick} style={{ cursor: 'pointer' }}>
+  {/* Name */}
+  <td className="name-col">
+    <div className="club-name-cell">
+      <div className="club-avatar">
+        <img
+          src={`${baseUrl}${club.profilePicture}`}
+          alt={`${club.clubName || 'Club'} profile`}
+          className="club-image"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/default-profile.png";
+          }}
         />
-      </td>
-            
-      <td className="name-col">
-        <div className="club-name-cell">
-          <div className="club-avatar">
-            <img
-              src={club.profile_picture || "/default-profile.png"}
-              alt={`${club.club_name || 'Club'} profile`}
-              className="club-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/default-profile.png";
-              }}
-            />
-          </div>
-          <span className="club-name">{club.club_name || 'Unnamed Club'}</span>
-        </div>
-      </td>
-            
-      <td className="website-col">
-        {club.website ? (
-          <a 
-            href={formatWebsiteUrl(club.website)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="website-link"
-            title={club.website}
-            onClick={(e) => e.stopPropagation()} // Prevent row click when clicking link
-          >
-            {getDomainName(club.website)}
-          </a>
-        ) : (
-          <span className="no-website">No website</span>
-        )}
-      </td>
-            
-      <td className="bio-col">
-        <span 
-          className="club-bio"
-          title={club.bio || 'No bio available'}
-        >
-          {truncateText(club.bio)}
-        </span>
-      </td>
-            
-      <td className="owner-col">
-        <div className="owner-cell">
-          {club.user ? (
-            <>
-              <span className="owner-name">
-                {club.user.firstName && club.user.lastName
-                  ? `${club.user.firstName} ${club.user.lastName}`
-                  : club.user.username || club.user.email || 'Unknown User'
-                }
-              </span>
-              {club.user.email && (
-                <span className="owner-email" title={club.user.email}>
-                  {club.user.email}
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="no-owner">No owner info</span>
+      </div>
+      <span className="club-name">{club.clubName || 'Unnamed Club'}</span>
+    </div>
+  </td>
+
+  {/* Website */}
+  <td className="website-col">
+    {club.website ? (
+      <a 
+        href={formatWebsiteUrl(club.website)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="website-link"
+        title={club.website}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {getDomainName(club.website)}
+      </a>
+    ) : (
+      <span className="no-website">No website</span>
+    )}
+  </td>
+
+  {/* Members — you can replace this with actual member count if available */}
+  <td className="members-col">
+    {/* Placeholder text for now */}
+    <span>--</span>
+  </td>
+
+  {/* Created — replace with club.createdAt if available */}
+  <td className="created-col">
+    <span title={club.bio}>
+      {club.bio}
+    </span>
+  </td>
+
+  {/* Status — owner info */}
+  <td className="owner-col">
+    <div className="owner-cell">
+      {club.user ? (
+        <>
+          <span className="owner-name">
+            {club.user.firstName && club.user.lastName
+              ? `${club.user.firstName} ${club.user.lastName}`
+              : club.user.username || club.user.email || 'Unknown User'}
+          </span>
+          {club.user.email && (
+            <span className="owner-email" title={club.user.email}>
+              {club.user.email}
+            </span>
           )}
-        </div>
-      </td>
-    </tr>
+        </>
+      ) : (
+        <span className="no-owner">No owner info</span>
+      )}
+    </div>
+  </td>
+</tr>
+
   );
 };
 

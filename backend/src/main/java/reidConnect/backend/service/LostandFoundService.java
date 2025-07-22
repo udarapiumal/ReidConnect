@@ -2,13 +2,14 @@ package reidConnect.backend.service;
 
 import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.LostandFoundDto;
-import org.springframework.web.multipart.MultipartFile;
+import reidConnect.backend.dto.LostandFoundResponseDto;
 import reidConnect.backend.entity.LostandFound;
 import reidConnect.backend.repository.LostandFoundRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -49,5 +50,25 @@ public class LostandFoundService {
 
         lostandFoundRepository.save(lostandFound);
     }
+    public List<LostandFoundResponseDto> getAllLostItems() {
+        List<LostandFound> items = lostandFoundRepository.findAll();
 
+        return items.stream().map(item -> {
+            String imageUrl = item.getImagePath() != null
+                    ? "http://localhost:8080/" + item.getImagePath()  // or your actual base path
+                    : null;
+
+            return new LostandFoundResponseDto(
+                    item.getId(),
+                    item.getItemName(),
+                    item.getCategory(),
+                    item.getDescription(),
+                    item.getLocation(),
+                    item.getDateLost(),
+                    imageUrl,
+                    item.getPosterName(),
+                    item.getContactNumber()
+            );
+        }).toList();
+    }
 }

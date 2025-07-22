@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from 'axios'; // Add this at the top if not already
 
 function LostItemForm() {
   const [formData, setFormData] = useState({
@@ -21,13 +22,37 @@ function LostItemForm() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Note: localStorage is not available in this environment
-    // In a real app, you would get the token from your auth system
-    console.log("Form submitted:", formData);
+ 
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const formPayload = new FormData();
+    formPayload.append("itemName", formData.itemName);
+    formPayload.append("category", formData.category);
+    formPayload.append("description", formData.description);
+    formPayload.append("location", formData.location);
+    formPayload.append("dateLost", formData.dateLost);
+    formPayload.append("image", formData.image);
+    formPayload.append("posterName", formData.posterName);
+    formPayload.append("contactNumber", formData.contactNumber);
+
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+  "http://localhost:8080/lost/lost-items",
+  formPayload,
+  {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      "Authorization": `Bearer ${token}` // ✅ Add token header
+    }
+  }
+);
+
     alert("Lost item post submitted successfully!");
-    
+    console.log(response.data);
+
     // Reset form
     setFormData({
       itemName: "",
@@ -39,7 +64,12 @@ function LostItemForm() {
       posterName: "",
       contactNumber: "",
     });
-  };
+  } catch (error) {
+    console.error("Error posting lost item:", error);
+    alert("Failed to submit the lost item post.");
+  }
+};
+
 
   const categories = [
     "Electronics",
@@ -56,21 +86,15 @@ function LostItemForm() {
 
   return (
     <div className="app-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h2 className="logo">Reid Connect</h2>
-        <ul className="nav-links">
-          <li>
-            <a href="/" className="">Home</a>
-          </li>
-          <li>
-            <a href="/union/LostandFound" className="active">Lost and Found</a>
-          </li>
-          <li>
-            <a href="/union/Profilemanagement" className="">Profile Management</a>
-          </li>
-        </ul>
-      </div>
+      {/* Header */}
+      <header className="header">
+        <div className="title">ReidConnect <span className="highlight">LostFound</span></div>
+        <div className="user-info">
+          <i className="fa fa-bell" />
+          <i className="fa fa-user" />
+          <span>User</span>
+        </div>
+      </header>
 
       {/* Main Content */}
       <div className="main-content">
@@ -164,6 +188,7 @@ function LostItemForm() {
                   className="file-input"
                 />
                 <div className="file-upload-display">
+                  <i className="fa fa-cloud-upload upload-icon" />
                   <span className="file-text">
                     {formData.image ? formData.image.name : "Choose an image file"}
                   </span>
@@ -201,9 +226,11 @@ function LostItemForm() {
 
             <div className="form-actions">
               <button type="button" className="btn-secondary">
-                Previous step
+                <i className="fa fa-arrow-left" />
+                Previous Step
               </button>
               <button type="button" onClick={handleSubmit} className="btn-primary">
+                <i className="fa fa-paper-plane" />
                 Submit Post
               </button>
             </div>
@@ -211,360 +238,208 @@ function LostItemForm() {
         </div>
       </div>
 
-      <style jsx>{`
-        .app-container {
-          margin: 0;
-          padding: 0;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-          background-color: #f8fafc;
-          color: #1e293b;
-          min-height: 100vh;
-        }
+     <style jsx>{`
+  .app-container {
+    background-color: #1a1a1a;
+    min-height: 100vh;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
 
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 100vh;
-          width: 220px;
-          background-color: #151718;
-          padding: 2rem 1rem;
-          display: flex;
-          flex-direction: column;
-          border-right: 2px solid #FF0033;
-          z-index: 1000;
-        }
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    z-index: 1001;
+  }
 
-        .logo {
-          color: #FF0033;
-          font-size: 1.75rem;
-          font-weight: bold;
-          margin-bottom: 2rem;
-          text-align: center;
-        }
+  .title {
+    font-weight: bold;
+    font-size: 20px;
+    color: white;
+  }
 
-        .nav-links {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
+  .title .highlight {
+    color: #ef4444;
+  }
 
-        .nav-links a {
-          color: #ffffff;
-          font-size: 1rem;
-          font-weight: 500;
-          text-decoration: none;
-          padding: 0.75rem 1rem;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-          display: block;
-        }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
 
-        .nav-links a:hover {
-          background-color: #1e1e1e;
-          color: #FF0033;
-        }
+  .user-info i {
+    font-size: 20px;
+    cursor: pointer;
+    color: white;
+    transition: color 0.3s;
+  }
 
-        .nav-links a.active {
-          background-color: #1e1e1e;
-          color: #FF0033;
-        }
+  .user-info i:hover {
+    color: #ef4444;
+  }
 
-        .main-content {
-          margin-left: 220px;
-          min-height: 100vh;
-          padding: 2rem;
-          background-color: #f8fafc;
-        }
+  .main-content {
+    padding-top: 96px;
+    padding: 2rem;
+    flex: 1;
+  }
 
-        .form-container {
-          max-width: 800px;
-          margin: 0 auto;
-          background: white;
-          border-radius: 16px;
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          overflow: hidden;
-          border: 1px solid #e2e8f0;
-        }
+  .form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #2a2a2a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 2rem;
+  }
 
-        .form-header {
-          background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
-          color: white;
-          padding: 2.5rem;
-          text-align: center;
-          position: relative;
-          overflow: hidden;
-        }
+  .form-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
 
-        .form-header::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
-          pointer-events: none;
-        }
+  .form-header p {
+    font-size: 14px;
+    color: #d1d5db;
+    margin-bottom: 1.5rem;
+  }
 
-        .form-header h1 {
-          font-size: 2.25rem;
-          font-weight: 800;
-          margin-bottom: 0.75rem;
-          position: relative;
-          z-index: 2;
-        }
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
 
-        .form-header p {
-          opacity: 0.95;
-          font-size: 1.125rem;
-          font-weight: 400;
-          position: relative;
-          z-index: 2;
-        }
+  .form-row {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
 
-        .form-content {
-          padding: 2.5rem;
-        }
+  .form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 14px;
+    color: #d1d5db;
+  }
 
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 2rem;
-          margin-bottom: 2rem;
-        }
+  .form-input,
+  .form-textarea,
+  .form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #444;
+    background-color: #1f1f1f;
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+  }
 
-        .form-group {
-          margin-bottom: 2rem;
-        }
+  .form-input:focus,
+  .form-textarea:focus,
+  .form-select:focus {
+    outline: none;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+  }
 
-        .form-group label {
-          display: block;
-          font-weight: 600;
-          margin-bottom: 0.75rem;
-          color: #374151;
-          font-size: 0.95rem;
-          letter-spacing: 0.025em;
-        }
+  .form-textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
 
-        .form-input,
-        .form-select,
-        .form-textarea {
-          width: 100%;
-          padding: 1rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 10px;
-          font-size: 0.95rem;
-          transition: all 0.2s ease;
-          background-color: #fff;
-          font-family: inherit;
-        }
+  .file-upload-container {
+    position: relative;
+  }
 
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-          outline: none;
-          border-color: #dc2626;
-          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
-          transform: translateY(-1px);
-        }
+  .file-input {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    cursor: pointer;
+  }
 
-        .form-textarea {
-          resize: vertical;
-          min-height: 120px;
-          font-family: inherit;
-        }
+  .file-upload-display {
+    padding: 1rem;
+    border: 1px dashed #555;
+    background-color: #1f1f1f;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 14px;
+    color: #9ca3af;
+  }
 
-        .form-input::placeholder,
-        .form-textarea::placeholder {
-          color: #9ca3af;
-        }
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
 
-        .form-select {
-          cursor: pointer;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-          background-repeat: no-repeat;
-          background-position: right 1rem center;
-          background-size: 1rem;
-          padding-right: 3rem;
-        }
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    transition: background-color 0.3s ease;
+  }
 
-        .file-upload-container {
-          position: relative;
-        }
+  .btn-primary {
+    background-color: #ef4444;
+    color: white;
+  }
 
-        .file-input {
-          position: absolute;
-          opacity: 0;
-          width: 100%;
-          height: 100%;
-          cursor: pointer;
-          z-index: 2;
-        }
+  .btn-primary:hover {
+    background-color: #dc2626;
+  }
 
-        .file-upload-display {
-          display: flex;
-          align-items: center;
-          padding: 1rem;
-          border: 2px dashed #d1d5db;
-          border-radius: 10px;
-          background-color: #f9fafb;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          min-height: 60px;
-        }
+  .btn-secondary {
+    background-color: #444;
+    color: white;
+    border: 1px solid #555;
+  }
 
-        .file-upload-container:hover .file-upload-display {
-          border-color: #dc2626;
-          background-color: #fef2f2;
-        }
+  .btn-secondary:hover {
+    background-color: #555;
+  }
 
-        .file-text {
-          font-size: 0.95rem;
-          color: #6b7280;
-          flex-grow: 1;
-        }
+  @media (max-width: 768px) {
+    .form-row {
+      flex-direction: column;
+    }
 
-        .form-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 3rem;
-          padding-top: 2rem;
-          border-top: 2px solid #f1f5f9;
-        }
+    .form-actions {
+      flex-direction: column;
+      gap: 1rem;
+    }
 
-        .btn-secondary,
-        .btn-primary {
-          padding: 1rem 2rem;
-          border-radius: 10px;
-          font-weight: 600;
-          font-size: 0.95rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border: none;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 140px;
-        }
+    .btn-primary,
+    .btn-secondary {
+      width: 100%;
+    }
+  }
+`}</style>
 
-        .btn-secondary {
-          background-color: #f3f4f6;
-          color: #374151;
-          border: 2px solid #e5e7eb;
-        }
-
-        .btn-secondary:hover {
-          background-color: #f3f4f6;
-          border-color: #dc2626;
-          color: #dc2626;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, #dc2626, #ef4444);
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background: linear-gradient(135deg, #b91c1c, #dc2626);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-        }
-
-        .btn-primary:active {
-          transform: translateY(0);
-        }
-
-        @media (max-width: 768px) {
-          .sidebar {
-            width: 100%;
-            height: auto;
-            flex-direction: row;
-            justify-content: space-around;
-            border-right: none;
-            border-bottom: 2px solid #FF0033;
-            position: relative;
-          }
-
-          .nav-links {
-            flex-direction: row;
-            gap: 1rem;
-          }
-
-          .logo {
-            margin-bottom: 0;
-            font-size: 1.25rem;
-          }
-
-          .main-content {
-            margin-left: 0;
-            padding: 1rem;
-          }
-
-          .form-content {
-            padding: 1.5rem;
-          }
-
-          .form-header {
-            padding: 2rem 1.5rem;
-          }
-
-          .form-header h1 {
-            font-size: 1.75rem;
-          }
-
-          .form-header p {
-            font-size: 1rem;
-          }
-
-          .form-row {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-          }
-
-          .form-group {
-            margin-bottom: 1.5rem;
-          }
-
-          .form-actions {
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 2rem;
-          }
-
-          .btn-secondary,
-          .btn-primary {
-            width: 100%;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .form-container {
-            border-radius: 12px;
-            margin: 0.5rem;
-          }
-
-          .form-header {
-            padding: 1.5rem;
-          }
-
-          .form-header h1 {
-            font-size: 1.5rem;
-          }
-
-          .form-content {
-            padding: 1rem;
-          }
-        }
-      `}</style>
     </div>
   );
 }

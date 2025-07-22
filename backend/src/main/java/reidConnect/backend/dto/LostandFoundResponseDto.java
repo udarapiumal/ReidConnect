@@ -1,21 +1,24 @@
 package reidConnect.backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
 @Getter
 @Setter
-public class LostandFoundDto {
-
+@NoArgsConstructor
+@AllArgsConstructor
+public class LostandFoundResponseDto {
+    private Long id;
     private String itemName;
     private String category;
     private String description;
     private String location;
     private LocalDate dateLost;
-    private MultipartFile image;
+    private String imageUrl;
     private String posterName;
     private String contactNumber;
 }
