@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import AcademicSidebar from './AcademicSidebar';
 
@@ -11,6 +11,67 @@ export default function Dashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [currentMonth, setCurrentMonth] = useState("July 2025");
     const [activeNavItem, setActiveNavItem] = useState("Dashboard");
+
+    // Animation state for stat cards
+    const [lectureCount, setLectureCount] = useState(0);
+    const [bookingCount, setBookingCount] = useState(0);
+    const [eventCount, setEventCount] = useState(0);
+
+    // Animation effect for counting up - runs every time component loads
+    useEffect(() => {
+        // Reset counts to 0 first
+        setLectureCount(0);
+        setBookingCount(0);
+        setEventCount(0);
+        
+        // Small delay to ensure reset is visible, then start animation
+        const startDelay = setTimeout(() => {
+            // Animate lecture count to 200
+            const lectureInterval = setInterval(() => {
+                setLectureCount(prev => {
+                    if (prev >= 200) {
+                        clearInterval(lectureInterval);
+                        return 200;
+                    }
+                    return prev + 8;
+                });
+            }, 50);
+
+            // Animate booking count to 50
+            const bookingInterval = setInterval(() => {
+                setBookingCount(prev => {
+                    if (prev >= 50) {
+                        clearInterval(bookingInterval);
+                        return 50;
+                    }
+                    return prev + 2;
+                });
+            }, 50);
+
+            // Animate event count to 100
+            const eventInterval = setInterval(() => {
+                setEventCount(prev => {
+                    if (prev >= 100) {
+                        clearInterval(eventInterval);
+                        return 100;
+                    }
+                    return prev + 4;
+                });
+            }, 50);
+
+            // Cleanup function for intervals
+            return () => {
+                clearInterval(lectureInterval);
+                clearInterval(bookingInterval);
+                clearInterval(eventInterval);
+            };
+        }, 100);
+
+        // Cleanup function for the timeout
+        return () => {
+            clearTimeout(startDelay);
+        };
+    }, []);
 
     const handleNavigation = (itemId) => {
         setActiveNavItem(itemId);
@@ -25,7 +86,9 @@ export default function Dashboard() {
         { day: 1, hasEvent: true }, { day: 2 }, { day: 3 }, { day: 4, hasEvent: true },
         { day: 5 }, { day: 6 }, { day: 7 }, { day: 8 }, { day: 9 }, { day: 10 },
         { day: 11 }, { day: 12 }, { day: 13 }, { day: 14 }, { day: 15, hasEvent: true },
-        { day: 16 }, { day: 17, isToday: true }, { day: 18 }, { day: 19 }, { day: 20 }, { day: 21 }
+        { day: 16 }, { day: 17, isToday: true }, { day: 18 }, { day: 19 }, { day: 20 }, 
+        { day: 21 }, { day: 22 }, { day: 23 }, { day: 24 }, { day: 25 }, { day: 26 },
+        { day: 27 }, { day: 28 }, { day: 29 }, { day: 30 }, { day: 31 }
     ];
 
     return (
@@ -67,9 +130,9 @@ export default function Dashboard() {
                                     <div key={index} className="timeline-event">
                                         <span className="event-date">{event.date}</span>
                                         <div className="event-details">
+                                            <i className="fas fa-clipboard event-icon"></i>
                                             <span className="event-time">{event.time}</span>
                                             <div className="event-info">
-                                                <i className="fas fa-clipboard event-icon"></i>
                                                 <div>
                                                     <span className="event-type">{event.type}</span><br />
                                                     <span className="event-location">{event.location}</span>
@@ -118,17 +181,17 @@ export default function Dashboard() {
                     <div className="dashboard-stats">
                         <div className="stat-card">
                             <i className="fas fa-graduation-cap"></i>
-                            <h3>200+</h3>
+                            <h3>{lectureCount}+</h3>
                             <p>Lectures</p>
                         </div>
                         <div className="stat-card">
                             <i className="fas fa-clipboard-list"></i>
-                            <h3>50</h3>
+                            <h3>{bookingCount}</h3>
                             <p>Bookings</p>
                         </div>
                         <div className="stat-card">
                             <i className="fas fa-calendar-alt"></i>
-                            <h3>100+</h3>
+                            <h3>{eventCount}+</h3>
                             <p>Events</p>
                         </div>
                     </div>
@@ -141,112 +204,168 @@ export default function Dashboard() {
                     background-color: #1a1a1a;
                     min-height: 100vh;
                     color: white;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 }
                 .dashboard-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 16px;
-                    background-color: #2a2a2a;
-                    border-bottom: 1px solid #333;
+                    padding: 0 24px;
+                    background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                     position: fixed;
                     top: 0; left: 0; right: 0;
-                    height: 64px;
+                    height: 70px;
                     z-index: 1001;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
                 }
                 .header-left {
                     flex: 1;
                 }
                 .app-title {
-                    font-size: 24px;
-                    font-weight: bold;
+                    font-size: 26px;
+                    font-weight: 700;
                     margin: 0;
                     color: white;
+                    letter-spacing: -0.5px;
                 }
                 .highlight {
                     color: #ef4444;
+                    font-weight: 600;
                 }
                 .header-right {
                     display: flex;
                     align-items: center;
-                    gap: 16px;
+                    gap: 20px;
                     color: white;
                 }
                 .header-icon {
-                    font-size: 20px;
+                    font-size: 18px;
                     cursor: pointer;
+                    padding: 8px;
+                    border-radius: 8px;
+                    transition: all 0.2s ease;
+                    opacity: 0.8;
+                }
+                .header-icon:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                    opacity: 1;
                 }
                 .admin-text {
-                    font-size: 16px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    opacity: 0.9;
                 }
                 .dashboard-content {
                     display: flex;
-                    margin-top: 64px;
+                    margin-top: 70px;
                 }
                 main.dashboard-main {
                     flex: 1;
-                    padding: 32px;
+                    padding: 20px;
                     background-color: #1a1a1a;
                     margin-left: 200px; /* Sidebar width */
-                    min-height: calc(100vh - 64px);
-                    overflow-y: auto;
+                    min-height: calc(100vh - 70px);
+                    overflow: hidden;
+                    max-width: calc(100vw - 200px);
                 }
                 .page-title {
-                    font-size: 32px;
-                    font-weight: bold;
-                    margin-bottom: 32px;
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin-bottom: 24px;
+                    color: #ffffff;
+                    letter-spacing: -0.3px;
                 }
                 .dashboard-grid {
-                    display: flex;
-                    gap: 32px;
-                    flex-wrap: wrap;
+                    display: grid;
+                    grid-template-columns: 1fr 350px;
+                    gap: 20px;
+                    margin-bottom: 24px;
+                    height: fit-content;
                 }
                 /* Timeline Section */
                 .timeline-section {
-                    flex: 1 1 400px;
-                    background-color: #2a2a2a;
+                    background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
                     padding: 20px;
-                    border-radius: 12px;
-                    border: 1px solid #333;
+                    border-radius: 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     flex-direction: column;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    backdrop-filter: blur(8px);
+                    max-height: 500px;
                 }
                 .section-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 12px;
+                    margin-bottom: 16px;
+                    padding-bottom: 12px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 }
                 .section-header h3 {
                     margin: 0;
-                    font-size: 20px;
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #ffffff;
+                }
+                .controls {
+                    display: flex;
+                    gap: 12px;
                 }
                 .controls span {
-                    margin-left: 8px;
-                    color: #ccc;
-                    font-size: 14px;
+                    color: #9ca3af;
+                    font-size: 12px;
+                    font-weight: 500;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                 }
                 .search-input {
-                    padding: 8px 12px;
+                    padding: 10px 12px;
                     margin-bottom: 16px;
-                    border-radius: 6px;
-                    border: none;
-                    font-size: 14px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    background-color: rgba(255, 255, 255, 0.05);
+                    color: white;
+                    font-size: 13px;
+                    font-weight: 400;
+                    transition: all 0.2s ease;
+                }
+                .search-input::placeholder {
+                    color: #9ca3af;
+                }
+                .search-input:focus {
+                    outline: none;
+                    border-color: #ef4444;
+                    background-color: rgba(255, 255, 255, 0.08);
                 }
                 .timeline-events {
                     flex: 1;
                     overflow-y: auto;
+                    padding-right: 4px;
                 }
                 .timeline-event {
                     margin-bottom: 16px;
-                    color: white;
+                    padding: 12px;
+                    background-color: rgba(255, 255, 255, 0.03);
+                    border-radius: 10px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    transition: all 0.2s ease;
+                }
+                .timeline-event:hover {
+                    background-color: rgba(255, 255, 255, 0.05);
+                    transform: translateY(-2px);
                 }
                 .event-date {
                     font-weight: 600;
-                    font-size: 14px;
-                    margin-bottom: 4px;
+                    font-size: 12px;
+                    margin-bottom: 8px;
                     display: block;
+                    color: #9ca3af;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
                 .event-details {
                     display: flex;
@@ -257,69 +376,95 @@ export default function Dashboard() {
                     font-weight: 600;
                     font-size: 14px;
                     flex-shrink: 0;
+                    color: #ffffff;
+                    min-width: 40px;
+                    order: 2;
                 }
                 .event-info {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 10px;
                     flex: 1;
+                    order: 3;
                 }
                 .event-icon {
                     color: #ef4444;
-                    font-size: 18px;
+                    font-size: 14px;
+                    opacity: 0.9;
+                    order: 1;
                 }
                 .event-type {
                     font-weight: 600;
-                    font-size: 16px;
+                    font-size: 14px;
                     display: block;
+                    color: #ffffff;
+                    margin-bottom: 2px;
                 }
                 .event-location {
-                    font-size: 12px;
-                    color: #aaa;
+                    font-size: 11px;
+                    color: #9ca3af;
+                    font-weight: 400;
                 }
                 .status-badge {
-                    padding: 4px 12px;
-                    border-radius: 12px;
+                    padding: 4px 10px;
+                    border-radius: 16px;
                     font-weight: 600;
-                    font-size: 12px;
+                    font-size: 10px;
                     text-transform: uppercase;
-                    min-width: 80px;
+                    letter-spacing: 0.5px;
+                    min-width: 70px;
                     text-align: center;
-                    color: white;
+                    border: 1px solid transparent;
+                    order: 4;
                 }
                 .status-badge.pending {
-                    background-color: #fbbf24; /* yellow */
+                    background: #60a5fa;
+                    color: #ffffff;
+                    border: 1px solid #252525;
                 }
                 .status-badge.approved {
-                    background-color: #22c55e; /* green */
+                    background: #ef4444;
+                    color: white;
+                    border: 1px solid #ef4444;
                 }
                 /* Calendar Section */
                 .calendar-section {
-                    flex: 1 1 300px;
-                    background-color: #2a2a2a;
+                    background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
                     padding: 20px;
-                    border-radius: 12px;
-                    border: 1px solid #333;
+                    border-radius: 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     flex-direction: column;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    backdrop-filter: blur(8px);
+                    max-height: 500px;
                 }
                 .calendar-nav {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 12px;
+                    margin-bottom: 16px;
+                    padding: 8px 0;
                 }
                 .calendar-nav button {
-                    background: none;
-                    border: none;
-                    color: #ef4444;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: #ffffff;
                     cursor: pointer;
                     font-weight: 600;
-                    font-size: 14px;
+                    font-size: 12px;
+                    padding: 6px 10px;
+                    border-radius: 6px;
+                    transition: all 0.2s ease;
+                }
+                .calendar-nav button:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    border-color: rgba(255, 255, 255, 0.5);
                 }
                 .current-month {
                     font-weight: 600;
                     color: white;
+                    font-size: 14px;
                 }
                 .calendar-grid {
                     display: flex;
@@ -330,8 +475,11 @@ export default function Dashboard() {
                     grid-template-columns: repeat(7, 1fr);
                     text-align: center;
                     font-weight: 600;
-                    color: #ccc;
-                    margin-bottom: 8px;
+                    color: #9ca3af;
+                    margin-bottom: 10px;
+                    font-size: 11px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
                 .calendar-days {
                     display: grid;
@@ -339,78 +487,155 @@ export default function Dashboard() {
                     gap: 6px;
                 }
                 .calendar-day {
-                    background-color: #1f1f1f;
-                    padding: 12px 6px;
+                    background-color: rgba(255, 255, 255, 0.03);
+                    padding: 10px 6px;
                     border-radius: 8px;
                     position: relative;
                     color: white;
                     text-align: center;
-                    font-weight: 600;
-                    cursor: default;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    font-size: 12px;
+                }
+                .calendar-day:hover {
+                    background-color: rgba(255, 255, 255, 0.08);
+                    transform: translateY(-1px);
                 }
                 .calendar-day.event {
-                    border: 2px solid #ef4444;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    background-color: rgba(255, 255, 255, 0.03);
                 }
                 .calendar-day.today {
-                    background-color: #ef4444;
+                    background-color: rgba(255, 255, 255, 0.03);
                     color: white;
+                    font-weight: 600;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
                 }
                 .event-dot {
                     position: absolute;
-                    bottom: 6px;
+                    top: 50%;
                     left: 50%;
-                    transform: translateX(-50%);
-                    width: 8px;
-                    height: 8px;
-                    background-color: #ef4444;
+                    transform: translate(-50%, -50%);
+                    width: 32px;
+                    height: 32px;
+                    background-color: #6b7280;
                     border-radius: 50%;
+                    z-index: -1;
                 }
                 .today-dot {
                     position: absolute;
-                    top: 4px;
-                    right: 4px;
-                    width: 6px;
-                    height: 6px;
-                    background-color: white;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 32px;
+                    height: 32px;
+                    background-color: #ef4444;
                     border-radius: 50%;
+                    z-index: -1;
                 }
                 .icon-btn {
-                    background: none;
-                    border: none;
-                    color: #ef4444;
+                    background: white;
+                    border: 1px solid #e5e7eb;
+                    color: #374151;
                     cursor: pointer;
-                    font-size: 18px;
+                    font-size: 14px;
+                    padding: 6px;
+                    border-radius: 6px;
+                    transition: all 0.2s ease;
+                }
+                .icon-btn:hover {
+                    background: #f9fafb;
+                    border-color: #d1d5db;
                 }
                 /* Dashboard Stats */
                 .dashboard-stats {
-                    margin-top: 32px;
-                    display: flex;
-                    gap: 24px;
-                    justify-content: flex-start;
-                    flex-wrap: wrap;
+                    margin-top: 0;
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                    gap: 16px;
                 }
                 .stat-card {
-                    background-color: #2a2a2a;
-                    padding: 20px;
+                    background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+                    padding: 20px 16px;
                     border-radius: 12px;
-                    flex: 1 1 120px;
                     text-align: center;
-                    border: 1px solid #333;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
                     color: white;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+                    backdrop-filter: blur(8px);
+                }
+                .stat-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                    border-color: rgba(239, 68, 68, 0.3);
                 }
                 .stat-card i {
                     font-size: 24px;
-                    margin-bottom: 8px;
+                    margin-bottom: 12px;
                     color: #60a5fa;
+                    opacity: 0.9;
+                    display: block;
                 }
                 .stat-card h3 {
-                    margin: 0;
+                    margin: 0 0 6px 0;
                     font-size: 28px;
+                    font-weight: 700;
+                    color: #ffffff;
+                    line-height: 1;
                 }
                 .stat-card p {
                     margin: 0;
-                    color: #aaa;
-                    font-weight: 600;
+                    color: #9ca3af;
+                    font-weight: 500;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+
+                /* Responsive Design */
+                @media (max-width: 1200px) {
+                    .dashboard-grid {
+                        grid-template-columns: 1fr;
+                    }
+                    .calendar-section {
+                        max-width: none;
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    main.dashboard-main {
+                        margin-left: 0;
+                        padding: 16px 12px;
+                        max-width: 100vw;
+                    }
+                    .dashboard-header {
+                        padding: 0 16px;
+                    }
+                    .page-title {
+                        font-size: 20px;
+                        margin-bottom: 16px;
+                    }
+                    .dashboard-grid {
+                        gap: 12px;
+                        grid-template-columns: 1fr;
+                    }
+                    .timeline-section, .calendar-section {
+                        padding: 16px;
+                        max-height: 400px;
+                    }
+                    .dashboard-stats {
+                        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                        gap: 12px;
+                    }
+                    .stat-card {
+                        padding: 16px 12px;
+                    }
+                    .stat-card h3 {
+                        font-size: 24px;
+                    }
                 }
             `}</style>
         </div>
