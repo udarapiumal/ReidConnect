@@ -85,60 +85,6 @@ const categories: CategoryData[] = [
   },
 ];
 
-const popularEvents: EventData[] = [
-  {
-    id: 1,
-    clubId: 1,
-    name: 'Summer Music Festival',
-    description: 'Join us for an amazing summer music festival featuring local and international artists.',
-    date: 'Jul 15, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [1, 2],
-    targetFaculties: ['All'],
-    targetYears: ['All'],
-    venueId: 1,
-    venueName: 'Central Park',
-    createdAt: '2025-07-01T00:00:00.000Z',
-    category: 'Music',
-    going: 245,
-    interested: 189,
-  },
-  {
-    id: 2,
-    clubId: 2,
-    name: 'Tech Conference 2025',
-    description: 'Explore the latest in technology with industry experts and networking opportunities.',
-    date: 'Aug 10, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [3, 4],
-    targetFaculties: ['Engineering', 'Science'],
-    targetYears: ['2nd', '3rd', '4th'],
-    venueId: 2,
-    venueName: 'Convention Center',
-    createdAt: '2025-07-01T00:00:00.000Z',
-    category: 'Technology',
-    going: 156,
-    interested: 234,
-  },
-  {
-    id: 3,
-    clubId: 3,
-    name: 'Food & Wine Festival',
-    description: 'Taste amazing cuisine from around the world and discover new flavors.',
-    date: 'Jul 22, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [5, 6],
-    targetFaculties: ['All'],
-    targetYears: ['All'],
-    venueId: 3,
-    venueName: 'Downtown Plaza',
-    createdAt: '2025-07-01T00:00:00.000Z',
-    category: 'Food',
-    going: 89,
-    interested: 167,
-  },
-];
-
 export default function ExplorePage() {
   const router = useRouter();
   const backgroundColor = useThemeColor({}, 'background');
