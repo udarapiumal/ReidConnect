@@ -137,6 +137,109 @@ const CourseManagement = () => {
     label: `${l.name} (${l.code})`
   }));
 
+  const creditOptions = [
+    { value: 1, label: '1 Credit' },
+    { value: 2, label: '2 Credits' },
+    { value: 3, label: '3 Credits' },
+    { value: 4, label: '4 Credits' }
+  ];
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      background: 'rgba(255, 255, 255, 0.03)',
+      border: `1px solid ${state.isFocused ? 'rgba(249, 115, 22, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
+      borderRadius: '12px',
+      padding: '4px 8px',
+      color: 'white',
+      fontSize: '15px',
+      fontWeight: '400',
+      backdropFilter: 'blur(10px)',
+      boxShadow: state.isFocused ? '0 0 0 3px rgba(249, 115, 22, 0.1)' : 'none',
+      minHeight: '40px',
+      '&:hover': {
+        border: '1px solid rgba(249, 115, 22, 0.3)',
+      },
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      background: 'rgba(249, 115, 22, 0.2)',
+      borderRadius: '8px',
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: 'white',
+      fontSize: '14px',
+      fontWeight: '500',
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: 'rgba(255, 255, 255, 0.8)',
+      '&:hover': {
+        background: 'rgba(239, 68, 68, 0.3)',
+        color: 'white',
+      },
+    }),
+    menu: (provided) => ({
+      ...provided,
+      background: 'rgba(20, 20, 20, 0.95)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      borderRadius: '12px',
+      backdropFilter: 'blur(20px)',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      padding: '8px',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      background: state.isFocused ? 'rgba(249, 115, 22, 0.15)' : 'transparent',
+      color: state.isSelected ? '#FF453A' : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: '8px',
+      margin: '2px 0',
+      padding: '12px 16px',
+      fontSize: '14px',
+      fontWeight: state.isSelected ? '600' : '400',
+      '&:hover': {
+        background: 'rgba(249, 115, 22, 0.2)',
+        color: 'white',
+      },
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: 'rgba(255, 255, 255, 0.4)',
+      fontSize: '15px',
+      fontWeight: '400',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: 'white',
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: 'white',
+    }),
+    indicatorSeparator: (provided) => ({
+      ...provided,
+      background: 'rgba(255, 255, 255, 0.1)',
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: 'rgba(255, 255, 255, 0.6)',
+      '&:hover': {
+        color: '#FF453A',
+      },
+    }),
+    clearIndicator: (provided) => ({
+      ...provided,
+      color: 'rgba(255, 255, 255, 0.6)',
+      '&:hover': {
+        color: '#ef4444',
+      },
+    }),
+  };
+
   const handleLecturerSelectChange = (selectedOptions) => {
     setFormData(prev => ({
       ...prev,
@@ -219,41 +322,47 @@ const CourseManagement = () => {
               )}
             </>
           ) : (
-            <div className="form-section">
-              <h2>{editingCourse ? "Edit Course" : "Add New Course"}</h2>
+            <div className="form-overlay">
+              <div className="form-section">
+                <h2>{editingCourse ? "Edit Course" : "Add New Course"}</h2>
               <form onSubmit={handleSubmit}>
-                <input 
-                  type="text" 
-                  placeholder="Course Name" 
-                  required 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                />
+                <div className="form-group">
+                  <label>Course Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="Course Name" 
+                    required 
+                    value={formData.name} 
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                  />
+                </div>
 
-                <input 
-                  type="text" 
-                  placeholder="Course Code (e.g., CS101)" 
-                  required 
-                  value={formData.code} 
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
-                />
+                <div className="form-group">
+                  <label>Course Code</label>
+                  <input 
+                    type="text" 
+                    placeholder="Course Code (e.g., CS101)" 
+                    required 
+                    value={formData.code} 
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
+                  />
+                </div>
 
                 <div className="form-row">
                   <div className="form-group">
                     <label>Credits</label>
-                    <select 
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      placeholder="Enter credits (1-10)"
                       required
-                      value={formData.credits} 
-                      onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) })}
-                    >
-                      <option value={1}>1 Credit</option>
-                      <option value={2}>2 Credits</option>
-                      <option value={3}>3 Credits</option>
-                      <option value={4}>4 Credits</option>
-                    </select>
+                      value={formData.credits}
+                      onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 1 })}
+                    />
                   </div>
 
-                  <div className="form-group" style={{ flex: 1 }}>
+                  <div className="form-group">
                     <label>Lecturers (Search & Select Multiple)</label>
                     <Select
                       isMulti
@@ -261,6 +370,19 @@ const CourseManagement = () => {
                       value={lecturerOptions.filter(opt => formData.lecturerIds.includes(opt.value))}
                       onChange={handleLecturerSelectChange}
                       placeholder="Search lecturers..."
+                      styles={customSelectStyles}
+                      isSearchable={true}
+                      isClearable={true}
+                      theme={(theme) => ({
+                        ...theme,
+                        colors: {
+                          ...theme.colors,
+                          primary: '#FF453A',
+                          primary75: 'rgba(249, 115, 22, 0.75)',
+                          primary50: 'rgba(249, 115, 22, 0.5)',
+                          primary25: 'rgba(249, 115, 22, 0.25)',
+                        },
+                      })}
                     />
                   </div>
                 </div>
@@ -274,6 +396,7 @@ const CourseManagement = () => {
                   </button>
                 </div>
               </form>
+            </div>
             </div>
           )}
         </main>
@@ -545,15 +668,32 @@ const CourseManagement = () => {
           transform: scale(1.1);
         }
 
+        .form-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1002;
+          padding: 20px;
+        }
+
         .form-section {
           background: rgba(255, 255, 255, 0.02);
           padding: 32px;
           border-radius: 20px;
           max-width: 600px;
+          width: 100%;
           box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(20px);
+          position: relative;
         }
 
         .form-section h2 {
