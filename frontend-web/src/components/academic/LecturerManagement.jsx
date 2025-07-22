@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
 import axios from '../../api/axiosInstance';
+import Select from 'react-select';
 
 const API_URL = 'http://localhost:8080/api/staff';
 
@@ -90,6 +91,91 @@ const LecturerManagement = () => {
     lecturer.degree.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const facultyOptions = [
+    { value: 'UCSC', label: 'UCSC' },
+    { value: 'FOS', label: 'FOS' },
+    { value: 'ALL', label: 'ALL' }
+  ];
+
+  const rankOptions = [
+    { value: 'SENIOR_LECTURER', label: 'Senior Lecturer' },
+    { value: 'LECTURER', label: 'Lecturer' },
+    { value: 'ASSOCIATE_PROFESSOR', label: 'Associate Professor' },
+    { value: 'PROFESSOR', label: 'Professor' },
+    { value: 'DEPARTMENT_HEAD', label: 'Department Head' },
+    { value: 'ACADEMIC_SUPPORT_STAFF', label: 'Academic Support Staff' }
+  ];
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      background: 'rgba(255, 255, 255, 0.03)',
+      border: `1px solid ${state.isFocused ? 'rgba(249, 115, 22, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
+      borderRadius: '12px',
+      padding: '4px 8px',
+      color: 'white',
+      fontSize: '15px',
+      fontWeight: '400',
+      backdropFilter: 'blur(10px)',
+      boxShadow: state.isFocused ? '0 0 0 3px rgba(249, 115, 22, 0.1)' : 'none',
+      minHeight: '40px',
+      '&:hover': {
+        border: '1px solid rgba(249, 115, 22, 0.3)',
+      },
+    }),
+    menu: (provided) => ({
+      ...provided,
+      background: 'rgba(20, 20, 20, 0.95)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      borderRadius: '12px',
+      backdropFilter: 'blur(20px)',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      padding: '8px',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      background: state.isFocused ? 'rgba(249, 115, 22, 0.15)' : 'transparent',
+      color: state.isSelected ? '#FF453A' : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: '8px',
+      margin: '2px 0',
+      padding: '12px 16px',
+      fontSize: '14px',
+      fontWeight: state.isSelected ? '600' : '400',
+      '&:hover': {
+        background: 'rgba(249, 115, 22, 0.2)',
+        color: 'white',
+      },
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: 'rgba(255, 255, 255, 0.4)',
+      fontSize: '15px',
+      fontWeight: '400',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: 'white',
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: 'white',
+    }),
+    indicatorSeparator: (provided) => ({
+      ...provided,
+      background: 'rgba(255, 255, 255, 0.1)',
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: 'rgba(255, 255, 255, 0.6)',
+      '&:hover': {
+        color: '#FF453A',
+      },
+    }),
+  };
+
   return (
     <div className="lecturer-management">
       <header className="header">
@@ -161,35 +247,85 @@ const LecturerManagement = () => {
               <div className="form-section">
                 <h2>{editingLecturer ? "Edit Lecturer" : "Add New Lecturer"}</h2>
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                <input type="text" placeholder="Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-                <input type="text" placeholder="Code (3 letters)" required value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
-                <div className="email-input-container">
-                  <input 
-                    type="text" 
-                    placeholder="Enter username (e.g., john.doe)" 
-                    required 
-                    value={formData.email.replace('@ucsc.cmb.ac.lk', '')} 
-                    onChange={(e) => {
-                      const username = e.target.value.replace('@ucsc.cmb.ac.lk', '');
-                      setFormData({ ...formData, email: username + '@ucsc.cmb.ac.lk' });
-                    }}
-                  />
-                  <span className="email-domain">@ucsc.cmb.ac.lk</span>
+                <div className="form-group">
+                  <label>Name</label>
+                  <input type="text" placeholder="Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                 </div>
-                <input type="text" placeholder="Degree" value={formData.degree} onChange={(e) => setFormData({ ...formData, degree: e.target.value })} />
-                <select value={formData.faculty} onChange={(e) => setFormData({ ...formData, faculty: e.target.value })}>
-                  <option value="UCSC">UCSC</option>
-                  <option value="FOS">FOS</option>
-                  <option value="ALL">ALL</option>
-                </select>
-                <select value={formData.rank} onChange={(e) => setFormData({ ...formData, rank: e.target.value })}>
-                  <option value="SENIOR_LECTURER">Senior Lecturer</option>
-                  <option value="LECTURER">Lecturer</option>
-                  <option value="ASSOCIATE_PROFESSOR">Associate Professor</option>
-                  <option value="PROFESSOR">Professor</option>
-                  <option value="DEPARTMENT_HEAD">Department Head</option>
-                  <option value="ACADEMIC_SUPPORT_STAFF">Academic Support Staff</option>
-                </select>
+
+                <div className="form-group">
+                  <label>Code</label>
+                  <input type="text" placeholder="Code (3 letters)" required value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
+                </div>
+
+                <div className="form-group">
+                  <label>Email</label>
+                  <div className="email-input-container">
+                    <input 
+                      type="text" 
+                      placeholder="Enter username (e.g., john.doe)" 
+                      required 
+                      value={formData.email.replace('@ucsc.cmb.ac.lk', '')} 
+                      onChange={(e) => {
+                        const username = e.target.value.replace('@ucsc.cmb.ac.lk', '');
+                        setFormData({ ...formData, email: username + '@ucsc.cmb.ac.lk' });
+                      }}
+                    />
+                    <span className="email-domain">@ucsc.cmb.ac.lk</span>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Degree</label>
+                  <input type="text" placeholder="Degree" value={formData.degree} onChange={(e) => setFormData({ ...formData, degree: e.target.value })} />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Faculty</label>
+                    <Select
+                      options={facultyOptions}
+                      value={facultyOptions.find(opt => opt.value === formData.faculty)}
+                      onChange={(selectedOption) => setFormData({ ...formData, faculty: selectedOption.value })}
+                      placeholder="Select faculty..."
+                      styles={customSelectStyles}
+                      isSearchable={false}
+                      isClearable={false}
+                      theme={(theme) => ({
+                        ...theme,
+                        colors: {
+                          ...theme.colors,
+                          primary: '#FF453A',
+                          primary75: 'rgba(249, 115, 22, 0.75)',
+                          primary50: 'rgba(249, 115, 22, 0.5)',
+                          primary25: 'rgba(249, 115, 22, 0.25)',
+                        },
+                      })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Rank</label>
+                    <Select
+                      options={rankOptions}
+                      value={rankOptions.find(opt => opt.value === formData.rank)}
+                      onChange={(selectedOption) => setFormData({ ...formData, rank: selectedOption.value })}
+                      placeholder="Select rank..."
+                      styles={customSelectStyles}
+                      isSearchable={false}
+                      isClearable={false}
+                      theme={(theme) => ({
+                        ...theme,
+                        colors: {
+                          ...theme.colors,
+                          primary: '#FF453A',
+                          primary75: 'rgba(249, 115, 22, 0.75)',
+                          primary50: 'rgba(249, 115, 22, 0.5)',
+                          primary25: 'rgba(249, 115, 22, 0.25)',
+                        },
+                      })}
+                    />
+                  </div>
+                </div>
                 <div className="form-buttons">
                   <button type="button" onClick={handleCancel}>Cancel</button>
                   <button type="submit">{editingLecturer ? 'Update' : 'Add'}</button>
@@ -460,7 +596,7 @@ const LecturerManagement = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
+          z-index: 1002;
           padding: 20px;
         }
 
@@ -521,6 +657,26 @@ const LecturerManagement = () => {
         .form-section select option {
           background: #1a1a1a;
           color: white;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .form-group label {
+          font-weight: 600;
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.8);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .form-buttons {
