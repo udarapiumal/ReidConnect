@@ -8,7 +8,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
+import axiosInstance from '../../api/axiosInstance';
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/constants/config';
@@ -52,14 +52,14 @@ export default function EventDetailPage() {
         }
         
         // Fetch specific event
-        const eventResponse = await axios.get(`${BASE_URL}/api/events/${id}`);
+        const eventResponse = await axiosInstance.get(`${BASE_URL}/api/events/${id}`);
         const eventData = eventResponse.data;
         console.log('📋 Event data:', eventData);
         
         // Fetch attendance counts
         let countsData = { going: 0, interested: 0 };
         try {
-          const countsResponse = await axios.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
+          const countsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
           const rawCounts = countsResponse.data;
           console.log('📊 Raw attendance counts from API:', rawCounts);
           
@@ -78,14 +78,8 @@ export default function EventDetailPage() {
         if (userId && token) {
           try {
             // Fetch user's attendance status from the API
-            const userStatusResponse = await axios.get(
-              `${BASE_URL}/api/events/${id}/attendance/user/${userId}`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                },
-              }
-            );
+            const userStatusResponse = await axiosInstance.get(`/api/events/${id}/attendance/user/${userId}`);
+
             
             const responseData = userStatusResponse.data;
             console.log('👤 Full user status response:', responseData);
@@ -124,7 +118,7 @@ export default function EventDetailPage() {
         setInterestStatus(normalizedStatus);
 
         // Fetch all events for related events
-        const allEventsResponse = await axios.get(`${BASE_URL}/api/events`);
+        const allEventsResponse = await axiosInstance.get(`${BASE_URL}/api/events`);
         const allEvents = allEventsResponse.data;
         
         // Get related events (same category or club, excluding current event)
@@ -137,7 +131,7 @@ export default function EventDetailPage() {
         const relatedWithCounts = await Promise.all(
           related.map(async (relatedEvent: EventData) => {
             try {
-              const relatedCountsResponse = await axios.get(`${BASE_URL}/api/events/${relatedEvent.id}/attendance/counts`);
+              const relatedCountsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${relatedEvent.id}/attendance/counts`);
               const rawCounts = relatedCountsResponse.data;
               return {
                 ...relatedEvent,
@@ -248,7 +242,7 @@ export default function EventDetailPage() {
 
       // After successful API call, fetch updated counts from server to ensure accuracy
       try {
-        const countsResponse = await axios.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
+        const countsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
         const rawUpdatedCounts = countsResponse.data;
         console.log('✅ Raw updated counts from server:', rawUpdatedCounts);
         
@@ -324,7 +318,7 @@ export default function EventDetailPage() {
         <View style={styles.bannerContainer}>
           {event.imagePath && (
             <Image 
-              source={{ uri: `${BASE_URL}/api/posts/uploads/${event.imagePath}` }}
+              source={{ uri: `${BASE_URL}/${event.imagePath}` }}
               style={styles.eventImage}
               resizeMode="cover"
             />
