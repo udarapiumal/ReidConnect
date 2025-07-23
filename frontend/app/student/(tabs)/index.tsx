@@ -1,11 +1,3 @@
-// page structure
-// featured events
-// your next event
-// upcoming events this week
-// community feed
-// for you
-//
-
 import { Platform, StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
@@ -138,6 +130,10 @@ const communityPosts: PostData[] = [
   // },
 ];
 
+// Event categories
+const EVENT_CATEGORIES = ['ALL', 'SPORTS', 'MUSIC', 'WELLNESS', 'OTHER', 'COMPETITION'] as const;
+type EventCategory = typeof EVENT_CATEGORIES[number];
+
 export default function HomePage() {
   const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
@@ -148,7 +144,9 @@ export default function HomePage() {
   const [upcomingEvents, setUpcomingEvents] = useState<EventData[]>([]);
   const [nextEvents, setNextEvents] = useState<EventData[]>([]);
   const [popularEvents, setPopularEvents] = useState<EventData[]>([]);
-  const [nearbyEvents, setNearbyEvents] = useState<EventData[]>([]);
+  const [allEvents, setAllEvents] = useState<EventData[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<EventData[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<EventCategory>('ALL');
   const [loading, setLoading] = useState(true);
 
   // Fetch events when component mounts
@@ -185,34 +183,29 @@ export default function HomePage() {
             const eventDate = new Date(event.date);
             const now = new Date();
             const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-            // Filter for events within the next week
+            // Filter for events within the next week and not in the past
             return eventDate > now && eventDate < oneWeekFromNow;
           })
           .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 5);
         
-        // Popular Events - most 5 events with the highest engagement
-        // (interested)
+        // Popular Events - most 5 events with the highest engagement (only future events)
         const popular = eventsData
-          .filter((event: any) => event.interested > 0)
+          .filter((event: any) => {
+            const eventDate = new Date(event.date);
+            const now = new Date();
+            return event.interested > 0 && eventDate > now; // Only future events
+          })
           .sort((a: any, b: any) => b.interested - a.interested)
           .slice(0, 5);
 
-        // Nearby Events - events in specific venues or categories
-        const nearby = eventsData
-          .filter((event: any) => 
-            event.venueName?.toLowerCase().includes('university') ||
-            event.venueName?.toLowerCase().includes('colombo') ||
-            event.venueName?.toLowerCase().includes('campus')
-          )
-          .slice(0, 5);
-        
         // Set state with categorized events, fallback to all events if categories are empty
         setFeaturedEvents(featured.length > 0 ? featured : eventsData.slice(0, 3));
         setNextEvents(next); // Show empty if no events with user attendance
         setUpcomingEvents(upcoming);
         setPopularEvents(popular);
-        setNearbyEvents(nearby.length > 0 ? nearby : eventsData.slice(0, 5));
+        setAllEvents(eventsData);
+        setFilteredEvents(eventsData);
         
       } catch (error) {
         console.error('Failed to fetch events, using empty arrays:', error);
@@ -221,7 +214,8 @@ export default function HomePage() {
         setNextEvents([]);
         setUpcomingEvents([]);
         setPopularEvents([]);
-        setNearbyEvents([]);
+        setAllEvents([]);
+        setFilteredEvents([]);
       } finally {
         setLoading(false);
       }
@@ -229,6 +223,53 @@ export default function HomePage() {
 
     fetchEvents();
   }, []);
+
+  // Update filtered events when allEvents changes
+  useEffect(() => {
+    filterEventsByCategory(selectedCategory);
+  }, [allEvents]);
+
+  // Filter events by category
+  const filterEventsByCategory = (category: EventCategory) => {
+    setSelectedCategory(category);
+    let eventsToFilter = [];
+    
+    if (category === 'ALL') {
+      eventsToFilter = allEvents;
+    } else {
+      eventsToFilter = allEvents.filter((event: any) => 
+        event.category?.toUpperCase() === category
+      );
+    }
+    
+    // Sort events to show upcoming events first, then by engagement
+    const sortedEvents = eventsToFilter.sort((a: any, b: any) => {
+      const eventDateA = new Date(a.date);
+      const eventDateB = new Date(b.date);
+      const now = new Date();
+      const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      // Check if events are upcoming (within next week)
+      const aIsUpcoming = eventDateA > now && eventDateA < oneWeekFromNow;
+      const bIsUpcoming = eventDateB > now && eventDateB < oneWeekFromNow;
+      
+      // Prioritize upcoming events
+      if (aIsUpcoming && !bIsUpcoming) return -1;
+      if (!aIsUpcoming && bIsUpcoming) return 1;
+      
+      // If both are upcoming or both are not upcoming, sort by date
+      if (aIsUpcoming && bIsUpcoming) {
+        return eventDateA.getTime() - eventDateB.getTime();
+      }
+      
+      // For non-upcoming events, sort by engagement (interested + going)
+      const engagementA = (a.interested || 0) + (a.going || 0);
+      const engagementB = (b.interested || 0) + (b.going || 0);
+      return engagementB - engagementA;
+    });
+    
+    setFilteredEvents(sortedEvents);
+  };
 
   const handleEventPress = (eventId: number) => {
     router.push(`/student/pages/EventPage?id=${eventId}`);
@@ -362,17 +403,80 @@ export default function HomePage() {
             ))}
           </View>
 
-          {/* Upcoming Events */}
+          {/* All events categorize by all, and other categories tags*/}
           <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Near You</ThemedText>
-            {nearbyEvents.map(event => (
-                <EventCard 
-                  key={event.id} 
-                  event={event} 
-                  size="large" 
-                  onPress={() => handleEventPress(event.id)}
-                />
-            ))}
+            <ThemedText type="subtitle" style={styles.sectionTitle}>All Events</ThemedText>
+            
+            {/* Category Tags */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryContainer}
+              style={styles.categoryScrollView}>
+              {EVENT_CATEGORIES.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryTag,
+                    selectedCategory === category && styles.categoryTagActive,
+                    { borderColor: tint }
+                  ]}
+                  onPress={() => filterEventsByCategory(category)}>
+                  <ThemedText
+                    style={[
+                      styles.categoryText,
+                      selectedCategory === category && [styles.categoryTextActive, { color: tint }]
+                    ]}>
+                    {category}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Filtered Events */}
+            <View style={styles.eventsGrid}>
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((event, index) => {
+                  // Check if this is the first non-upcoming event after upcoming events
+                  const eventDate = new Date(event.date);
+                  const now = new Date();
+                  const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                  const isUpcoming = eventDate > now && eventDate < oneWeekFromNow;
+                  
+                  // Check if previous event was upcoming and this one isn't
+                  const prevEvent = index > 0 ? filteredEvents[index - 1] : null;
+                  const prevEventDate = prevEvent ? new Date(prevEvent.date) : null;
+                  const prevIsUpcoming = prevEventDate ? (prevEventDate > now && prevEventDate < oneWeekFromNow) : false;
+                  const shouldShowOtherEventsHeader = index > 0 && prevIsUpcoming && !isUpcoming;
+                  
+                  return (
+                    <View key={event.id}>
+                      {index === 0 && isUpcoming && (
+                        <View style={styles.sectionDivider}>
+                          <ThemedText style={styles.sectionDividerText}>🔥 Happening Soon</ThemedText>
+                        </View>
+                      )}
+                      {shouldShowOtherEventsHeader && (
+                        <View style={styles.sectionDivider}>
+                          <ThemedText style={styles.sectionDividerText}>📅 Other Events</ThemedText>
+                        </View>
+                      )}
+                      <EventCard 
+                        event={event} 
+                        size="small" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
+                    </View>
+                  );
+                })
+              ) : (
+                <View style={styles.noEventsContainer}>
+                  <ThemedText style={styles.noEventsText}>
+                    No events found in {selectedCategory.toLowerCase()} category
+                  </ThemedText>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Bottom padding */}
@@ -454,6 +558,53 @@ const styles = StyleSheet.create({
   featuredEventsContainer: {
     paddingHorizontal: 20,
     marginTop: 16,
+  },
+  categoryScrollView: {
+    marginTop: 16,
+  },
+  categoryContainer: {
+    paddingHorizontal: 20,
+  },
+  categoryTag: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 12,
+    backgroundColor: 'transparent',
+  },
+  categoryTagActive: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  categoryTextActive: {
+    fontWeight: '700',
+  },
+  eventsGrid: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  sectionDivider: {
+    marginVertical: 16,
+    alignItems: 'center',
+  },
+  sectionDividerText: {
+    fontSize: 16,
+    fontWeight: '700',
+    opacity: 0.8,
+  },
+  noEventsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  noEventsText: {
+    fontSize: 16,
+    opacity: 0.6,
   },
   bottomPadding: {
     height: 40,

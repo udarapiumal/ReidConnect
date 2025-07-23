@@ -62,7 +62,7 @@ export default function CommunityPage() {
               userId: decoded.id,
               role: decoded.role,
               exp: new Date(decoded.exp * 1000).toLocaleString(),
-              tokenPreview: storedToken.substring(0, 20) + '...'
+              tokenPreview: storedToken
             });
           } catch (decodeError) {
             console.error('Error decoding token:', decodeError);

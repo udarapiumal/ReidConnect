@@ -5,7 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { StudentProvider } from '../context/StudentContext';
+// import { StudentProvider } from '../context/StudentContext';
+// import { ClubProvider } from '../context/ClubContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -19,7 +20,7 @@ export default function RootLayout() {
   }
 
   return (
-    <StudentProvider>
+    // <ClubProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -29,6 +30,6 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
-    </StudentProvider>
+    // </ClubProvider>
   );
 }
