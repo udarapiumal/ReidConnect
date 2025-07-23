@@ -33,9 +33,12 @@ public interface EventService {
     long countAllEventsByClubId(Long clubId);
     long countRecentEventsByClubId(Long clubId);
 
-
-    
     EventAttendanceCountDto getEventAttendanceCounts(Long eventId);
     UserEventAttendanceDto getUserEventAttendanceStatus(Long eventId, Long userId);
+
+    void featureEvent(Long eventId);
+    void unfeatureEvent(Long eventId);
+    List<EventResponseDto> getFeaturedEventsWithinOneMonth();
+
 
 }

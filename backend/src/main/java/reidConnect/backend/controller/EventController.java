@@ -314,4 +314,28 @@ public class EventController {
         return ResponseEntity.ok(userAttendance);
     }
 
+    // Add to the featured list
+    @PutMapping("/{eventId}/feature")
+    //@PreAuthorize("hasRole('UNION')")
+    public ResponseEntity<String> featureEvent(@PathVariable Long eventId) {
+        eventService.featureEvent(eventId);
+        return ResponseEntity.ok("✅ Event featured successfully");
+    }
+
+    // Remove from the featured list
+    @DeleteMapping("/{eventId}/feature")
+    @PreAuthorize("hasRole('UNION')")
+    public ResponseEntity<String> unfeatureEvent(@PathVariable Long eventId) {
+        eventService.unfeatureEvent(eventId);
+        return ResponseEntity.ok("✅ Event unfeatured successfully");
+    }
+
+    // Get all featured events in the last month
+    @GetMapping("/featured")
+    public ResponseEntity<List<EventResponseDto>> getFeaturedEventsWithinOneMonth() {
+        List<EventResponseDto> featuredEvents = eventService.getFeaturedEventsWithinOneMonth();
+        return ResponseEntity.ok(featuredEvents);
+    }
+
+
 }

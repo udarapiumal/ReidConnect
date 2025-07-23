@@ -10,4 +10,6 @@ public interface SubscriptionService {
     void unsubscribe(SubscriptionDto dto);
     List<Club> getSubscribedClubs(Long userId);
     long countSubscriptionsForClub(Long clubId);
+    boolean isUserSubscribedToClub(Long userId, Long clubId);
+
 }

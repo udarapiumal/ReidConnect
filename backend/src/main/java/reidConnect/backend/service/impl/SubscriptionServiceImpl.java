@@ -69,4 +69,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .orElseThrow(() -> new IllegalArgumentException("Club not found"));
         return subscriptionRepository.countByClub(club);
     }
+
+    @Override
+    public boolean isUserSubscribedToClub(Long userId, Long clubId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new IllegalArgumentException("Club not found"));
+
+        return subscriptionRepository.findByUserAndClub(user, club).isPresent();
+    }
 }

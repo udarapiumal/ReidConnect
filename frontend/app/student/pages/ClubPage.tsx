@@ -79,17 +79,21 @@ export default function ClubProfileScreen() {
 
   // Function to check subscription status
   const checkSubscriptionStatus = async () => {
-    if (!clubDetails?.id) return;
-    try {
-      const res = await axios.get(`${BASE_URL}/api/subscriptions/check/${clubDetails.id}`, {
+  if (!clubDetails?.id || !user?.id) return;
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/api/subscriptions/check/${clubDetails.id}?userId=${user.id}`,
+      {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      setIsSubscribed(res.data.isSubscribed || false);
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
-      setIsSubscribed(false);
-    }
-  };
+      }
+    );
+    setIsSubscribed(res.data === true);
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+    setIsSubscribed(false);
+  }
+};
+
 
   // Function to handle subscription
   const handleSubscribe = async () => {

@@ -40,4 +40,16 @@ public class SubscriptionController {
     public ResponseEntity<Long> getClubSubscriptionCount(@PathVariable Long clubId) {
         return ResponseEntity.ok(subscriptionService.countSubscriptionsForClub(clubId));
     }
+
+    // Check if a user is subscribed to a club
+    @GetMapping("/check/{clubId}")
+    public ResponseEntity<Boolean> isUserSubscribed(
+            @PathVariable Long clubId,
+            @RequestParam Long userId
+    ) {
+        boolean isSubscribed = subscriptionService.isUserSubscribedToClub(userId, clubId);
+        return ResponseEntity.ok(isSubscribed);
+    }
+
+
 }

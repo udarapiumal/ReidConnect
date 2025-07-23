@@ -36,6 +36,7 @@ public class EventServiceImpl implements EventService {
     private final EventFacultyRepository eventFacultyRepository;
     private final UserRepository userRepository;
     private final EventAttendanceRepository attendanceRepository;
+    private final FeaturedEventRepository featuredEventRepository;
 
     public EventServiceImpl(EventRepository eventRepository,
                             EventSlotRepository eventSlotRepository,
@@ -45,7 +46,8 @@ public class EventServiceImpl implements EventService {
                             EventYearRepository eventYearRepository,
                             EventFacultyRepository eventFacultyRepository,
                             UserRepository userRepository,
-                            EventAttendanceRepository eventAttendanceRepository) {
+                            EventAttendanceRepository eventAttendanceRepository,
+                            FeaturedEventRepository featuredEventRepository) {
         this.eventRepository = eventRepository;
         this.eventSlotRepository = eventSlotRepository;
         this.clubRepository = clubRepository;
@@ -55,6 +57,7 @@ public class EventServiceImpl implements EventService {
         this.eventFacultyRepository = eventFacultyRepository;
         this.userRepository = userRepository;
         this.attendanceRepository = eventAttendanceRepository;
+        this.featuredEventRepository = featuredEventRepository;
     }
 
     @Override
@@ -323,5 +326,48 @@ public class EventServiceImpl implements EventService {
             // User has not marked attendance for this event
             return new UserEventAttendanceDto(eventId, userId, null, false);
         }
+    }
+
+
+    @Override
+    public void featureEvent(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        // Avoid duplicate
+        if (featuredEventRepository.findByEvent_Id(eventId).isPresent()) {
+            throw new RuntimeException("Event already featured");
+        }
+
+        FeaturedEvent featuredEvent = new FeaturedEvent();
+        featuredEvent.setEvent(event);
+        featuredEvent.setFeaturedTime(LocalDateTime.now());
+
+        featuredEventRepository.save(featuredEvent);
+    }
+
+    @Override
+    public void unfeatureEvent(Long eventId) {
+        if (!featuredEventRepository.findByEvent_Id(eventId).isPresent()) {
+            throw new RuntimeException("Event is not featured");
+        }
+        featuredEventRepository.deleteByEvent_Id(eventId);
+    }
+
+    @Override
+    public List<EventResponseDto> getFeaturedEventsWithinOneMonth() {
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+        List<FeaturedEvent> featuredEvents = featuredEventRepository.findByFeaturedTimeAfter(oneMonthAgo);
+
+        return featuredEvents.stream()
+                .map(fe -> {
+                    Event event = fe.getEvent();
+                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
+                            .stream()
+                            .map(es -> es.getSlot().getId())
+                            .toList();
+                    return EventMapper.toResponseDto(event, slotIds);
+                })
+                .toList();
     }
 }
