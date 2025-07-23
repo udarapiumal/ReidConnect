@@ -29,6 +29,7 @@ public class Post {
     @Column(name = "description", length = 500)
     private String description;
 
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
