@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,6 +36,7 @@ const formatTimeAgo = (timestamp: string) => {
 export default function CommunityPage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
   const iconColor = useThemeColor({}, 'icon');
@@ -44,76 +45,98 @@ export default function CommunityPage() {
   const placeholderColor = useThemeColor({ light: '#888', dark: '#aaa' }, 'text');
   const backgroundColor = useThemeColor({}, 'background');
 
-  useFocusEffect(
-    useCallback(() => {
-      const fetchPosts = async () => {
-        try {
-          setLoading(true);
-          const storedToken = await AsyncStorage.getItem('token');
-          if (!storedToken) {
-            console.warn('No authentication token found');
-            setLoading(false);
-            return;
+  const fetchPosts = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const storedToken = await AsyncStorage.getItem('token');
+      if (!storedToken) {
+        console.warn('No authentication token found');
+        return;
+      }
+
+      setToken(storedToken);
+
+      const response = await axiosInstance.get('/api/posts');
+      const postsData = response.data;
+
+      const enrichedPosts = await Promise.all(
+        postsData.map(async post => {
+          let profilePicture = null;
+          let commentsCount = 0;
+
+          try {
+            // Fetch club data using clubId
+            const clubResponse = await axiosInstance.get(`/api/club/${post.clubId}`);
+            profilePicture = clubResponse.data.profilePicture;
+          } catch (error) {
+            console.warn(`Error fetching club for post ${post.id}:`, error);
           }
 
           try {
-            const decoded = jwtDecode(storedToken);
-            console.log('Token info:', {
-              userId: decoded.id,
-              role: decoded.role,
-              exp: new Date(decoded.exp * 1000).toLocaleString(),
-              tokenPreview: storedToken
-            });
-          } catch (decodeError) {
-            console.error('Error decoding token:', decodeError);
+            // Fetch comment count for each post
+            const commentCountResponse = await axiosInstance.get(`/api/comments/post/${post.id}/count`);
+            commentsCount = commentCountResponse.data;
+          } catch (error) {
+            console.warn(`Error fetching comment count for post ${post.id}:`, error);
           }
 
-          setToken(storedToken);
+          const imageUrl = post.mediaPaths && post.mediaPaths.length > 0
+            ? post.mediaPaths[0].startsWith('uploads/')
+              ? `${BASE_URL}/${post.mediaPaths[0]}`
+              : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+            : null;
 
-          console.log('Requesting from URL:', '/api/posts');
+          return {
+            id: post.id,
+            club: post.clubName || 'Unknown Club',
+            avatar: profilePicture || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732',
+            time: formatTimeAgo(post.createdAt),
+            text: post.description || 'No description',
+            image: imageUrl || require('@/assets/images/event1.png'),
+            likes: post.likes || 0,
+            comments: commentsCount,
+          };
+        })
+      );
 
-          const response = await axiosInstance.get('/api/posts');
+      setPosts(enrichedPosts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-          console.log('Fetched posts:', response.data);
+  const onRefresh = () => {
+    fetchPosts(true);
+  };
 
-          const formattedPosts: PostData[] = response.data.map(post => {
-            const imageUrl = post.mediaPaths && post.mediaPaths.length > 0
-              ? post.mediaPaths[0].startsWith('uploads/')
-                ? `${BASE_URL}/${post.mediaPaths[0]}`
-                : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
-              : null;
-
-            console.log('Post:', post.id, 'Image URL:', imageUrl, 'Media paths:', post.mediaPaths);
-
-            return {
-              id: post.id,
-              club: post.clubName || 'Unknown Club',
-              avatar: post.clubAvatar || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732',
-              time: formatTimeAgo(post.createdAt),
-              text: post.description || 'No description',
-              image: imageUrl || require('@/assets/images/event1.png'),
-              likes: post.likes || 0,
-              comments: post.comments || 0,
-            };
-          });
-
-          setPosts(formattedPosts);
-        } catch (error) {
-          console.error('Error fetching posts:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
+  useFocusEffect(
+    useCallback(() => {
       fetchPosts();
     }, [])
   );
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={tint}
+            colors={[tint]}
+          />
+        }
+      >
         <SafeAreaView edges={['top']}>
-
           {/* Header */}
           <ThemedText style={styles.headerTitle}>Community Feed</ThemedText>
 
