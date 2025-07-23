@@ -4,4 +4,5 @@ public enum Faculties {
     ALL,
     UCSC,
     FOS,
+    FOT,
 }

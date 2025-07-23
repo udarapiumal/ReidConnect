@@ -1,10 +1,11 @@
 /* ClubDetail.css */
 .club-detail-container {
-  margin-left: 250px; /* Adjust this to match your sidebar width */
+  margin-left: 230px; /* Adjust this to match your sidebar width */
   padding: 20px;
   width: calc(100% - 250px); /* Adjust to match sidebar width */
   position: relative;
   z-index: 1; /* Ensure content appears above sidebar if needed */
+  background-color: #1a1a1a;
 }
 
 .posts-grid, .events-grid {
@@ -14,17 +15,6 @@
   margin-top: 20px;
 }
 
-/* If you have a fixed sidebar, add these styles */
-.sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 250px; /* Match this with the margin-left above */
-  z-index: 2; /* Higher than content but shouldn't cover it */
-  background: #f8f9fa; /* Or your sidebar color */
-  overflow-y: auto;
-}
 
 .club-detail-loading,
 .club-detail-error {
@@ -223,6 +213,285 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+/* Add these styles to your ClubDetail.css file */
+
+/* Search Container */
+.search-container {
+  margin-bottom: 32px;
+}
+
+.search-wrapper {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 48px 16px 48px;
+  font-size: 16px;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  background: #1a1a1a;
+  color: #ffffff;
+  transition: all 0.3s ease;
+  outline: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.search-input:focus {
+  border-color: #FF453A;
+  box-shadow: 0 4px 20px rgba(255, 69, 58, 0.3);
+  background: #151515;
+}
+
+.search-input::placeholder {
+  color: #666;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.clear-search {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.clear-search:hover {
+  background: rgba(255, 69, 58, 0.1);
+  color: #FF453A;
+}
+
+/* Content Header */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.content-stats {
+  color: #a0a0a0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.search-info {
+  color: #FF453A;
+  font-weight: 600;
+}
+
+/* Pagination */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.pagination-btn {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-btn:hover:not(.pagination-active) {
+  background: #2a2a2a;
+  border-color: #FF453A;
+  color: #FF453A;
+  transform: translateY(-1px);
+}
+
+.pagination-active {
+  background: linear-gradient(135deg, #FF453A 0%, #e63946 100%);
+  border-color: #FF453A;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(255, 69, 58, 0.3);
+}
+
+.pagination-prev,
+.pagination-next {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Enhanced Tab Styles */
+.club-detail-nav {
+  margin-bottom: 24px;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Loading State Enhancement */
+.club-detail-loading {
+  padding: 80px 20px;
+}
+
+.loading-spinner {
+  font-size: 16px;
+  color: #FF453A;
+  font-weight: 500;
+}
+
+/* Error State Enhancement */
+.club-detail-error {
+  padding: 80px 20px;
+}
+
+.club-detail-error p {
+  color: #e63946;
+  font-size: 16px;
+  margin-bottom: 20px;
+  background: rgba(230, 57, 70, 0.1);
+  border: 1px solid rgba(230, 57, 70, 0.2);
+}
+
+/* Enhanced Empty State */
+.empty-state {
+  padding: 100px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+
+.empty-state h3 {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  font-size: 18px;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.6;
+  background: none;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* Grid Improvements */
+.posts-grid,
+.events-grid {
+  min-height: 200px;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+  .search-wrapper {
+    max-width: 100%;
+  }
+  
+  .search-input {
+    padding: 14px 40px 14px 40px;
+    font-size: 16px;
+  }
+  
+  .content-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .pagination-container {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  
+  .pagination-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .empty-state {
+    padding: 60px 16px;
+  }
+  
+  .empty-icon {
+    font-size: 48px;
+  }
+  
+  .empty-state h3 {
+    font-size: 22px;
+  }
+  
+  .empty-state p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-tab {
+    padding: 12px 8px;
+    font-size: 13px;
+    gap: 4px;
+  }
+  
+  .search-input {
+    padding: 12px 36px 12px 36px;
+    font-size: 14px;
+  }
+  
+  .search-icon {
+    left: 12px;
+    font-size: 14px;
+  }
+  
+  .clear-search {
+    right: 8px;
+    font-size: 16px;
+  }
+  
+  .pagination-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
   }
 }
 

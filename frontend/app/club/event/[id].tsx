@@ -68,6 +68,7 @@ const EventDetailsScreen = () => {
 
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  
 
   const fetchEvent = async () => {
     try {
@@ -157,6 +158,23 @@ const EventDetailsScreen = () => {
     return `${hour12}:${minute} ${suffix}`;
   };
 
+  const deleteEvent = async () => {
+  try {
+    await axios.delete(`${BASE_URL}/api/events/${event.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    alert('Event deleted successfully');
+    router.back(); // Or navigate to a different page like router.replace('/club/events')
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    alert('Failed to delete event. Please try again.');
+  }
+};
+
+
   useEffect(() => {
     fetchEvent();
     fetchPostsForEvent();
@@ -225,9 +243,10 @@ const EventDetailsScreen = () => {
             <TouchableOpacity style={styles.editButton}>
               <Text style={styles.editButtonText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteButton}>
+            <TouchableOpacity style={styles.deleteButton} onPress={deleteEvent}>
               <Text style={styles.deleteButtonText}>Delete</Text>
             </TouchableOpacity>
+
           </View>
 
           {/* Event Details Card */}

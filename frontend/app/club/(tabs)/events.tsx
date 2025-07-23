@@ -7,6 +7,8 @@ import RNPickerSelect from 'react-native-picker-select';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 
 const { width } = Dimensions.get('window');
@@ -31,9 +33,12 @@ export default function EventListScreen() {
   ];
 
 
-  useEffect(() => {
+ useFocusEffect(
+  useCallback(() => {
     fetchEvents();
-  }, []);
+  }, [clubDetails.id, token])
+);
+
 
   useEffect(() => {
     filterEvents();

@@ -46,13 +46,20 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
             </div>
 
             <div style={styles.bottomSection}>
-                <button style={styles.logoutButton}>
+                <button
+                    style={styles.logoutButton}
+                    onClick={() => {
+                        localStorage.removeItem('token'); // Clear token
+                        navigate('/'); // Redirect to Login page
+                    }}
+                    >
                     <i
                         className="fa-solid fa-right-from-bracket"
                         style={{ marginRight: '10px', fontSize: '16px', color: '#fff' }}
                     ></i>
                     <span style={styles.logoutText}>Logout</span>
                 </button>
+
             </div>
         </div>
     );

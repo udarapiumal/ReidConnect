@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
+import axios from '../../api/axiosInstance';
 
 const HallBookings = () => {
   const [activeTab, setActiveTab] = useState('bookings');
@@ -7,39 +8,21 @@ const HallBookings = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const mockBookings = [
-    {
-      id: 1,
-      hall: 'Lecture Hall A',
-      date: '2025-07-21',
-      time: '10:00 - 12:00',
-      status: 'Confirmed',
-      bookedBy: 'Dr. Smith',
-      course: 'Software Engineering',
-    },
-    {
-      id: 2,
-      hall: 'Lecture Hall B',
-      date: '2025-07-22',
-      time: '14:00 - 16:00',
-      status: 'Pending',
-      bookedBy: 'Prof. Lee',
-      course: 'Database Systems',
-    },
-  ];
+  const [bookings, setBookings] = useState([]);
 
-  const mockRequests = [
-    {
-      id: 101,
-      requester: 'Dr. Adams',
-      hall: 'Lecture Hall C',
-      date: '2025-07-24',
-      time: '09:00 - 11:00',
-      reason: 'Extra tutorial session',
-      course: 'Web Development',
-      requestDate: '2025-07-20',
-    },
-  ];
+useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      const res = await axios.get('/api/venue-bookings/all');
+      console.log('Bookings:', res.data);
+      setBookings(res.data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
 
   const handleAction = (action, item) => {
     if (action === 'view') {
@@ -48,41 +31,21 @@ const HallBookings = () => {
     }
   };
 
-  const renderBookingCard = (booking) => (
+ const renderBookingCard = (booking) => (
     <div key={booking.id} className="card">
       <div className="card-header">
-        <span className="hall-name">{booking.hall}</span>
+        <span className="hall-name">{booking.venueName}</span>
         <span className={`status ${booking.status.toLowerCase()}`}>{booking.status}</span>
       </div>
       <div className="card-body">
-        <p><strong>Date & Time:</strong> {booking.date} | {booking.time}</p>
-        <p><strong>Booked by:</strong> {booking.bookedBy}</p>
-        <p><strong>Course:</strong> {booking.course}</p>
+        <p><strong>Date:</strong> {booking.requestedDate}</p>
+        <p><strong>Time:</strong> {booking.slotTimes.join(', ')}</p>
+        <p><strong>Booked by:</strong> {booking.applicantName}</p>
       </div>
       <div className="card-actions">
         <button onClick={() => handleAction('view', booking)}>
           <i className="fas fa-eye"></i> View
         </button>
-      </div>
-    </div>
-  );
-
-  const renderRequestCard = (request) => (
-    <div key={request.id} className="card">
-      <div className="card-header">
-        <span className="hall-name">{request.hall}</span>
-        <span className="status pending">New Request</span>
-      </div>
-      <div className="card-body">
-        <p><strong>Requested by:</strong> {request.requester}</p>
-        <p><strong>Date & Time:</strong> {request.date} | {request.time}</p>
-        <p><strong>Course:</strong> {request.course}</p>
-        <p><strong>Reason:</strong> {request.reason}</p>
-        <p><strong>Request Date:</strong> {request.requestDate}</p>
-      </div>
-      <div className="card-actions">
-        <button>Approve</button>
-        <button>Contact</button>
       </div>
     </div>
   );
@@ -98,47 +61,32 @@ const HallBookings = () => {
         </div>
       </header>
 
-      <div className="body">
+ <div className="body">
         <AcademicSidebar activeItem="Hall Bookings" />
         <main className="main-content">
           <h1>Hall Bookings</h1>
-
-          <div className="tabs">
-            <button
-              className={activeTab === 'bookings' ? 'active' : ''}
-              onClick={() => setActiveTab('bookings')}
-            >
-              <i className="fas fa-calendar-check"></i> Manage Bookings
-            </button>
-            <button
-              className={activeTab === 'requests' ? 'active' : ''}
-              onClick={() => setActiveTab('requests')}
-            >
-              <i className="fas fa-plus-circle"></i> Lecture Requests
-            </button>
-          </div>
 
           <div className="controls">
             <div className="search-bar">
               <i className="fas fa-search"></i>
               <input
                 type="text"
-                placeholder={`Search ${activeTab === 'bookings' ? 'bookings' : 'requests'}...`}
+                placeholder={`Search bookings...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {activeTab === 'bookings' && (
-              <button className="new-booking">
-                <i className="fas fa-plus"></i> New Booking
-              </button>
-            )}
           </div>
 
           <div className="cards-container">
             {activeTab === 'bookings'
-              ? mockBookings.map(renderBookingCard)
-              : mockRequests.map(renderRequestCard)}
+              ? bookings
+                  .filter((b) =>
+                    b.venueName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    b.applicantName.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map(renderBookingCard)
+              : <p>No lecture requests available</p>}
           </div>
         </main>
       </div>
@@ -148,14 +96,14 @@ const HallBookings = () => {
         <div className="modal">
           <div className="modal-content">
             <button className="close-btn" onClick={() => setShowPreview(false)}>×</button>
-            <h3>Preview</h3>
-            <p><strong>Hall:</strong> {selectedItem.hall}</p>
-            <p><strong>Date:</strong> {selectedItem.date}</p>
-            <p><strong>Time:</strong> {selectedItem.time}</p>
-            {selectedItem.bookedBy && <p><strong>Booked by:</strong> {selectedItem.bookedBy}</p>}
-            {selectedItem.requester && <p><strong>Requested by:</strong> {selectedItem.requester}</p>}
-            <p><strong>Course:</strong> {selectedItem.course}</p>
-            {selectedItem.reason && <p><strong>Reason:</strong> {selectedItem.reason}</p>}
+            <h3>Booking Preview</h3>
+            <p><strong>Hall:</strong> {selectedItem.venueName}</p>
+            <p><strong>Date:</strong> {selectedItem.requestedDate}</p>
+            <p><strong>Time Slots:</strong> {selectedItem.slotTimes.join(', ')}</p>
+            <p><strong>Booked by:</strong> {selectedItem.applicantName}</p>
+            <p><strong>Contact:</strong> {selectedItem.contactNumber}</p>
+            <p><strong>Reason:</strong> {selectedItem.reason}</p>
+            <p><strong>Status:</strong> {selectedItem.status}</p>
           </div>
         </div>
       )}

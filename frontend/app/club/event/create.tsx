@@ -716,7 +716,12 @@ const renderDayView = () => {
         </Text>
       </View>
       
-      <ScrollView style={styles.timeSlotsList}>
+      <ScrollView 
+        style={styles.timeSlotsList}
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={styles.timeSlotsContent}
+        nestedScrollEnabled={true}
+      >
         {TIME_SLOTS.map(({ time, label }) => {
           const eventsForSlot = getEventsForTimeSlot(selectedDate, time);
           const isSelected = selectedTimeSlots.includes(time);
@@ -1384,6 +1389,7 @@ dayEventText: {
   dayViewContainer: {
     flex: 1,
     marginBottom: 20,
+    height: height * 0.6, // Set explicit height
   },
   dayViewHeader: {
     flexDirection: 'row',
@@ -1419,10 +1425,17 @@ dayEventText: {
   timeSlotsList: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    maxHeight: 400,
     borderWidth: 1,
     borderColor: '#333',
+    flex: 1, // Remove maxHeight, use flex instead
+    height: height * 0.45, // Set explicit height for better scrolling
   },
+  
+  timeSlotsContent: {
+    paddingBottom: 20, // Add padding at bottom for better scrolling experience
+    flexGrow: 1,
+  },
+  
   timeSlotRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,

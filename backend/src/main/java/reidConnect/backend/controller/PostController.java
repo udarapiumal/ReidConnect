@@ -31,7 +31,7 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_CLUB')")
+    @PreAuthorize("hasRole('CLUB')")
     public ResponseEntity<String> createPost(
             @RequestParam("clubId") Long clubId,
             @RequestParam("description") String description,
@@ -92,7 +92,7 @@ public class PostController {
 
 
     //Get all posts
-    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('CLUB') or hasRole('STUDENT')")
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
         List<PostResponseDto> posts = postService.getAllPosts();
@@ -117,7 +117,7 @@ public class PostController {
     }
 
     // Get the latest 3 posts by club ID
-    @PreAuthorize("hasRole('ROLE_CLUB')")
+    @PreAuthorize("hasRole('CLUB')")
     @GetMapping("/club/{clubId}/latest")
     public ResponseEntity<List<PostResponseDto>> getLatestThreePostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getLatestThreePostsByClubId(clubId);
@@ -126,7 +126,7 @@ public class PostController {
 
 
     //Update a post by ID
-    @PreAuthorize("hasRole('ROLE_CLUB')")
+    @PreAuthorize("hasRole('CLUB')")
     @PutMapping("/{id}")
     public ResponseEntity<String> updatePost(@PathVariable Long id, @RequestBody PostUpdateDto dto) {
         postService.updatePost(id, dto);
@@ -134,7 +134,7 @@ public class PostController {
     }
 
     //Delete a post by ID
-    @PreAuthorize("hasRole('ROLE_CLUB')")
+    @PreAuthorize("hasRole('CLUB')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePost(@PathVariable Long id) {
         postService.deletePost(id);
@@ -142,7 +142,7 @@ public class PostController {
     }
 
     // Add a like to a post
-    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('CLUB') or hasRole('STUDENT')")
     @PostMapping("/{postId}/like")
     public ResponseEntity<String> likePost(
             @PathVariable Long postId,
