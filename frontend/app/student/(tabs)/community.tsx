@@ -70,9 +70,9 @@ export default function CommunityPage() {
 
           setToken(storedToken);
 
-          console.log('Requesting from URL:', '/api/posts');
+          console.log('Requesting from URL:', `${BASE_URL}/api/posts`);
 
-          const response = await axiosInstance.get('/api/posts');
+          const response = await axiosInstance.get(`${BASE_URL}/api/posts`);
 
           console.log('Fetched posts:', response.data);
 

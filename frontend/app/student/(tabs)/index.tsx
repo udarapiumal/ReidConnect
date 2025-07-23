@@ -20,10 +20,96 @@ interface UserType {
   role: string;
 }
 
+// API function to fetch featured events
+const getFeaturedEvents = async () => {
+  try {
+    const response = await axiosInstance.get('/api/events/featured');
+    console.log('Featured Events:', response.data);
+    
+    let userId = null;
+    let token = null;
+    
+    try {
+      token = await AsyncStorage.getItem("token");
+      if (token) {
+        const decoded = jwtDecode<UserType>(token);
+        userId = decoded.id;
+      }
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+    }
+
+    // Fetch attendance counts and user status for each featured event
+    const eventsWithCounts = await Promise.all(
+      response.data.map(async (event: any) => {
+        try {
+          // Fetch attendance counts
+          const countsResponse = await axiosInstance.get(`/api/events/${event.id}/attendance/counts`);
+          const rawCounts = countsResponse.data;
+          console.log(`Raw counts for featured event ${event.id}:`, rawCounts);
+          
+          // Map API response to expected format
+          const mappedCounts = {
+            going: rawCounts.goingCount || 0,
+            interested: rawCounts.interestedCount || 0
+          };
+          console.log(`Mapped counts for featured event ${event.id}:`, mappedCounts);
+          
+          // Fetch user status if logged in
+          let userStatus = 'none';
+          if (userId && token) {
+            try {
+              const userStatusResponse = await axiosInstance.get(
+                `/api/events/${event.id}/attendance/user/${userId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                }
+              );
+              const responseData = userStatusResponse.data;
+              const rawStatus = responseData.status;
+              userStatus = rawStatus ? rawStatus.toLowerCase() : 'none';
+              console.log(`User status for featured event ${event.id}:`, rawStatus, '-> normalized:', userStatus);
+            } catch (error: any) {
+              if (error.response?.status === 404) {
+                console.log(`User has not registered for featured event ${event.id} yet`);
+              } else {
+                console.error(`Failed to fetch user status for featured event ${event.id}:`, error);
+              }
+              userStatus = 'none';
+            }
+          }
+          
+          return {
+            ...event,
+            ...mappedCounts,
+            statusOfUser: userStatus,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch counts for featured event ${event.id}:`, error);
+          return {
+            ...event,
+            going: 0,
+            interested: 0,
+            statusOfUser: 'none',
+          };
+        }
+      })
+    );
+    
+    console.log('Featured events with counts and user status:', eventsWithCounts);
+    return eventsWithCounts;
+  } catch (error) {
+    console.error('Error fetching featured events:', error);
+    throw error;
+  }
+};
+
 // API function to fetch events
 const getAllEvents = async () => {
   try {
-    const response = await axiosInstance.get(`${BASE_URL}/api/events`);
+    const response = await axiosInstance.get('/api/events');
     console.log('Events:', response.data);
     
     let userId = null;
@@ -45,7 +131,7 @@ const getAllEvents = async () => {
       response.data.map(async (event: any) => {
         try {
           // Fetch attendance counts
-          const countsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${event.id}/attendance/counts`);
+          const countsResponse = await axiosInstance.get(`/api/events/${event.id}/attendance/counts`);
           const rawCounts = countsResponse.data;
           console.log(`Raw counts for event ${event.id}:`, rawCounts);
           
@@ -61,7 +147,7 @@ const getAllEvents = async () => {
           if (userId && token) {
             try {
               const userStatusResponse = await axiosInstance.get(
-                `${BASE_URL}/api/events/${event.id}/attendance/user/${userId}`,
+                `/api/events/${event.id}/attendance/user/${userId}`,
                 {
                   headers: {
                     'Authorization': `Bearer ${token}`,
@@ -154,14 +240,14 @@ export default function HomePage() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const eventsData = await getAllEvents();
+        
+        // Fetch featured events and all events in parallel
+        const [featuredEventsData, eventsData] = await Promise.all([
+          getFeaturedEvents(),
+          getAllEvents()
+        ]);
         
         // Categorize events based on different criteria
-        
-        // Featured Events - events with high engagement or marked as featured
-        const featured = eventsData
-          .filter((event: any) => event.featured || (event.going + event.interested) > 50)
-          .slice(0, 3);
         
         // Your Next Event - events user is going to or interested in
         const next = eventsData
@@ -199,8 +285,8 @@ export default function HomePage() {
           .sort((a: any, b: any) => b.interested - a.interested)
           .slice(0, 5);
 
-        // Set state with categorized events, fallback to all events if categories are empty
-        setFeaturedEvents(featured.length > 0 ? featured : eventsData.slice(0, 3));
+        // Set state with categorized events
+        setFeaturedEvents(featuredEventsData); // Only show actual featured events from API
         setNextEvents(next); // Show empty if no events with user attendance
         setUpcomingEvents(upcoming);
         setPopularEvents(popular);
@@ -317,22 +403,24 @@ export default function HomePage() {
           </View>
 
           {/* Featured Events */}
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Featured Events</ThemedText>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredEventsContainer}>
-              {featuredEvents.map(event => (
-                    <EventCard 
-                      key={event.id} 
-                      event={event} 
-                      size="large" 
-                      onPress={() => handleEventPress(event.id)}
-                    />
-              ))}
-            </ScrollView>
-          </View>
+          {featuredEvents.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>Featured Events</ThemedText>
+              <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredEventsContainer}>
+                {featuredEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           {/* Your Next Event */}
           {nextEvents.length > 0 && (
