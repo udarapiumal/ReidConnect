@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import AcademicSidebar from './AcademicSidebar';
+import UserProfile from './UserProfile';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function Dashboard() {
     const [activeNavItem, setActiveNavItem] = useState("Dashboard");
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showProfile, setShowProfile] = useState(false);
 
     // Animation state for stat cards
     const [lectureCount, setLectureCount] = useState(0);
@@ -126,6 +128,14 @@ export default function Dashboard() {
         setShowNotifications(false);
     };
 
+    const handleProfileToggle = () => {
+        setShowProfile(!showProfile);
+    };
+
+    const handleProfileClose = () => {
+        setShowProfile(false);
+    };
+
     const calendarDays = [
         { day: 1, hasEvent: true }, { day: 2 }, { day: 3 }, { day: 4, hasEvent: true },
         { day: 5 }, { day: 6 }, { day: 7 }, { day: 8 }, { day: 9 }, { day: 10 },
@@ -136,7 +146,7 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''}`}>
+        <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''} ${showProfile ? 'blur-background' : ''}`}>
             <header className="header">
                 <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
                 <div className="admin-info">
@@ -146,7 +156,7 @@ export default function Dashboard() {
                             <span className="notification-badge"></span>
                         )}
                     </div>
-                    <i className="fa fa-user" />
+                    <i className="fa fa-user" onClick={handleProfileToggle} />
                     <span>Admin</span>
                 </div>
             </header>
@@ -187,6 +197,10 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {showProfile && (
+                <UserProfile onClose={handleProfileClose} />
             )}
 
             <div className="dashboard-content">
