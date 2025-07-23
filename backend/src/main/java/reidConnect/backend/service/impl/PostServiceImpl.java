@@ -55,6 +55,26 @@ public class PostServiceImpl implements PostService {
                 })
                 .toList();
     }
+    @Override
+    @Transactional
+    public void deactivatePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        post.setActive(false); // This assumes you have a boolean `active` field in your Post entity
+        postRepository.save(post);
+    }
+    @Override
+    @Transactional
+    public void activatePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        post.setActive(true); // Assuming Post entity has `active` boolean field
+        postRepository.save(post);
+    }
+
+
 
     @Override
     public List<PostResponseDto> getPostsByClubId(Long clubId) {
@@ -111,6 +131,7 @@ public class PostServiceImpl implements PostService {
 
         PostLikeRepository.delete(like);
     }
+
 
     @Override
     public long getLikeCount(Long postId) {

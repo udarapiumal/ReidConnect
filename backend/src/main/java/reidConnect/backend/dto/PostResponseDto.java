@@ -21,5 +21,6 @@ public class PostResponseDto {
     private String description;
     private List<String> mediaPaths;
     private Long eventId;
+    private boolean active;
 
 }

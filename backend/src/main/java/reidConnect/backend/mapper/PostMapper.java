@@ -17,6 +17,7 @@ public class PostMapper {
         post.setClub(club);
         post.setDescription(dto.getDescription());
         post.setEvent(event);
+        post.setActive(true);
         return post;
     }
 
@@ -39,7 +40,8 @@ public class PostMapper {
                 post.getCreatedAt(),
                 post.getDescription(),
                 paths,
-                post.getEvent() != null ? post.getEvent().getId() : null
+                post.getEvent() != null ? post.getEvent().getId() : null,
+                post.isActive()
         );
     }
 

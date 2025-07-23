@@ -67,37 +67,50 @@ const ClubDetail = () => {
     fetchEvents();
   }, [clubId]);
 
+  // Generalized handler for post status changes (activate/deactivate)
+  const handlePostStatusChange = (postId, newStatus) => {
+    const updatePostActive = (postsList) =>
+      postsList.map((post) =>
+        post.id === postId ? { ...post, active: newStatus } : post
+      );
+
+    setPosts((prevPosts) => updatePostActive(prevPosts));
+    setFilteredPosts((prevFilteredPosts) => updatePostActive(prevFilteredPosts));
+  };
+
   // Search functionality
   useEffect(() => {
-  const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase();
 
-  if (activeTab === 'posts') {
-    if (query.trim() === '') {
-      setFilteredPosts(posts); // reset
+    if (activeTab === 'posts') {
+      if (query.trim() === '') {
+        setFilteredPosts(posts);
+      } else {
+        const filtered = posts.filter(
+          (post) =>
+            post.title?.toLowerCase().includes(query) ||
+            post.description?.toLowerCase().includes(query) ||
+            post.content?.toLowerCase().includes(query) ||
+            post.author?.toLowerCase().includes(query)
+        );
+        setFilteredPosts(filtered);
+      }
+      setCurrentPostsPage(1);
     } else {
-      const filtered = posts.filter(post =>
-        post.title?.toLowerCase().includes(query) ||
-        post.content?.toLowerCase().includes(query) ||
-        post.author?.toLowerCase().includes(query)
-      );
-      setFilteredPosts(filtered);
+      if (query.trim() === '') {
+        setFilteredEvents(events);
+      } else {
+        const filtered = events.filter(
+          (event) =>
+            event.title?.toLowerCase().includes(query) ||
+            event.description?.toLowerCase().includes(query) ||
+            event.location?.toLowerCase().includes(query)
+        );
+        setFilteredEvents(filtered);
+      }
+      setCurrentEventsPage(1);
     }
-    setCurrentPostsPage(1);
-  } else {
-    if (query.trim() === '') {
-      setFilteredEvents(events); // reset
-    } else {
-      const filtered = events.filter(event =>
-        event.title?.toLowerCase().includes(query) ||
-        event.description?.toLowerCase().includes(query) ||
-        event.location?.toLowerCase().includes(query)
-      );
-      setFilteredEvents(filtered);
-    }
-    setCurrentEventsPage(1);
-  }
-}, [searchQuery, activeTab]);
-
+  }, [searchQuery, activeTab, posts, events]);
 
   // Pagination logic
   const getCurrentItems = () => {
@@ -141,10 +154,15 @@ const ClubDetail = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Get active posts count for display
+  const getActivePostsCount = () => {
+    return posts.filter((post) => post.active !== false).length;
+  };
+
   const renderPagination = () => {
     const totalPages = getTotalPages();
     const currentPage = getCurrentPage();
-    
+
     if (totalPages <= 1) return null;
 
     const pages = [];
@@ -152,7 +170,6 @@ const ClubDetail = () => {
     const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-    // Previous button
     if (currentPage > 1) {
       pages.push(
         <button
@@ -165,7 +182,6 @@ const ClubDetail = () => {
       );
     }
 
-    // Page numbers
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
@@ -178,7 +194,6 @@ const ClubDetail = () => {
       );
     }
 
-    // Next button
     if (currentPage < totalPages) {
       pages.push(
         <button
@@ -212,10 +227,7 @@ const ClubDetail = () => {
       return (
         <div className="club-detail-error">
           <p>{error}</p>
-          <button 
-            className="back-btn"
-            onClick={() => window.location.reload()}
-          >
+          <button className="back-btn" onClick={() => window.location.reload()}>
             Try Again
           </button>
         </div>
@@ -225,15 +237,12 @@ const ClubDetail = () => {
     if (totalItems === 0) {
       return (
         <div className="empty-state">
-          <div className="empty-icon">
-            {activeTab === 'posts' ? '📝' : '📅'}
-          </div>
+          <div className="empty-icon">{activeTab === 'posts' ? '📝' : '📅'}</div>
           <h3>No {activeTab} found</h3>
           <p>
-            {searchQuery 
+            {searchQuery
               ? `No ${activeTab} match your search "${searchQuery}"`
-              : `This club doesn't have any ${activeTab} yet.`
-            }
+              : `This club doesn't have any ${activeTab} yet.`}
           </p>
         </div>
       );
@@ -247,17 +256,21 @@ const ClubDetail = () => {
             {searchQuery && <span className="search-info"> for "{searchQuery}"</span>}
           </div>
         </div>
-        
+
         <div className={activeTab === 'posts' ? 'posts-grid' : 'events-grid'}>
-          {currentItems.map((item) => 
+          {currentItems.map((item) =>
             activeTab === 'posts' ? (
-              <PostCard key={item.id} post={item} />
+              <PostCard
+                key={item.id}
+                post={item}
+                onPostStatusChange={handlePostStatusChange}
+              />
             ) : (
               <EventCard key={item.id} event={item} />
             )
           )}
         </div>
-        
+
         {renderPagination()}
       </>
     );
@@ -271,7 +284,7 @@ const ClubDetail = () => {
           className={`nav-tab ${activeTab === 'posts' ? 'active' : ''}`}
           onClick={() => handleTabChange('posts')}
         >
-          📝 Posts ({posts.length})
+          📝 Posts ({getActivePostsCount()})
         </button>
         <button
           className={`nav-tab ${activeTab === 'events' ? 'active' : ''}`}
@@ -305,13 +318,9 @@ const ClubDetail = () => {
       </div>
 
       {/* Content */}
-      <div className="club-detail-content">
-        {renderContent()}
-      </div>
+      <div className="club-detail-content">{renderContent()}</div>
     </div>
   );
 };
 
 export default ClubDetail;
-
-/* Additional CSS styles to add to ClubDetail.css */
