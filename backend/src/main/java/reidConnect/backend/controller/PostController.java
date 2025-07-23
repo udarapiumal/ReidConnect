@@ -92,7 +92,7 @@ public class PostController {
 
 
     //Get all posts
-    @PreAuthorize("hasRole('CLUB') or hasRole('STUDENT')")
+    // @PreAuthorize("hasAnyRole('CLUB', 'STUDENT')")
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
         List<PostResponseDto> posts = postService.getAllPosts();
