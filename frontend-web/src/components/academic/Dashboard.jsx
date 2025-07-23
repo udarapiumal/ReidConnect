@@ -785,24 +785,24 @@ export default function Dashboard() {
                 }
 
                 .status-badge.pending {
-                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
                     color: white;
-                    border: 1px solid rgba(59, 130, 246, 0.3);
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+                    border: 1px solid rgba(251, 191, 36, 0.4);
+                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
                 }
 
                 .status-badge.approved {
-                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
                     color: white;
-                    border: 1px solid rgba(59, 130, 246, 0.3);
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+                    border: 1px solid rgba(52, 211, 153, 0.4);
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
                 }
 
                 .status-badge.canceled {
-                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    background: linear-gradient(135deg, #f87171 0%, #ef4444 50%, #dc2626 100%);
                     color: white;
-                    border: 1px solid rgba(59, 130, 246, 0.3);
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+                    border: 1px solid rgba(248, 113, 113, 0.4);
+                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
                 }
 
                 /* Calendar Section */
@@ -978,7 +978,10 @@ export default function Dashboard() {
                     opacity: 0.9;
                     display: block;
                     transition: color 0.3s ease;
-                    color: #60a5fa;
+                    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
                 }
 
                 .stat-card h3 {

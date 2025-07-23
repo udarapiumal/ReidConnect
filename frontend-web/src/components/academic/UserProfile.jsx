@@ -4,8 +4,8 @@ const UserProfile = ({ onClose }) => {
   const [user, setUser] = useState({
     name: 'Academic Admin',
     email: 'admin@reidconnect.edu',
-    phone: '+1 (555) 123-4567',
-    location: 'University Campus',
+    phone: '+94 123 4567',
+    location: 'University of Colombo School of Computing',
     bio: 'Academic administrator passionate about creating efficient educational systems and supporting student success.',
     joinDate: 'January 2023',
     avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400'
@@ -466,7 +466,7 @@ const UserProfile = ({ onClose }) => {
 
         .cover-section {
           height: 120px;
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+          background: #ffffff;
           position: relative;
         }
 
