@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from 'axios'; // Add this at the top if not already
+import axios from 'axios';
 
 function LostItemForm() {
   const [formData, setFormData] = useState({
@@ -22,71 +22,90 @@ function LostItemForm() {
     }
   };
 
- 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+    const {
+      itemName,
+      category,
+      description,
+      location,
+      dateLost,
+      image,
+      posterName,
+      contactNumber,
+    } = formData;
 
-  try {
-    const formPayload = new FormData();
-    formPayload.append("itemName", formData.itemName);
-    formPayload.append("category", formData.category);
-    formPayload.append("description", formData.description);
-    formPayload.append("location", formData.location);
-    formPayload.append("dateLost", formData.dateLost);
-    formPayload.append("image", formData.image);
-    formPayload.append("posterName", formData.posterName);
-    formPayload.append("contactNumber", formData.contactNumber);
-
-    const token = localStorage.getItem("token");
-    const response = await axios.post(
-  "http://localhost:8080/lost/lost-items",
-  formPayload,
-  {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "Authorization": `Bearer ${token}` // ✅ Add token header
+    if (
+      !itemName.trim() ||
+      !category.trim() ||
+      !description.trim() ||
+      !location.trim() ||
+      !dateLost ||
+      !image ||
+      !posterName.trim() ||
+      !contactNumber.trim()
+    ) {
+      alert("Please fill in all required fields.");
+      return;
     }
-  }
-);
 
-    alert("Lost item post submitted successfully!");
-    console.log(response.data);
+    if (!/^\d{10}$/.test(contactNumber)) {
+      alert("Please enter a valid 10-digit contact number.");
+      return;
+    }
 
-    // Reset form
-    setFormData({
-      itemName: "",
-      category: "",
-      description: "",
-      location: "",
-      dateLost: "",
-      image: null,
-      posterName: "",
-      contactNumber: "",
-    });
-  } catch (error) {
-    console.error("Error posting lost item:", error);
-    alert("Failed to submit the lost item post.");
-  }
-};
+    try {
+      const formPayload = new FormData();
+      formPayload.append("itemName", itemName);
+      formPayload.append("category", category);
+      formPayload.append("description", description);
+      formPayload.append("location", location);
+      formPayload.append("dateLost", dateLost);
+      formPayload.append("image", image);
+      formPayload.append("posterName", posterName);
+      formPayload.append("contactNumber", contactNumber);
 
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:8080/lost/lost-items",
+        formPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+
+      alert("Lost item post submitted successfully!");
+      console.log(response.data);
+
+      // Reset form
+      setFormData({
+        itemName: "",
+        category: "",
+        description: "",
+        location: "",
+        dateLost: "",
+        image: null,
+        posterName: "",
+        contactNumber: "",
+      });
+    } catch (error) {
+      console.error("Error posting lost item:", error);
+      alert("Failed to submit the lost item post.");
+    }
+  };
 
   const categories = [
-    "Electronics",
-    "Clothing",
-    "Accessories",
-    "Books",
-    "Documents",
-    "Keys",
-    "Bags",
-    "Jewelry",
-    "Sports Equipment",
-    "Other"
+    "Electronics", "Clothing", "Accessories", "Books",
+    "Documents", "Keys", "Bags", "Jewelry",
+    "Sports Equipment", "Other"
   ];
 
   return (
     <div className="app-container">
-      {/* Header */}
       <header className="header">
         <div className="title">ReidConnect <span className="highlight">LostFound</span></div>
         <div className="user-info">
@@ -96,7 +115,6 @@ const handleSubmit = async (e) => {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="main-content">
         <div className="form-container">
           <div className="form-header">
@@ -112,10 +130,10 @@ const handleSubmit = async (e) => {
                   type="text"
                   id="itemName"
                   name="itemName"
-                  placeholder="Enter the name of your lost item"
                   value={formData.itemName}
                   onChange={handleChange}
                   className="form-input"
+                  placeholder="Enter the name of your lost item"
                 />
               </div>
 
@@ -141,11 +159,11 @@ const handleSubmit = async (e) => {
               <textarea
                 id="description"
                 name="description"
-                placeholder="Provide a detailed description of your lost item"
                 value={formData.description}
                 onChange={handleChange}
-                rows={4}
                 className="form-textarea"
+                placeholder="Provide a detailed description of your lost item"
+                rows={4}
               />
             </div>
 
@@ -156,10 +174,10 @@ const handleSubmit = async (e) => {
                   type="text"
                   id="location"
                   name="location"
-                  placeholder="Where did you last see your item?"
                   value={formData.location}
                   onChange={handleChange}
                   className="form-input"
+                  placeholder="Where did you last see your item?"
                 />
               </div>
 
@@ -203,10 +221,10 @@ const handleSubmit = async (e) => {
                   type="text"
                   id="posterName"
                   name="posterName"
-                  placeholder="Enter your full name"
                   value={formData.posterName}
                   onChange={handleChange}
                   className="form-input"
+                  placeholder="Enter your full name"
                 />
               </div>
 
@@ -216,10 +234,10 @@ const handleSubmit = async (e) => {
                   type="tel"
                   id="contactNumber"
                   name="contactNumber"
-                  placeholder="Enter your phone number"
                   value={formData.contactNumber}
                   onChange={handleChange}
                   className="form-input"
+                  placeholder="Enter your phone number"
                 />
               </div>
             </div>
@@ -238,208 +256,207 @@ const handleSubmit = async (e) => {
         </div>
       </div>
 
-     <style jsx>{`
-  .app-container {
-    background-color: #1a1a1a;
-    min-height: 100vh;
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    flex-direction: column;
-  }
+      <style jsx>{`
+        .app-container {
+          background-color: #1a1a1a;
+          min-height: 100vh;
+          color: white;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          display: flex;
+          flex-direction: column;
+        }
 
-  .header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    background-color: #2a2a2a;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 16px;
-    z-index: 1001;
-  }
+        .header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 64px;
+          background-color: #2a2a2a;
+          border-bottom: 1px solid #333;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 16px;
+          z-index: 1001;
+        }
 
-  .title {
-    font-weight: bold;
-    font-size: 20px;
-    color: white;
-  }
+        .title {
+          font-weight: bold;
+          font-size: 20px;
+          color: white;
+        }
 
-  .title .highlight {
-    color: #ef4444;
-  }
+        .title .highlight {
+          color: #ef4444;
+        }
 
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+        .user-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
 
-  .user-info i {
-    font-size: 20px;
-    cursor: pointer;
-    color: white;
-    transition: color 0.3s;
-  }
+        .user-info i {
+          font-size: 20px;
+          cursor: pointer;
+          color: white;
+          transition: color 0.3s;
+        }
 
-  .user-info i:hover {
-    color: #ef4444;
-  }
+        .user-info i:hover {
+          color: #ef4444;
+        }
 
-  .main-content {
-    padding-top: 96px;
-    padding: 2rem;
-    flex: 1;
-  }
+        .main-content {
+          padding-top: 96px;
+          padding: 2rem;
+          flex: 1;
+        }
 
-  .form-container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: #2a2a2a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 2rem;
-  }
+        .form-container {
+          max-width: 800px;
+          margin: 0 auto;
+          background: #2a2a2a;
+          border: 1px solid #333;
+          border-radius: 12px;
+          padding: 2rem;
+        }
 
-  .form-header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
+        .form-header h1 {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+        }
 
-  .form-header p {
-    font-size: 14px;
-    color: #d1d5db;
-    margin-bottom: 1.5rem;
-  }
+        .form-header p {
+          font-size: 14px;
+          color: #d1d5db;
+          margin-bottom: 1.5rem;
+        }
 
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
 
-  .form-row {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
+        .form-row {
+          display: flex;
+          gap: 2rem;
+          flex-wrap: wrap;
+        }
 
-  .form-group label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    font-size: 14px;
-    color: #d1d5db;
-  }
+        .form-group label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 0.5rem;
+          font-size: 14px;
+          color: #d1d5db;
+        }
 
-  .form-input,
-  .form-textarea,
-  .form-select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #444;
-    background-color: #1f1f1f;
-    color: white;
-    border-radius: 8px;
-    font-size: 14px;
-  }
+        .form-input,
+        .form-textarea,
+        .form-select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #444;
+          background-color: #1f1f1f;
+          color: white;
+          border-radius: 8px;
+          font-size: 14px;
+        }
 
-  .form-input:focus,
-  .form-textarea:focus,
-  .form-select:focus {
-    outline: none;
-    border-color: #ef4444;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
-  }
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+          outline: none;
+          border-color: #ef4444;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+        }
 
-  .form-textarea {
-    min-height: 120px;
-    resize: vertical;
-  }
+        .form-textarea {
+          min-height: 120px;
+          resize: vertical;
+        }
 
-  .file-upload-container {
-    position: relative;
-  }
+        .file-upload-container {
+          position: relative;
+        }
 
-  .file-input {
-    opacity: 0;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-    cursor: pointer;
-  }
+        .file-input {
+          opacity: 0;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          z-index: 2;
+          cursor: pointer;
+        }
 
-  .file-upload-display {
-    padding: 1rem;
-    border: 1px dashed #555;
-    background-color: #1f1f1f;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 14px;
-    color: #9ca3af;
-  }
+        .file-upload-display {
+          padding: 1rem;
+          border: 1px dashed #555;
+          background-color: #1f1f1f;
+          border-radius: 8px;
+          text-align: center;
+          font-size: 14px;
+          color: #9ca3af;
+        }
 
-  .form-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
+        .form-actions {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
 
-  .btn-primary,
-  .btn-secondary {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: none;
-    transition: background-color 0.3s ease;
-  }
+        .btn-primary,
+        .btn-secondary {
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: none;
+          transition: background-color 0.3s ease;
+        }
 
-  .btn-primary {
-    background-color: #ef4444;
-    color: white;
-  }
+        .btn-primary {
+          background-color: #ef4444;
+          color: white;
+        }
 
-  .btn-primary:hover {
-    background-color: #dc2626;
-  }
+        .btn-primary:hover {
+          background-color: #dc2626;
+        }
 
-  .btn-secondary {
-    background-color: #444;
-    color: white;
-    border: 1px solid #555;
-  }
+        .btn-secondary {
+          background-color: #444;
+          color: white;
+          border: 1px solid #555;
+        }
 
-  .btn-secondary:hover {
-    background-color: #555;
-  }
+        .btn-secondary:hover {
+          background-color: #555;
+        }
 
-  @media (max-width: 768px) {
-    .form-row {
-      flex-direction: column;
-    }
+        @media (max-width: 768px) {
+          .form-row {
+            flex-direction: column;
+          }
 
-    .form-actions {
-      flex-direction: column;
-      gap: 1rem;
-    }
+          .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+          }
 
-    .btn-primary,
-    .btn-secondary {
-      width: 100%;
-    }
-  }
-`}</style>
-
+          .btn-primary,
+          .btn-secondary {
+            width: 100%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

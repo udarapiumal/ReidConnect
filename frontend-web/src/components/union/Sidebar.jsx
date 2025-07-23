@@ -1,15 +1,22 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const links = [
     { label: 'Home', path: '/union/dashboard', icon: 'fa-solid fa-house' },
     { label: 'Lost and Found', path: '/union/LostandFound', icon: 'fa-solid fa-box-open' },
     { label: 'Profile Management', path: '/union/Profilemanagement', icon: 'fa-solid fa-user-gear' },
-    { label: 'Club Management', path: '/union/Clubmanagement', icon: 'fa-solid fa-people-group' }
+    { label: 'Club Management', path: '/union/Clubmanagement', icon: 'fa-solid fa-people-group' },
+    { label: 'Sign Out', isLogout: true, icon: 'fa-solid fa-right-from-bracket' }
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('token'); // Clear auth token
+    navigate('/'); // Redirect to login page (adjust if your login route is different)
+  };
 
   return (
     <div style={styles.sidebar}>
@@ -17,22 +24,40 @@ const Sidebar = () => {
         <h2 style={styles.sidebarLogo}>Reid Connect</h2>
         <ul style={styles.sidebarNav}>
           {links.map((link) => (
-            <li key={link.path} style={styles.navListItem}>
-              <Link
-                to={link.path}
-                style={{
-                  ...styles.sidebarLink,
-                  ...(location.pathname === link.path ? styles.sidebarLinkActive : {})
-                }}
-              >
-                <i className={link.icon} style={styles.navIcon}></i>
-                <span style={{
-                  ...styles.navText,
-                  ...(location.pathname === link.path ? styles.navTextActive : {})
-                }}>
-                  {link.label}
-                </span>
-              </Link>
+            <li key={link.label} style={styles.navListItem}>
+              {link.isLogout ? (
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    ...styles.sidebarLink,
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    width: '100%',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <i className={link.icon} style={styles.navIcon}></i>
+                  <span style={styles.navText}>{link.label}</span>
+                </button>
+              ) : (
+                <Link
+                  to={link.path}
+                  style={{
+                    ...styles.sidebarLink,
+                    ...(location.pathname === link.path ? styles.sidebarLinkActive : {})
+                  }}
+                >
+                  <i className={link.icon} style={styles.navIcon}></i>
+                  <span
+                    style={{
+                      ...styles.navText,
+                      ...(location.pathname === link.path ? styles.navTextActive : {})
+                    }}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              )}
             </li>
           ))}
         </ul>
@@ -107,9 +132,6 @@ const styles = {
   navTextActive: {
     fontWeight: '500',
   },
-  // Media query styles would need to be handled differently in React
-  // You can use a library like react-responsive or implement useEffect with window.matchMedia
-  // For now, keeping the basic structure consistent with AcademicSidebar
 };
 
 export default Sidebar;

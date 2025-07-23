@@ -36,7 +36,7 @@ public class UserService {
 
         return new UserWithProfileDto(
                 user.getId(),
-                user.getUsername(),
+                user.getName(),
                 user.getEmail(),
                 user.getRole(),
                 profilePicUrl
