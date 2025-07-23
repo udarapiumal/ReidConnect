@@ -316,7 +316,7 @@ public class EventController {
 
     // Add to the featured list
     @PutMapping("/{eventId}/feature")
-    //@PreAuthorize("hasRole('UNION')")
+    @PreAuthorize("hasRole('UNION')")
     public ResponseEntity<String> featureEvent(@PathVariable Long eventId) {
         eventService.featureEvent(eventId);
         return ResponseEntity.ok("✅ Event featured successfully");

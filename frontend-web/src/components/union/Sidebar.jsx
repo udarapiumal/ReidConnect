@@ -10,6 +10,7 @@ const Sidebar = () => {
     { label: 'Lost and Found', path: '/union/LostandFound', icon: 'fa-solid fa-box-open' },
     { label: 'Profile Management', path: '/union/Profilemanagement', icon: 'fa-solid fa-user-gear' },
     { label: 'Club Management', path: '/union/Clubmanagement', icon: 'fa-solid fa-people-group' },
+    { label: 'Events', path: '/union/events', icon: 'fa-solid fa-calendar-days' },  // Added Events here
     { label: 'Sign Out', isLogout: true, icon: 'fa-solid fa-right-from-bracket' }
   ];
 

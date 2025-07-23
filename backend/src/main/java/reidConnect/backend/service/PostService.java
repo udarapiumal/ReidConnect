@@ -17,6 +17,10 @@ public interface PostService {
 
     List<PostResponseDto> getAllPosts();
 
+    void deactivatePost(Long postId);
+    void activatePost(Long postId);
+
+
     List<PostResponseDto> getPostsByClubId(Long clubId);
 
     List<PostResponseDto> getLatestThreePostsByClubId(Long clubId);

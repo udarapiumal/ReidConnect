@@ -15,6 +15,7 @@ import LostItemForm from './components/union/LostandFound';
 import ClubGallery from './components/union/ClubGallery';
 import ClubDetail from './components/union/ClubDetail';
 import AcademicSidebar from './components/academic/AcademicSidebar';
+import EventsPage from './components/union/EventsPage';
 
 function AppWrapper() {
   const location = useLocation();
@@ -41,6 +42,7 @@ function AppWrapper() {
         <Route path="/union/dashboard" element={<UnionDashboard />} />
         <Route path="/union/Clubmanagement" element={<ClubGallery />} />
         <Route path="/club/:clubId" element={<ClubDetail />} />
+        <Route path="/union/events" element={<EventsPage/>} />
 
         {/* Academic Routes */}
         <Route path="/academic/dashboard" element={<AcademicDashboard />} />

@@ -19,4 +19,5 @@ public class PostUpdateDto {
     private String description;
     private List<String> mediaPaths;
     private Long eventId;
+    private boolean active;
 }

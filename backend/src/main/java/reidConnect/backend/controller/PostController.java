@@ -131,6 +131,22 @@ public class PostController {
         postService.updatePost(id, dto);
         return ResponseEntity.ok("Post updated successfully.");
     }
+    @PutMapping("/{id}/deactivate")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    public ResponseEntity<String> deactivatePost(@PathVariable Long id) {
+        System.out.println("Deactivating post with id: " + id);
+        postService.deactivatePost(id);
+        return ResponseEntity.ok("Post deactivated successfully.");
+    }
+    // Activate a post by ID
+    @PutMapping("/{id}/activate")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    public ResponseEntity<String> activatePost(@PathVariable Long id) {
+        System.out.println("Activating post with id: " + id);
+        postService.activatePost(id);
+        return ResponseEntity.ok("Post activated successfully.");
+    }
+
 
     //Delete a post by ID
     @PreAuthorize("hasRole('CLUB')")

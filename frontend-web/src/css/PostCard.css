@@ -34,8 +34,16 @@
   padding: 1.2rem;
 }
 
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
 .post-title {
-  margin: 0 0 0.5rem 0;
+  margin: 0;
+  flex: 1;
   font-size: 1.3rem;
   font-weight: 700;
   color: #fff;
@@ -55,18 +63,101 @@
   align-items: center;
 }
 
-.post-tag {
-  background-color: #2a2d2f;
-  color: #f9fafb;
-  padding: 0.3rem 0.6rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
 .post-date {
   font-size: 0.8rem;
   color: #6b7280;
+}
+
+/* Deactivate button styles */
+.deactivate-button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  /* Add user-select none so text isn't accidentally highlighted */
+  user-select: none;
+}
+
+.deactivate-button:hover {
+  background-color: #c0392b;
+}
+
+.deactivate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e74c3c;
+  color: #ddd;
+  /* Prevent hover color change when disabled */
+  pointer-events: none;
+}
+
+.deactivate-button:disabled:hover {
+  background-color: #e74c3c;
+  color: #ddd;
+}
+
+/* Deactivated post styles */
+.post-card.deactivated {
+  opacity: 0.6;
+  background-color: #f9f9f9;
+  border: 1px dashed #ccc;
+}
+
+.deactivated-notice {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+/* Activate button styles */
+.activate-button {
+  background-color: #27ae60; /* green */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+.activate-button:hover {
+  background-color: #1e8449;
+}
+
+.activate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #27ae60;
+  color: #ddd;
+  pointer-events: none;
+}
+
+.activate-button:disabled:hover {
+  background-color: #27ae60;
+  color: #ddd;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .deactivate-button {
+    font-size: 1.2rem;
+    padding: 8px 14px;
+  }
+
+  .post-media-wrapper {
+    height: 160px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -75,7 +166,4 @@
     margin: 1rem 0;
   }
   
-  .post-media-wrapper {
-    height: 160px;
-  }
 }
