@@ -1,8 +1,9 @@
-import { Platform, StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, Animated, Dimensions } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import axiosInstance from '../../api/axiosInstance';
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,10 +21,117 @@ interface UserType {
   role: string;
 }
 
+// Helper function to format time ago from timestamp
+const formatTimeAgo = (timestamp: string) => {
+  const now = new Date();
+  const createdAt = new Date(timestamp);
+  const diffMs = now.getTime() - createdAt.getTime();
+
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const totalHours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalHours / 24);
+
+  if (days > 0) {
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+
+  if (totalHours > 0) {
+    return `${totalHours} hour${totalHours !== 1 ? 's' : ''} ago`;
+  }
+
+  return `${totalMinutes} minute${totalMinutes !== 1 ? 's' : ''} ago`;
+};
+
+// API function to fetch featured events
+const getFeaturedEvents = async () => {
+  try {
+    const response = await axiosInstance.get('/api/events/featured');
+    console.log('Featured Events:', response.data);
+    
+    let userId = null;
+    let token = null;
+    
+    try {
+      token = await AsyncStorage.getItem("token");
+      if (token) {
+        const decoded = jwtDecode<UserType>(token);
+        userId = decoded.id;
+      }
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+    }
+
+    // Fetch attendance counts and user status for each featured event
+    const eventsWithCounts = await Promise.all(
+      response.data.map(async (event: any) => {
+        try {
+          // Fetch attendance counts
+          const countsResponse = await axiosInstance.get(`/api/events/${event.id}/attendance/counts`);
+          const rawCounts = countsResponse.data;
+          console.log(`Raw counts for featured event ${event.id}:`, rawCounts);
+          
+          // Map API response to expected format
+          const mappedCounts = {
+            going: rawCounts.goingCount || 0,
+            interested: rawCounts.interestedCount || 0
+          };
+          console.log(`Mapped counts for featured event ${event.id}:`, mappedCounts);
+          
+          // Fetch user status if logged in
+          let userStatus = 'none';
+          if (userId && token) {
+            try {
+              const userStatusResponse = await axiosInstance.get(
+                `/api/events/${event.id}/attendance/user/${userId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                }
+              );
+              const responseData = userStatusResponse.data;
+              const rawStatus = responseData.status;
+              userStatus = rawStatus ? rawStatus.toLowerCase() : 'none';
+              console.log(`User status for featured event ${event.id}:`, rawStatus, '-> normalized:', userStatus);
+            } catch (error: any) {
+              if (error.response?.status === 404) {
+                console.log(`User has not registered for featured event ${event.id} yet`);
+              } else {
+                console.error(`Failed to fetch user status for featured event ${event.id}:`, error);
+              }
+              userStatus = 'none';
+            }
+          }
+          
+          return {
+            ...event,
+            ...mappedCounts,
+            statusOfUser: userStatus,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch counts for featured event ${event.id}:`, error);
+          return {
+            ...event,
+            going: 0,
+            interested: 0,
+            statusOfUser: 'none',
+          };
+        }
+      })
+    );
+    
+    console.log('Featured events with counts and user status:', eventsWithCounts);
+    return eventsWithCounts;
+  } catch (error) {
+    console.error('Error fetching featured events:', error);
+    throw error;
+  }
+};
+
 // API function to fetch events
 const getAllEvents = async () => {
   try {
-    const response = await axiosInstance.get(`${BASE_URL}/api/events`);
+    const response = await axiosInstance.get('/api/events');
     console.log('Events:', response.data);
     
     let userId = null;
@@ -45,7 +153,7 @@ const getAllEvents = async () => {
       response.data.map(async (event: any) => {
         try {
           // Fetch attendance counts
-          const countsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${event.id}/attendance/counts`);
+          const countsResponse = await axiosInstance.get(`/api/events/${event.id}/attendance/counts`);
           const rawCounts = countsResponse.data;
           console.log(`Raw counts for event ${event.id}:`, rawCounts);
           
@@ -61,7 +169,7 @@ const getAllEvents = async () => {
           if (userId && token) {
             try {
               const userStatusResponse = await axiosInstance.get(
-                `${BASE_URL}/api/events/${event.id}/attendance/user/${userId}`,
+                `/api/events/${event.id}/attendance/user/${userId}`,
                 {
                   headers: {
                     'Authorization': `Bearer ${token}`,
@@ -107,28 +215,44 @@ const getAllEvents = async () => {
   }
 };
 
-const communityPosts: PostData[] = [
-  // {
-  //   id: '1',
-  //   club: 'Gavel Club of University of Colombo',
-  //   avatar: require('@/assets/images/event1.png'),
-  //   time: '1 day ago',
-  //   text: 'New blog post out now! "Why you should live away from home at least once in your life".',
-  //   image: require('@/assets/images/event2.png'),
-  //   likes: 52,
-  //   comments: 11,
-  // },
-  // {
-  //   id: '2',
-  //   club: 'Hiking Adventures',
-  //   avatar: require('@/assets/images/event2.png'),
-  //   time: '3 days ago',
-  //   text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
-  //   image: require('@/assets/images/event1.png'),
-  //   likes: 67,
-  //   comments: 15,
-  // },
-];
+// API function to fetch posts
+const getPosts = async () => {
+  try {
+    const response = await axiosInstance.get(`${BASE_URL}/api/posts`);
+    console.log('Fetched posts for home page:', response.data);
+
+    const formattedPosts: PostData[] = response.data.map((post: any) => {
+      const imageUrl = post.mediaPaths && post.mediaPaths.length > 0
+        ? post.mediaPaths[0].startsWith('uploads/')
+          ? `${BASE_URL}/${post.mediaPaths[0]}`
+          : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+        : null;
+
+      return {
+        id: post.id,
+        club: post.clubName || 'Unknown Club',
+        avatar: post.clubAvatar || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732',
+        time: formatTimeAgo(post.createdAt),
+        text: post.description || 'No description',
+        image: imageUrl || require('@/assets/images/event1.png'),
+        likes: post.likes || 0,
+        comments: post.comments || 0,
+      };
+    });
+
+    // Sort by creation date (newest first) and return only the latest 3
+    const sortedPosts = formattedPosts.sort((a, b) => {
+      // Since we already formatted the time, we'll rely on the API returning posts in order
+      // or we could use the original timestamp if available
+      return 0; // Keep the order from API (assuming it's already sorted by newest first)
+    });
+
+    return sortedPosts.slice(0, 3); // Return only the latest 3 posts
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return []; // Return empty array on error
+  }
+};
 
 // Event categories
 const EVENT_CATEGORIES = ['ALL', 'SPORTS', 'MUSIC', 'WELLNESS', 'OTHER', 'COMPETITION'] as const;
@@ -138,6 +262,11 @@ export default function HomePage() {
   const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
   const router = useRouter();
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   // State for events
   const [featuredEvents, setFeaturedEvents] = useState<EventData[]>([]);
@@ -149,19 +278,23 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<EventCategory>('ALL');
   const [loading, setLoading] = useState(true);
 
+  // State for posts
+  const [communityPosts, setCommunityPosts] = useState<PostData[]>([]);
+
   // Fetch events when component mounts
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const eventsData = await getAllEvents();
+        
+        // Fetch featured events, all events, and posts in parallel
+        const [featuredEventsData, eventsData, postsData] = await Promise.all([
+          getFeaturedEvents(),
+          getAllEvents(),
+          getPosts()
+        ]);
         
         // Categorize events based on different criteria
-        
-        // Featured Events - events with high engagement or marked as featured
-        const featured = eventsData
-          .filter((event: any) => event.featured || (event.going + event.interested) > 50)
-          .slice(0, 3);
         
         // Your Next Event - events user is going to or interested in
         const next = eventsData
@@ -199,16 +332,17 @@ export default function HomePage() {
           .sort((a: any, b: any) => b.interested - a.interested)
           .slice(0, 5);
 
-        // Set state with categorized events, fallback to all events if categories are empty
-        setFeaturedEvents(featured.length > 0 ? featured : eventsData.slice(0, 3));
+        // Set state with categorized events and posts
+        setFeaturedEvents(featuredEventsData); // Only show actual featured events from API
         setNextEvents(next); // Show empty if no events with user attendance
         setUpcomingEvents(upcoming);
         setPopularEvents(popular);
         setAllEvents(eventsData);
         setFilteredEvents(eventsData);
+        setCommunityPosts(postsData); // Set the latest 3 posts
         
       } catch (error) {
-        console.error('Failed to fetch events, using empty arrays:', error);
+        console.error('Failed to fetch data, using empty arrays:', error);
         // Use empty arrays if API fails
         setFeaturedEvents([]);
         setNextEvents([]);
@@ -216,13 +350,38 @@ export default function HomePage() {
         setPopularEvents([]);
         setAllEvents([]);
         setFilteredEvents([]);
+        setCommunityPosts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEvents();
+    fetchData();
   }, []);
+
+  // Animation effect when loading completes
+  useEffect(() => {
+    if (!loading) {
+      // Start entrance animations
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [loading]);
 
   // Update filtered events when allEvents changes
   useEffect(() => {
@@ -287,8 +446,13 @@ export default function HomePage() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" />
-        <ThemedText style={styles.loadingText}>Loading events...</ThemedText>
+        <LinearGradient
+          colors={['rgba(0, 122, 255, 0.1)', 'rgba(0, 122, 255, 0.05)', 'transparent']}
+          style={styles.loadingGradient}
+        />
+        <ThemedText type="title" style={styles.loadingLogo}>ReidConnect</ThemedText>
+        <ActivityIndicator size="large" color={tint} style={styles.loadingSpinner} />
+        <ThemedText style={styles.loadingText}>Discovering amazing events...</ThemedText>
       </ThemedView>
     );
   }
@@ -299,45 +463,105 @@ export default function HomePage() {
             showsVerticalScrollIndicator={false}>
          <SafeAreaView edges={['top']}>
 
-          {/* Header */}
-          <View style={styles.header}>
-            <View>
-              <ThemedText type="title" style={styles.logo}>ReidConnect</ThemedText>
-              <ThemedText type="defaultSemiBold" style={styles.welcomeText}>Good afternoon, Shenal 👋</ThemedText>
+          {/* Enhanced Header with Gradient */}
+          <Animated.View 
+            style={[
+              styles.headerContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            <LinearGradient
+              colors={['rgba(0, 122, 255, 0.08)', 'rgba(0, 122, 255, 0.02)', 'transparent']}
+              style={styles.headerGradient}
+            />
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <ThemedText type="title" style={styles.logo}>
+                  ReidConnect
+                </ThemedText>
+                <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
+                  Good afternoon, Shenal 👋
+                </ThemedText>
+              </View>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity 
+                  style={[styles.iconButton, styles.searchButton]}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['rgba(0, 122, 255, 0.1)', 'rgba(0, 122, 255, 0.05)']}
+                    style={styles.iconButtonGradient}
+                  />
+                  <Feather name="search" size={24} color={iconColor} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.iconButton, styles.notificationButton]}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['rgba(0, 122, 255, 0.1)', 'rgba(0, 122, 255, 0.05)']}
+                    style={styles.iconButtonGradient}
+                  />
+                  <Feather name="bell" size={24} color={iconColor} />
+                  <View style={styles.notificationDot} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.headerButtons}>
-              <TouchableOpacity style={styles.iconButton}>
-                <Feather name="search" size={24} color={iconColor} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Feather name="bell" size={24} color={iconColor} />
-                <View style={styles.notificationDot} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          </Animated.View>
 
           {/* Featured Events */}
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Featured Events</ThemedText>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredEventsContainer}>
-              {featuredEvents.map(event => (
-                    <EventCard 
-                      key={event.id} 
-                      event={event} 
-                      size="large" 
-                      onPress={() => handleEventPress(event.id)}
-                    />
-              ))}
-            </ScrollView>
-          </View>
+          {featuredEvents.length > 0 && (
+            <Animated.View 
+              style={[
+                styles.section, 
+                { 
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }] 
+                }
+              ]}
+            >
+              <View style={styles.sectionTitleContainer}>
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Featured Events
+                </ThemedText>
+                <View style={styles.sectionTitleAccent} />
+              </View>
+              <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredEventsContainer}>
+                {featuredEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
+                ))}
+              </ScrollView>
+            </Animated.View>
+          )}
 
           {/* Your Next Event */}
           {nextEvents.length > 0 && (
-            <View style={styles.section}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Your Next Event</ThemedText>
+            <Animated.View 
+              style={[
+                styles.section, 
+                { 
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }] 
+                }
+              ]}
+            >
+              <View style={styles.sectionTitleContainer}>
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Your Next Event
+                </ThemedText>
+                <View style={[styles.sectionTitleAccent, { backgroundColor: '#FF6B6B' }]} />
+              </View>
               <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -351,12 +575,25 @@ export default function HomePage() {
                       />
                 ))}
               </ScrollView>
-            </View>
+            </Animated.View>
           )}
 
           {/* Upcoming Event */}
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Upcoming Events</ThemedText>
+          <Animated.View 
+            style={[
+              styles.section, 
+              { 
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }] 
+              }
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Upcoming Events
+              </ThemedText>
+              <View style={[styles.sectionTitleAccent, { backgroundColor: '#4ECDC4' }]} />
+            </View>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -370,11 +607,24 @@ export default function HomePage() {
                     />
                 ))}
             </ScrollView>
-          </View>
+          </Animated.View>
 
           {/* Popular Event */}
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Popular Events</ThemedText>
+          <Animated.View 
+            style={[
+              styles.section, 
+              { 
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }] 
+              }
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Popular Events
+              </ThemedText>
+              <View style={[styles.sectionTitleAccent, { backgroundColor: '#FF9F43' }]} />
+            </View>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -388,24 +638,52 @@ export default function HomePage() {
                       />
               ))}
             </ScrollView>
-          </View>
+          </Animated.View>
 
           {/* Community Feed */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Community Feed</ThemedText>
-              <TouchableOpacity onPress={handleCommunitySeeMorePress}>
-                <ThemedText style={[styles.seeAllButton, { color: tint }]}>See All</ThemedText>
-              </TouchableOpacity>
-            </View>
-            {communityPosts.map(post => (
-                <PostCard key={post.id} post={post} />
-            ))}
-          </View>
+          {communityPosts.length > 0 && (
+            <Animated.View 
+              style={[
+                styles.section, 
+                { 
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }] 
+                }
+              ]}
+            >
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleContainer}>
+                  <ThemedText type="subtitle" style={styles.sectionTitle}>
+                    Community Feed
+                  </ThemedText>
+                  <View style={[styles.sectionTitleAccent, { backgroundColor: '#A55EEA' }]} />
+                </View>
+                <TouchableOpacity onPress={handleCommunitySeeMorePress}>
+                  <ThemedText style={[styles.seeAllButton, { color: tint }]}>See All</ThemedText>
+                </TouchableOpacity>
+              </View>
+              {communityPosts.map((post: PostData) => (
+                  <PostCard key={post.id} post={post} />
+              ))}
+            </Animated.View>
+          )}
 
           {/* All events categorize by all, and other categories tags*/}
-          <View style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>All Events</ThemedText>
+          <Animated.View 
+            style={[
+              styles.section, 
+              { 
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }] 
+              }
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                All Events
+              </ThemedText>
+              <View style={[styles.sectionTitleAccent, { backgroundColor: '#26D0CE' }]} />
+            </View>
             
             {/* Category Tags */}
             <ScrollView
@@ -477,7 +755,7 @@ export default function HomePage() {
                 </View>
               )}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Bottom padding */}
           <View style={styles.bottomPadding} />
@@ -494,13 +772,42 @@ const styles = StyleSheet.create({
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  loadingGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  loadingLogo: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  loadingSpinner: {
+    marginVertical: 20,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+    opacity: 0.7,
   },
   scrollView: {
     flex: 1,
+  },
+  headerContainer: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   header: {
     flexDirection: 'row',
@@ -508,15 +815,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 16,
+  },
+  headerLeft: {
+    flex: 1,
   },
   logo: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 5,
+    letterSpacing: 0.5,
   },
   welcomeText: {
     fontSize: 16,
+    opacity: 0.8,
   },
   userName: {
     fontSize: 24,
@@ -525,13 +837,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   iconButton: {
-    marginLeft: 16,
+    marginLeft: 12,
     position: 'relative',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  searchButton: {
+    padding: 12,
+  },
+  notificationButton: {
+    padding: 12,
+  },
+  iconButtonGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   notificationDot: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 8,
+    right: 8,
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -539,6 +866,20 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 24,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 4,
+  },
+  sectionTitleAccent: {
+    marginLeft: 8,
+    width: 30,
+    height: 3,
+    backgroundColor: '#007AFF',
+    borderRadius: 1.5,
+    opacity: 0.8,
   },
   sectionHeader: {
     flexDirection: 'row',

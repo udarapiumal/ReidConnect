@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { EventData } from '@/components/EventCard';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Mock data
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -55,28 +56,49 @@ const calendarDays = generateCalendarDays();
 
 const scheduledEvents: EventData[] = [
   {
-    id: '1',
-    title: 'Team Building Workshop',
-    category: 'Work',
+    id: 1,
+    clubId: 1,
+    name: 'Team Building Workshop',
+    description: 'A great team building workshop for everyone',
     date: 'July 5, 2025 • 10:00 AM - 2:00 PM',
-    location: 'Conference Room A',
-    image: 'https://images.unsplash.com/photo-1560439514-4e9645039924?q=80&w=2070&auto=format&fit=crop',
+    imagePath: 'https://images.unsplash.com/photo-1560439514-4e9645039924?q=80&w=2070&auto=format&fit=crop',
+    slotIds: [],
+    targetFaculties: [],
+    targetYears: [],
+    venueId: 1,
+    venueName: 'Conference Room A',
+    createdAt: '2025-07-01',
+    category: 'Work',
   },
   {
-    id: '2',
-    title: 'Yoga in the Park',
-    category: 'Fitness',
+    id: 2,
+    clubId: 2,
+    name: 'Yoga in the Park',
+    description: 'Relaxing yoga session in the park',
     date: 'July 5, 2025 • 8:00 AM - 9:00 AM',
-    location: 'Riverside Park',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2070&auto=format&fit=crop',
+    imagePath: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2070&auto=format&fit=crop',
+    slotIds: [],
+    targetFaculties: [],
+    targetYears: [],
+    venueId: 2,
+    venueName: 'Riverside Park',
+    createdAt: '2025-07-01',
+    category: 'Fitness',
   },
   {
-    id: '3',
-    title: 'Dinner with Friends',
-    category: 'Social',
+    id: 3,
+    clubId: 3,
+    name: 'Dinner with Friends',
+    description: 'Social dinner event with friends',
     date: 'July 5, 2025 • 7:00 PM',
-    location: 'Bistro on Main',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop',
+    imagePath: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop',
+    slotIds: [],
+    targetFaculties: [],
+    targetYears: [],
+    venueId: 3,
+    venueName: 'Bistro on Main',
+    createdAt: '2025-07-01',
+    category: 'Social',
   },
 ];
 
@@ -90,6 +112,8 @@ type CalendarDayProps = {
 };
 
 const CalendarDay = ({ day, isCurrentMonth, isToday, hasEvent, isEmpty, onPress }: CalendarDayProps) => {
+  const tintColor = useThemeColor({}, 'tint');
+  
   if (isEmpty) {
     return <View style={styles.emptyDay} />;
   }
@@ -98,7 +122,7 @@ const CalendarDay = ({ day, isCurrentMonth, isToday, hasEvent, isEmpty, onPress 
     <TouchableOpacity
       style={[
         styles.calendarDay,
-        isToday && styles.todayDay,
+        isToday && [styles.todayDay, { backgroundColor: tintColor }],
       ]}
       onPress={onPress}>
       <ThemedText style={[
@@ -108,7 +132,7 @@ const CalendarDay = ({ day, isCurrentMonth, isToday, hasEvent, isEmpty, onPress 
       ]}>
         {day}
       </ThemedText>
-      {hasEvent && <View style={styles.eventDot} />}
+      {hasEvent && <View style={[styles.eventDot, { backgroundColor: tintColor }]} />}
     </TouchableOpacity>
   );
 };
@@ -119,15 +143,18 @@ type EventListItemProps = {
 };
 
 const EventListItem = ({ event, onPress }: EventListItemProps) => {
+  const cardColor = useThemeColor({}, 'card');
+  const iconColor = useThemeColor({}, 'icon');
+  
   return (
-    <TouchableOpacity style={styles.eventItem} onPress={onPress}>
-      <View style={[styles.eventColor, { backgroundColor: getCategoryColor(event.category) }]} />
+    <TouchableOpacity style={[styles.eventItem, { backgroundColor: cardColor }]} onPress={onPress}>
+      <View style={[styles.eventColor, { backgroundColor: getCategoryColor(event.category || 'Other') }]} />
       <View style={styles.eventDetails}>
-        <ThemedText style={styles.eventTitle}>{event.title}</ThemedText>
+        <ThemedText style={styles.eventTitle}>{event.name}</ThemedText>
         <ThemedText style={styles.eventTime}>{event.date}</ThemedText>
         <View style={styles.eventLocation}>
-          <Feather name="map-pin" size={12} color="#888" />
-          <ThemedText style={styles.eventLocationText}>{event.location}</ThemedText>
+          <Feather name="map-pin" size={12} color={iconColor} />
+          <ThemedText style={styles.eventLocationText}>{event.venueName}</ThemedText>
         </View>
       </View>
     </TouchableOpacity>
@@ -151,24 +178,32 @@ const getCategoryColor = (category: string) => {
 
 export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState('July 2025');
+  
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const cardColor = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const tintColor = useThemeColor({}, 'tint');
+  const iconColor = useThemeColor({}, 'icon');
 
   const renderCalendarDay = ({ item, index }: { item: CalendarDayProps; index: number }) => (
     <CalendarDay {...item} />
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <View style={styles.content}>
         {/* Month Header */}
         <View style={styles.monthHeader}>
           <TouchableOpacity style={styles.monthNavButton}>
-            <Feather name="chevron-left" size={24} color="#333" />
+            <Feather name="chevron-left" size={24} color={iconColor} />
           </TouchableOpacity>
 
           <ThemedText style={styles.monthTitle}>{selectedMonth}</ThemedText>
 
           <TouchableOpacity style={styles.monthNavButton}>
-            <Feather name="chevron-right" size={24} color="#333" />
+            <Feather name="chevron-right" size={24} color={iconColor} />
           </TouchableOpacity>
         </View>
 
@@ -205,7 +240,6 @@ export default function CalendarPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
   },
   content: {
     flex: 1,
@@ -234,7 +268,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
-    color: '#888',
+    opacity: 0.6,
   },
   calendarContainer: {
     marginBottom: 24,
@@ -256,10 +290,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   otherMonthDay: {
-    color: '#ccc',
+    opacity: 0.3,
   },
   todayDay: {
-    backgroundColor: '#6200ee',
     borderRadius: 18,
   },
   todayText: {
@@ -270,7 +303,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#6200ee',
     position: 'absolute',
     bottom: 6,
   },
@@ -284,7 +316,6 @@ const styles = StyleSheet.create({
   },
   eventItem: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 12,
     padding: 16,
@@ -309,7 +340,7 @@ const styles = StyleSheet.create({
   },
   eventTime: {
     fontSize: 14,
-    color: '#666',
+    opacity: 0.7,
     marginBottom: 4,
   },
   eventLocation: {
@@ -318,7 +349,7 @@ const styles = StyleSheet.create({
   },
   eventLocationText: {
     fontSize: 12,
-    color: '#888',
+    opacity: 0.6,
     marginLeft: 4,
   },
 });
