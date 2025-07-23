@@ -507,6 +507,17 @@ export default function Dashboard() {
                     transition: all 0.2s ease;
                 }
 
+                .notification-footer button.mark-all-read {
+                    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                    color: white;
+                    border: 1px solid rgba(239, 68, 68, 0.3);
+                }
+
+                .notification-footer button.mark-all-read:hover {
+                    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+                    border-color: rgba(248, 113, 113, 0.5);
+                }
+
                 .notification-footer button:hover {
                     background: rgba(255, 255, 255, 0.1);
                     color: #ffffff;
@@ -969,7 +980,6 @@ export default function Dashboard() {
                 .stat-card:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-                    border-color: rgba(239, 68, 68, 0.3);
                 }
 
                 .stat-card i {

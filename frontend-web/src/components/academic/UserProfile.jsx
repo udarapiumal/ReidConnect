@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 
 const UserProfile = ({ onClose }) => {
-  const [user, setUser] = useState({
-    name: 'Academic Admin',
+const [user, setUser] = useState({
+    name: 'Sampath Perera',
     email: 'admin@reidconnect.edu',
     phone: '+94 123 4567',
     location: 'University of Colombo School of Computing',
     bio: 'Academic administrator passionate about creating efficient educational systems and supporting student success.',
     joinDate: 'January 2023',
-    avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400'
-  });
+    avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+});
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
