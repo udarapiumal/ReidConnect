@@ -35,15 +35,17 @@ const getAllEvents = async () => {
     console.log('Events:', response.data);
     
     let userId = null;
-try {
-  const token = await AsyncStorage.getItem("token");
-  if (token) {
-    const decoded = jwtDecode<UserType>(token);
-    userId = decoded.id;
-  }
-} catch (error) {
-  console.error('Failed to decode token:', error);
-}
+    let token = null;
+    
+    try {
+      token = await AsyncStorage.getItem("token");
+      if (token) {
+        const decoded = jwtDecode<UserType>(token);
+        userId = decoded.id;
+      }
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+    }
 
     
     // Fetch attendance counts and user status for each event
@@ -114,26 +116,26 @@ try {
 };
 
 const communityPosts: PostData[] = [
-  {
-    id: '1',
-    club: 'Gavel Club of University of Colombo',
-    avatar: require('@/assets/images/event1.png'),
-    time: '1 day ago',
-    text: 'New blog post out now! "Why you should live away from home at least once in your life".',
-    image: require('@/assets/images/event2.png'),
-    likes: 52,
-    comments: 11,
-  },
-  {
-    id: '2',
-    club: 'Hiking Adventures',
-    avatar: require('@/assets/images/event2.png'),
-    time: '3 days ago',
-    text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
-    image: require('@/assets/images/event1.png'),
-    likes: 67,
-    comments: 15,
-  },
+  // {
+  //   id: '1',
+  //   club: 'Gavel Club of University of Colombo',
+  //   avatar: require('@/assets/images/event1.png'),
+  //   time: '1 day ago',
+  //   text: 'New blog post out now! "Why you should live away from home at least once in your life".',
+  //   image: require('@/assets/images/event2.png'),
+  //   likes: 52,
+  //   comments: 11,
+  // },
+  // {
+  //   id: '2',
+  //   club: 'Hiking Adventures',
+  //   avatar: require('@/assets/images/event2.png'),
+  //   time: '3 days ago',
+  //   text: 'Beautiful day on the trail yesterday! Thanks to everyone who joined our mountain expedition.',
+  //   image: require('@/assets/images/event1.png'),
+  //   likes: 67,
+  //   comments: 15,
+  // },
 ];
 
 export default function HomePage() {

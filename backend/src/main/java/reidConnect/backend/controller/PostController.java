@@ -100,8 +100,7 @@ public class PostController {
     }
 
     //Get a post by ID
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')" +
-            "")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
         PostResponseDto post = postService.getPostById(id);
@@ -109,7 +108,7 @@ public class PostController {
     }
 
     // Get all posts by club ID
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<PostResponseDto>> getPostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getPostsByClubId(clubId);

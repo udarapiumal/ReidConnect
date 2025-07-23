@@ -38,11 +38,13 @@ public class SecurityConfiguration {
                 )
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/**", "/test","/uploads/**" ).permitAll()
+                        .requestMatchers("/auth/**", "/test", "/uploads/**").permitAll()
+                        .requestMatchers("/api/posts/uploads/**").permitAll() // Allow direct access to uploaded images
+                        .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
                         .requestMatchers("/api/courses/**").authenticated()
-                        .requestMatchers("/api/events/**").authenticated()
+                        .requestMatchers("/api/events/**").authenticated() // Other event operations still require auth
                         .requestMatchers("/api/staff/**").authenticated()
                         .requestMatchers("/api/venues/**").authenticated()
                         .requestMatchers("/api/comments/**").authenticated()
