@@ -10,6 +10,7 @@ export default function Dashboard() {
     const [currentMonth, setCurrentMonth] = useState("July 2025");
     const [activeNavItem, setActiveNavItem] = useState("Dashboard");
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     // Animation state for stat cards
     const [lectureCount, setLectureCount] = useState(0);
@@ -82,6 +83,49 @@ export default function Dashboard() {
         { date: "Wed, 16 July", time: "09:30", type: "Workshop", location: "Lab 305 • IT Dept", status: "Canceled" }
     ];
 
+    const notifications = [
+        { 
+            id: 1, 
+            title: "New Hall Booking Request", 
+            message: "Engineering Hall requested for AI Conference on July 25th", 
+            time: "2 min ago", 
+            type: "booking",
+            unread: true 
+        },
+        { 
+            id: 2, 
+            title: "Lecturer Registration", 
+            message: "Dr. Sarah Johnson has completed registration", 
+            time: "15 min ago", 
+            type: "registration",
+            unread: true 
+        },
+        { 
+            id: 3, 
+            title: "Event Approved", 
+            message: "Machine Learning Workshop has been approved", 
+            time: "1 hour ago", 
+            type: "approval",
+            unread: false 
+        },
+        { 
+            id: 4, 
+            title: "System Update", 
+            message: "Scheduled maintenance tonight at 2:00 AM", 
+            time: "3 hours ago", 
+            type: "system",
+            unread: false 
+        }
+    ];
+
+    const handleNotificationToggle = () => {
+        setShowNotifications(!showNotifications);
+    };
+
+    const handleNotificationClose = () => {
+        setShowNotifications(false);
+    };
+
     const calendarDays = [
         { day: 1, hasEvent: true }, { day: 2 }, { day: 3 }, { day: 4, hasEvent: true },
         { day: 5 }, { day: 6 }, { day: 7 }, { day: 8 }, { day: 9 }, { day: 10 },
@@ -92,15 +136,58 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="dashboard-container">
+        <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''}`}>
             <header className="header">
                 <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
                 <div className="admin-info">
-                    <i className="fa fa-bell" />
+                    <div className="notification-wrapper">
+                        <i className="fa fa-bell" onClick={handleNotificationToggle} />
+                        {notifications.filter(n => n.unread).length > 0 && (
+                            <span className="notification-badge"></span>
+                        )}
+                    </div>
                     <i className="fa fa-user" />
                     <span>Admin</span>
                 </div>
             </header>
+
+            {showNotifications && (
+                <>
+                    <div className="notification-overlay" onClick={handleNotificationClose}></div>
+                    <div className="notification-popup">
+                        <div className="notification-header">
+                            <h3>Notifications</h3>
+                            <button className="close-btn" onClick={handleNotificationClose}>
+                                <i className="fa fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="notification-list">
+                            {notifications.map((notification) => (
+                                <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
+                                    <div className="notification-icon">
+                                        <i className={`fa ${
+                                            notification.type === 'booking' ? 'fa-calendar' :
+                                            notification.type === 'registration' ? 'fa-user-plus' :
+                                            notification.type === 'approval' ? 'fa-check-circle' :
+                                            'fa-cog'
+                                        }`}></i>
+                                    </div>
+                                    <div className="notification-content">
+                                        <h4>{notification.title}</h4>
+                                        <p>{notification.message}</p>
+                                        <span className="notification-time">{notification.time}</span>
+                                    </div>
+                                    {notification.unread && <div className="unread-dot"></div>}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="notification-footer">
+                            <button className="mark-all-read">Mark all as read</button>
+                            <button className="view-all">View all notifications</button>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <div className="dashboard-content">
                 <AcademicSidebar 
@@ -206,6 +293,210 @@ export default function Dashboard() {
                     transition: all 0.3s ease;
                     background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
                     color: white;
+                }
+
+                .dashboard-container.blur-background .dashboard-content {
+                    filter: blur(8px);
+                    pointer-events: none;
+                }
+
+                .dashboard-container.blur-background .header {
+                    filter: blur(8px);
+                }
+
+                .notification-wrapper {
+                    position: relative;
+                    display: inline-block;
+                }
+
+                .notification-badge {
+                    position: absolute;
+                    top: -4px;
+                    right: -4px;
+                    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                    border-radius: 50%;
+                    width: 12px;
+                    height: 12px;
+                    border: 2px solid rgba(20, 20, 20, 0.95);
+                    animation: pulse 2s infinite;
+                }
+
+                @keyframes pulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.1); }
+                    100% { transform: scale(1); }
+                }
+
+                .notification-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    z-index: 9998;
+                    backdrop-filter: blur(4px);
+                }
+
+                .notification-popup {
+                    position: fixed;
+                    top: 80px;
+                    right: 24px;
+                    width: 380px;
+                    max-height: 500px;
+                    background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 16px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                    z-index: 9999;
+                    overflow: hidden;
+                    backdrop-filter: blur(20px);
+                    animation: slideIn 0.3s ease-out;
+                }
+
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px) scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                }
+
+                .notification-header {
+                    padding: 20px 20px 16px 20px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .notification-header h3 {
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #ffffff;
+                    letter-spacing: -0.02em;
+                }
+
+                .close-btn {
+                    background: none;
+                    border: none;
+                    color: rgba(255, 255, 255, 0.6);
+                    font-size: 16px;
+                    cursor: pointer;
+                    padding: 4px;
+                    border-radius: 6px;
+                    transition: all 0.2s ease;
+                }
+
+                .close-btn:hover {
+                    color: #ffffff;
+                    background: rgba(255, 255, 255, 0.1);
+                }
+
+                .notification-list {
+                    max-height: 320px;
+                    overflow-y: auto;
+                    padding: 8px 0;
+                }
+
+                .notification-item {
+                    padding: 16px 20px;
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    position: relative;
+                    transition: all 0.2s ease;
+                    cursor: pointer;
+                }
+
+                .notification-item:hover {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+
+                .notification-item.unread {
+                    background: rgba(59, 130, 246, 0.05);
+                    border-left: 3px solid #3b82f6;
+                }
+
+                .notification-icon {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(59, 130, 246, 0.2);
+                    flex-shrink: 0;
+                }
+
+                .notification-icon i {
+                    color: #60a5fa;
+                    font-size: 14px;
+                }
+
+                .notification-content {
+                    flex: 1;
+                }
+
+                .notification-content h4 {
+                    margin: 0 0 4px 0;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #ffffff;
+                    line-height: 1.3;
+                }
+
+                .notification-content p {
+                    margin: 0 0 6px 0;
+                    font-size: 13px;
+                    color: rgba(255, 255, 255, 0.7);
+                    line-height: 1.4;
+                }
+
+                .notification-time {
+                    font-size: 11px;
+                    color: rgba(255, 255, 255, 0.5);
+                    font-weight: 500;
+                }
+
+                .unread-dot {
+                    width: 8px;
+                    height: 8px;
+                    background: #3b82f6;
+                    border-radius: 50%;
+                    flex-shrink: 0;
+                    margin-top: 4px;
+                }
+
+                .notification-footer {
+                    padding: 16px 20px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    display: flex;
+                    gap: 12px;
+                }
+
+                .notification-footer button {
+                    flex: 1;
+                    padding: 8px 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    border-radius: 8px;
+                    background: rgba(255, 255, 255, 0.05);
+                    color: rgba(255, 255, 255, 0.8);
+                    font-size: 12px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .notification-footer button:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    color: #ffffff;
+                    border-color: rgba(255, 255, 255, 0.3);
                 }
 
                 .header {
@@ -736,6 +1027,16 @@ export default function Dashboard() {
                     }
                     .stat-card h3 {
                         font-size: 24px;
+                    }
+                    .notification-popup {
+                        right: 12px;
+                        left: 12px;
+                        width: auto;
+                        top: 90px;
+                    }
+                    .notification-header, .notification-item, .notification-footer {
+                        padding-left: 16px;
+                        padding-right: 16px;
                     }
                 }
             `}</style>
