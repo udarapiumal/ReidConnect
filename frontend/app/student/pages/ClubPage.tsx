@@ -1,539 +1,970 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, RefreshControl, Text, Dimensions, StatusBar } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { BASE_URL } from '@/constants/config';
 import axios from 'axios';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/config';
+import { useStudent } from "../../context/StudentContext";
+import { useThemeColor } from '../../../hooks/useThemeColor';
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
+const imageSize = (screenWidth - 4) / 3; // 3 columns with 2px gaps
+const router = useRouter();
 
-export type ClubDetailData = {
-  id: number;
-  clubName: string;
-  userId: number;
-  website: string;
-  profilePicture: string;
-  bio: string;
-  subCount: number;
-  isJoined?: boolean;
-  description?: string;
-  location?: string;
-  contactEmail?: string;
-  establishedYear?: number;
-  category?: string;
+const formatTimeAgo = (timestamp: string) => {
+  const now = new Date();
+  const createdAt = new Date(timestamp);
+  const diffMs = now.getTime() - createdAt.getTime();
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const totalHours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const minutes = totalMinutes % 60;
+  let result = '';
+  if (days > 0) result += `${days}d `;
+  if (hours > 0) result += `${hours}h `;
+  if (minutes > 0 || (!days && !hours)) result += `${minutes}m `;
+  return result.trim() + ' ago';
 };
 
-// API function to fetch club details
-const fetchClubDetails = async (clubId: string): Promise<ClubDetailData> => {
-  try {
-    // Get token from AsyncStorage
-    const storedToken = await AsyncStorage.getItem('token');
-    if (!storedToken) {
-      console.warn('No authentication token found');
-      throw new Error('Authentication required');
-    }
-
-    const response = await axios.get(`${BASE_URL}/api/club/${clubId}`, {
-      headers: {
-        Authorization: `Bearer ${storedToken}`
-      }
-    });
-
-    return {
-      ...response.data,
-      isJoined: false, // This could be determined based on user's membership status
-    };
-  } catch (error) {
-    console.error('Error fetching club details:', error);
-    throw error;
-  }
-};
-
-export default function ClubPage() {
+export default function ClubProfileScreen() {
+  const { token, user } = useStudent();
   const { clubId } = useLocalSearchParams();
-  const [clubDetails, setClubDetails] = useState<ClubDetailData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
-  const [isJoined, setIsJoined] = useState(false);
-  const router = useRouter();
+  const [selectedTab, setSelectedTab] = useState('posts');
+  const [posts, setPosts] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [subCount, setSubCount] = useState(0);
+  const [eventCount, setEventCount] = useState(0);
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [postStats, setPostStats] = useState({}); // Store like/comment counts for posts
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [clubDetails, setClubDetails] = useState<any>(null);
+  const [subscribeLoading, setSubscribeLoading] = useState(false);
 
+  // Get theme colors
   const backgroundColor = useThemeColor({}, 'background');
-  const cardColor = useThemeColor({}, 'card');
   const textColor = useThemeColor({}, 'text');
-  const secondaryTextColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
-  const iconColor = useThemeColor({}, 'icon');
-  const tintColor = useThemeColor({}, 'tint');
+  const buttonColor = useThemeColor({}, 'button');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const cardColor = useThemeColor({}, 'card');
   const borderColor = useThemeColor({}, 'border');
 
-  // Load club details function
-  const loadClubDetails = async (isRefresh = false) => {
-    if (!clubId || typeof clubId !== 'string') {
-      setError('Invalid club ID');
-      setLoading(false);
-      return;
-    }
-
+  // Function to fetch club details (should be passed as props or from route params)
+  const fetchClubDetails = async (clubId: string) => {
     try {
-      if (!isRefresh) setLoading(true);
-      setError(null);
-      const details = await fetchClubDetails(clubId);
-      setClubDetails(details);
-      setIsJoined(details.isJoined || false);
+      const res = await axios.get(`${BASE_URL}/api/club/${clubId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setClubDetails(res.data);
+    } catch (error) {
+      console.error('Error fetching club details:', error);
+    }
+  };
+
+  // Function to check subscription status
+  const checkSubscriptionStatus = async () => {
+    if (!clubDetails?.id) return;
+    try {
+      const res = await axios.get(`${BASE_URL}/api/subscriptions/check/${clubDetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsSubscribed(res.data.isSubscribed || false);
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      setIsSubscribed(false);
+    }
+  };
+
+  // Function to handle subscription
+  const handleSubscribe = async () => {
+    if (!clubDetails?.id || subscribeLoading || !user?.id) return;
+    
+    setSubscribeLoading(true);
+    try {
+      if (isSubscribed) {
+        // Unsubscribe
+        await axios.post(`${BASE_URL}/api/subscriptions/unsubscribe`, 
+          { 
+            userId: user.id,
+            clubId: clubDetails.id 
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsSubscribed(false);
+        Alert.alert('Success', 'Unsubscribed successfully!');
+      } else {
+        // Subscribe
+        await axios.post(`${BASE_URL}/api/subscriptions/subscribe`, 
+          { 
+            userId: user.id,
+            clubId: clubDetails.id 
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsSubscribed(true);
+        Alert.alert('Success', 'Subscribed successfully!');
+      }
+      fetchSubCount(); // Refresh subscriber count
+    } catch (error) {
+      console.error('Error handling subscription:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setSubscribeLoading(false);
+    }
+  };
+
+  const fetchSubCount = async () => {
+    try {
+      const [subCountResponse] = await Promise.all([
+        axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ]);
+      console.log(subCountResponse.data);
+      setSubCount(subCountResponse.data || 0);
+    } catch (error) {
+      console.error(`Error fetching subCount:`, error);
+      return { subCount: 0 };
+    }
+  };
+
+  const fetchPostStats = async (postId: number) => {
+    try {
+      const [likeCountRes, commentCountRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/posts/${postId}/likes/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+ 
+        axios.get(`${BASE_URL}/api/comments/post/${postId}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      
+      return {
+        likeCount: likeCountRes.data || 0,
+        commentCount: commentCountRes.data || 0
+      };
+    } catch (error) {
+      console.error(`Error fetching post stats for post ${postId}:`, error);
+      return { likeCount: 0, commentCount: 0 };
+    }
+  };
+
+  const fetchAllPostStats = async (postsData: any[]) => {
+    try {
+      const statsPromises = postsData.map((post: any) => fetchPostStats(post.id));
+      const statsResults = await Promise.all(statsPromises);
+      
+      const statsMap: any = {};
+      postsData.forEach((post: any, index: number) => {
+        statsMap[post.id] = statsResults[index];
+      });
+      
+      setPostStats(statsMap);
+    } catch (error) {
+      console.error('Error fetching all post stats:', error);
+    }
+  };
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const postsData = res.data || [];
+      setPosts(postsData);
+      
+      // Fetch stats for all posts
+      if (postsData.length > 0) {
+        await fetchAllPostStats(postsData);
+      }
     } catch (err) {
-      setError('Failed to load club details. Please try again.');
-      console.error('Error loading club details:', err);
+      console.error("Error fetching posts:", err);
     } finally {
       setLoading(false);
-      if (isRefresh) setRefreshing(false);
     }
   };
 
-  // Fetch club details on component mount
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/events/club/${clubDetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEvents(res.data || []);
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCounts = async () => {
+    try {
+      const [postRes, eventRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${BASE_URL}/api/events/count/${clubDetails.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      setPostCount(postRes.data || 0);
+      setEventCount(eventRes.data || 0);
+    } catch (error) {
+      console.error('Error fetching counts:', error);
+    }
+  };
+
   useEffect(() => {
-    loadClubDetails();
+    if (selectedTab === 'posts') fetchPosts();
+    else fetchEvents();
+  }, [selectedTab]);
+
+  useEffect(() => {
+    if (clubDetails?.id) {
+      fetchCounts();
+      fetchSubCount();
+      checkSubscriptionStatus();
+    }
+  }, [clubDetails]);
+
+  // Initialize club details from route params
+  useEffect(() => {
+    if (clubId && typeof clubId === 'string') {
+      fetchClubDetails(clubId);
+    }
   }, [clubId]);
 
-  // Pull to refresh handler
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadClubDetails(true);
+  const currentData = selectedTab === 'posts' ? posts : events;
+
+  const handleItemPress = (index: number) => {
+    setSelectedIndex(index);
+    setShowDetailView(true);
   };
 
-  const handleBackPress = () => {
-    router.back();
+  const renderGridItem = ({ item, index }: { item: any; index: number }) => {
+    // Handle different image path structures for posts vs events
+    const imageUri = selectedTab === 'posts' 
+      ? (item.mediaPaths?.[0] ? `${BASE_URL}/${item.mediaPaths[0]}` : null)
+      : (item.imagePath ? `${BASE_URL}/${item.imagePath}` : null);
+    
+    return (
+      <TouchableOpacity 
+        style={styles.gridItem} 
+        onPress={() => handleItemPress(index)}
+      >
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.gridImage}
+            onError={(error) => {
+              console.log('Image load error:', error.nativeEvent.error);
+            }}
+          />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <Ionicons 
+              name={selectedTab === 'posts' ? "image-outline" : "calendar-outline"} 
+              size={32} 
+              color="#666" 
+            />
+          </View>
+        )}
+        {/* Multiple images indicator - only for posts */}
+        {selectedTab === 'posts' && item.mediaPaths && item.mediaPaths.length > 1 && (
+          <View style={styles.multipleImagesIndicator}>
+            <Ionicons name="copy-outline" size={16} color="#fff" />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
   };
 
-  const handleJoinToggle = async () => {
-    if (!clubDetails) return;
+  const renderDetailItem = ({ item, index }: { item: any; index: number }) => {
+    const isEvent = selectedTab === 'events';
+    const images = isEvent ? (item.imagePath ? [item.imagePath] : []) : (item.mediaPaths || []);
+    
+    // Get post stats for this item (only for posts)
+    const stats = !isEvent ? (postStats as any)[item.id] || { likeCount: 0, commentCount: 0 } : null;
+    
+    // Format target years and faculties for events
+    const formatTargets = (targets: string[]) => {
+      if (!targets || targets.length === 0) return '';
+      return targets.map((target: string) => target.replace('_', ' ')).join(', ');
+    };
 
-    try {
-      const storedToken = await AsyncStorage.getItem('token');
-      if (!storedToken) {
-        Alert.alert('Error', 'Authentication required');
-        return;
-      }
-
-      const endpoint = isJoined ? 'leave' : 'join';
-      await axios.post(`${BASE_URL}/api/club/${clubDetails.id}/${endpoint}`, {}, {
-        headers: {
-          Authorization: `Bearer ${storedToken}`
-        }
+    // Format date for events
+    const formatEventDate = (dateString: string) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
       });
+    };
 
-      setIsJoined(!isJoined);
-      // Update subCount based on join/leave action
-      setClubDetails(prev => prev ? {
-        ...prev,
-        subCount: isJoined ? prev.subCount - 1 : prev.subCount + 1
-      } : null);
-
-      Alert.alert(
-        'Success', 
-        isJoined ? `You left ${clubDetails.clubName}` : `You joined ${clubDetails.clubName}`
-      );
-    } catch (error) {
-      console.error('Error toggling club membership:', error);
-      Alert.alert('Error', 'Failed to update membership status');
-    }
-  };
-
-  const handleRetry = () => {
-    loadClubDetails();
-  };
-
-  if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-        <View style={[styles.container, { backgroundColor }]}>
-          <StatusBar barStyle="light-content" backgroundColor={backgroundColor} />
-          <View style={[styles.header, { backgroundColor }]}>
-            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={iconColor} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: textColor }]}>Club Details</Text>
-          </View>
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={tintColor} />
-            <Text style={[styles.loadingText, { color: secondaryTextColor }]}>
-              Loading club details...
-            </Text>
+      <View style={styles.detailCard}>
+        <View style={styles.detailHeader}>
+          <Image
+            source={{ 
+                uri: clubDetails.imagePath?.startsWith('uploads/') 
+                ? `${BASE_URL}/${clubDetails.imagePath}` 
+                : `${BASE_URL}/uploads/${clubDetails.imagePath}` 
+            }}
+            style={styles.detailAvatar}
+          />
+          <View style={styles.detailHeaderText}>
+            <Text style={[styles.detailClubName, { color: textColor }]}>{clubDetails?.clubName || "Club Name"}</Text>
+            <Text style={styles.detailTime}>{formatTimeAgo(item.createdAt)}</Text>
           </View>
         </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-        <View style={[styles.container, { backgroundColor }]}>
-          <StatusBar barStyle="light-content" backgroundColor={backgroundColor} />
-          <View style={[styles.header, { backgroundColor }]}>
-            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={iconColor} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: textColor }]}>Club Details</Text>
-          </View>
-          <View style={styles.centerContainer}>
-            <Ionicons name="alert-circle" size={48} color={iconColor} />
-            <Text style={[styles.errorText, { color: textColor }]}>
-              {error}
+        
+        {/* Event venue header - only for events */}
+        {isEvent && (
+          <View style={styles.eventVenue}>
+            <Ionicons name="location-outline" size={16} color="#0095f6" />
+            <Text style={styles.venueText}>
+              {item.venueName || item.venue || 'Venue TBA'}
             </Text>
-            <TouchableOpacity 
-              style={[styles.retryButton, { backgroundColor: cardColor, borderColor }]}
-              onPress={handleRetry}
-            >
-              <Text style={[styles.retryButtonText, { color: textColor }]}>
-                Retry
+          </View>
+        )}
+        
+        <ScrollView 
+          horizontal 
+          pagingEnabled 
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageContainer}
+        >
+          {images.length > 0 ? (
+            images.map((path: string, idx: number) => (
+              <Image
+                key={idx}
+                source={{ uri: `${BASE_URL}/${path}` }}
+                style={styles.detailImage}
+                onError={(error) => {
+                  console.log('Detail image load error:', error.nativeEvent.error);
+                }}
+              />
+            ))
+          ) : (
+            <View style={styles.detailPlaceholder}>
+              <Ionicons 
+                name={isEvent ? "calendar-outline" : "image-outline"} 
+                size={64} 
+                color="#666" 
+              />
+              <Text style={styles.placeholderText}>
+                {isEvent ? 'Event image' : 'No image available'}
               </Text>
-            </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+        
+        {images.length > 1 && (
+          <View style={styles.imageIndicators}>
+            {images.map((_: any, idx: number) => (
+              <View key={idx} style={styles.indicator} />
+            ))}
           </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
+        )}
 
-  if (!clubDetails) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-        <View style={[styles.container, { backgroundColor }]}>
-          <StatusBar barStyle="light-content" backgroundColor={backgroundColor} />
-          <View style={[styles.header, { backgroundColor }]}>
-            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={iconColor} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: textColor }]}>Club Details</Text>
+        {/* Post Actions and Stats - only for posts */}
+        {!isEvent && (
+          <View style={styles.postActions}>
+            <View style={styles.postActionButtons}>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="heart-outline" size={24} color={textColor} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="chatbubble-outline" size={24} color={textColor} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="paper-plane-outline" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.centerContainer}>
-            <Text style={[styles.errorText, { color: textColor }]}>
-              Club not found
-            </Text>
+        )}
+
+        {/* Like and Comment Count - only for posts */}
+        {!isEvent && stats && (
+          <View style={styles.postStats}>
+            {stats.likeCount > 0 && (
+              <Text style={[styles.likesText, { color: textColor }]}>
+                {stats.likeCount === 1 ? '1 like' : `${stats.likeCount} likes`}
+              </Text>
+            )}
+            {stats.commentCount > 0 && (
+              <TouchableOpacity>
+                <Text style={styles.commentsText}>
+                  View {stats.commentCount === 1 ? '1 comment' : `all ${stats.commentCount} comments`}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
+        )}
+        
+        <View style={styles.detailContent}>
+          {/* Event name - highlighted for events */}
+          {isEvent && (
+            <Text style={[styles.eventName, { color: textColor }]}>{item.name}</Text>
+          )}
+          
+          <Text style={[styles.detailDescription, { color: textColor }]}>
+            {item.description || 'No description'}
+          </Text>
+          
+          {/* Event specific details */}
+          {isEvent && (
+            <View style={styles.eventDetails}>
+              {item.date && (
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="calendar" size={16} color="#0095f6" />
+                  <Text style={styles.eventDetailText}>{formatEventDate(item.date)}</Text>
+                </View>
+              )}
+              
+              {item.targetYears && item.targetYears.length > 0 && (
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="school" size={16} color="#0095f6" />
+                  <Text style={styles.eventDetailText}>
+                    Target Years: {formatTargets(item.targetYears)}
+                  </Text>
+                </View>
+              )}
+              
+              {item.targetFaculties && item.targetFaculties.length > 0 && (
+                <View style={styles.eventDetailRow}>
+                  <Ionicons name="business" size={16} color="#0095f6" />
+                  <Text style={styles.eventDetailText}>
+                    Faculties: {formatTargets(item.targetFaculties)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
-      </SafeAreaView>
+      </View>
     );
-  }
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-      <View style={[styles.container, { backgroundColor }]}>
-        <StatusBar barStyle="light-content" backgroundColor={backgroundColor} />
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+      <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                   <Ionicons name="arrow-back" size={24} color={textColor} />
+                </TouchableOpacity>
+                
+                  <Text style={[styles.title, { color: textColor }]}>Profile</Text>
+                
+                <View style={styles.headerActions}>
+                </View>
+              </View>
+      {/* Header */}
+      <View style={[styles.profileHeader, { backgroundColor }]}>
+        <View style={styles.profileTopRow}>
+          {clubDetails?.profilePicture ? (
+              <Image
+          source={{
+              uri: `${BASE_URL}${clubDetails.profilePicture}`
+          }}
+          style={styles.avatar}
+          />
+          ) : (
+              <Image
+              source={require('../../../assets/images/default-profile.png')} // fallback image
+              style={styles.avatar}
+              />
+          )}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: textColor }]}>{postCount}</Text>
+              <Text style={[styles.statLabel, { color: textColor }]}>posts</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: textColor }]}>{eventCount}</Text>
+              <Text style={[styles.statLabel, { color: textColor }]}>events</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: textColor }]}>{subCount || 0}</Text>
+              <Text style={[styles.statLabel, { color: textColor }]}>subscribers</Text>
+            </View>
+          </View>
+        </View>
         
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor }]}>
-          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={iconColor} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: textColor }]}>Club Details</Text>
+        <View style={styles.profileInfo}>
+          <Text style={[styles.clubName, { color: textColor }]}>{clubDetails?.clubName || "Club Name"}</Text>
+          <Text style={[styles.clubBio, { color: textColor }]}>
+            {clubDetails?.bio || "Club Name"}
+          </Text>
         </View>
 
-        <ScrollView 
-          style={styles.scrollView}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={tintColor}
-              colors={[tintColor]}
-            />
-          }
-        >
-          {/* Cover Image with Centered Profile Picture */}
-          <View style={[styles.coverSection, { backgroundColor: cardColor }]}>
-            <View style={[styles.coverImageContainer, { backgroundColor: cardColor }]}>
-              <Image
-                source={require("@/assets/clubImages/profilePictures/rota_cover.jpg")}
-                style={styles.coverImage}
-                resizeMode="cover"
-              />
-            </View>
-            
-            {/* Profile Picture centered on cover */}
-            <View style={styles.profilePictureSection}>
-              <View style={styles.profilePictureContainer}>
-                <View style={[styles.profilePicture, { backgroundColor: cardColor, borderColor: backgroundColor }]}>
-                  <Image 
-                    source={imageError ? require("@/assets/clubImages/profilePictures/1.jpeg") : { uri: clubDetails.profilePicture }}
-                    style={styles.profilePictureImage}
-                    onError={() => setImageError(true)}
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Club Info Section */}
-          <View style={[styles.clubInfoSection, { backgroundColor }]}>
-            {/* Club Name */}
-            <Text style={[styles.clubName, { color: textColor }]}>{clubDetails.clubName}</Text>
-            
-            {/* Member Count */}
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Ionicons name="people" size={16} color={iconColor} />
-                <Text style={[styles.statText, { color: secondaryTextColor }]}>{clubDetails.subCount} members</Text>
-              </View>
-            </View>
-
-            {/* Subscribe Button */}
-            <TouchableOpacity 
-              style={[
-                styles.subscribeButton, 
-                { backgroundColor: isJoined ? secondaryTextColor : tintColor }
-              ]}
-              onPress={handleJoinToggle}
-            >
-              <Ionicons 
-                name={isJoined ? "checkmark" : "add"} 
-                size={20} 
-                color={backgroundColor} 
-                style={styles.subscribeIcon}
-              />
-              <Text style={[styles.subscribeText, { color: backgroundColor }]}>
-                {isJoined ? 'Subscribed' : 'Subscribe'}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
+            style={[styles.subscribeButton, { backgroundColor: isSubscribed ? '#666' : buttonColor }]}
+            onPress={handleSubscribe}
+            disabled={subscribeLoading}
+          >
+            {subscribeLoading ? (
+              <ActivityIndicator size="small" color={buttonTextColor} />
+            ) : (
+              <Text style={[styles.subscribeButtonText, { color: buttonTextColor }]}>
+                {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
               </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Club Details */}
-          <View style={[styles.profileFields, { backgroundColor }]}>
-            {/* Website Field */}
-            {clubDetails.website && (
-              <View style={styles.fieldContainer}>
-                <Text style={[styles.fieldLabel, { color: textColor }]}>Website</Text>
-                <View style={styles.fieldRow}>
-                  <Text style={[styles.fieldValue, { color: secondaryTextColor }]}>{clubDetails.website}</Text>
-                  <Ionicons name="globe-outline" size={16} color={iconColor} />
-                </View>
-              </View>
             )}
-
-            {/* Bio Field */}
-            <View style={styles.fieldContainer}>
-              <Text style={[styles.fieldLabel, { color: textColor }]}>About</Text>
-              <View style={styles.fieldRow}>
-                <Text style={[styles.fieldValue, styles.bioText, { color: secondaryTextColor }]}>
-                  {clubDetails.bio || 'No description available.'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Additional Info */}
-            {clubDetails.category && (
-              <View style={styles.fieldContainer}>
-                <Text style={[styles.fieldLabel, { color: textColor }]}>Category</Text>
-                <View style={styles.fieldRow}>
-                  <Text style={[styles.fieldValue, { color: secondaryTextColor }]}>{clubDetails.category}</Text>
-                  <Ionicons name="pricetag-outline" size={16} color={iconColor} />
-                </View>
-              </View>
-            )}
-
-            {clubDetails.location && (
-              <View style={styles.fieldContainer}>
-                <Text style={[styles.fieldLabel, { color: textColor }]}>Location</Text>
-                <View style={styles.fieldRow}>
-                  <Text style={[styles.fieldValue, { color: secondaryTextColor }]}>{clubDetails.location}</Text>
-                  <Ionicons name="location-outline" size={16} color={iconColor} />
-                </View>
-              </View>
-            )}
-
-            {clubDetails.contactEmail && (
-              <View style={styles.fieldContainer}>
-                <Text style={[styles.fieldLabel, { color: textColor }]}>Contact</Text>
-                <View style={styles.fieldRow}>
-                  <Text style={[styles.fieldValue, { color: secondaryTextColor }]}>{clubDetails.contactEmail}</Text>
-                  <Ionicons name="mail-outline" size={16} color={iconColor} />
-                </View>
-              </View>
-            )}
-
-            {clubDetails.establishedYear && (
-              <View style={styles.fieldContainer}>
-                <Text style={[styles.fieldLabel, { color: textColor }]}>Established</Text>
-                <View style={styles.fieldRow}>
-                  <Text style={[styles.fieldValue, { color: secondaryTextColor }]}>{clubDetails.establishedYear}</Text>
-                  <Ionicons name="calendar-outline" size={16} color={iconColor} />
-                </View>
-              </View>
-            )}
-          </View>
-
-          {/* Bottom padding */}
-          <View style={styles.bottomPadding} />
-        </ScrollView>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Tab Switcher */}
+      <View style={[styles.tabSwitcher, { borderTopColor: borderColor }]}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('posts')}
+          style={[styles.tabButton, selectedTab === 'posts' && { borderBottomColor: textColor }]}
+        >
+          <Ionicons 
+            name="grid-outline" 
+            size={24} 
+            color={selectedTab === 'posts' ? textColor : '#666'} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSelectedTab('events')}
+          style={[styles.tabButton, selectedTab === 'events' && { borderBottomColor: textColor }]}
+        >
+          <Ionicons 
+            name="calendar-outline" 
+            size={24} 
+            color={selectedTab === 'events' ? textColor : '#666'} 
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Grid Content */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      ) : (
+        <FlatList
+          data={currentData}
+          renderItem={renderGridItem}
+          numColumns={3}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.gridContainer}
+          ItemSeparatorComponent={() => <View style={{ height: 2 }} />}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Feather 
+                name={selectedTab === 'posts' ? "image" : "calendar"} 
+                size={48} 
+                color="#666" 
+              />
+              <Text style={[styles.emptyText, { color: textColor }]}>
+                No {selectedTab} yet
+              </Text>
+            </View>
+          )}
+        />
+      )}
+
+      {/* Detail View Modal */}
+      <Modal
+        visible={showDetailView}
+        animationType="slide"
+        onRequestClose={() => setShowDetailView(false)}
+      >
+        <SafeAreaView style={[styles.detailContainer, { backgroundColor }]}>
+          <View style={[styles.detailTopBar, { borderBottomColor: borderColor }]}>
+            <TouchableOpacity 
+              onPress={() => setShowDetailView(false)}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color={textColor} />
+            </TouchableOpacity>
+            <Text style={[styles.detailTitle, { color: textColor }]}>
+              {selectedTab === 'posts' ? 'Posts' : 'Events'}
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          <FlatList
+            data={currentData}
+            renderItem={renderDetailItem}
+            keyExtractor={(item) => item.id.toString()}
+            initialScrollIndex={selectedIndex}
+            getItemLayout={(data, index) => ({
+              length: screenWidth + 200, // Approximate item height
+              offset: (screenWidth + 200) * index,
+              index,
+            })}
+            showsVerticalScrollIndicator={false}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
+  container: { 
+    flex: 1, 
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+  },
+  searchInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    fontSize: 16,
+    color: 'white',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "500",
-    flex: 1,
+  addButton: {
+    width: 44,
+    height: 24,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
   },
-  scrollView: {
-    flex: 1,
+  searchButton: {
+    width: 44,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  coverSection: {
-    position: "relative",
-    width: "100%",
-    height: 200,
+  searchButtonActive: {
+    backgroundColor: '#007aff',
+    borderColor: '#007aff',
   },
-  coverImageContainer: {
-    width: "100%",
-    height: "100%",
-  },
-  coverImage: {
-    width: "100%",
-    height: "100%",
-  },
-  profilePictureSection: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profilePictureContainer: {
-    position: "relative",
-  },
-  profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 4,
-    overflow: "hidden",
-  },
-  profilePictureImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 50,
-  },
-  clubInfoSection: {
+  
+  // Profile Header
+  profileHeader: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingVertical: 16,
   },
-  clubName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 8,
+  profileTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
+  avatar: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    marginRight: 24,
+  },
+  statsContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   statItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    alignItems: 'center',
   },
-  statText: {
-    fontSize: 16,
-    marginLeft: 4,
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  profileInfo: {
+    marginBottom: 16,
+  },
+  clubName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  clubBio: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  actionButtons: {
+    marginTop: 16,
   },
   subscribeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    width: '100%',
     paddingVertical: 12,
-    paddingHorizontal: 24,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subscribeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  followButton: {
+    flex: 1,
+    backgroundColor: '#0095f6',
+    paddingVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  followButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  messageButton: {
+    flex: 1,
+    backgroundColor: '#262626',
+    paddingVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  messageButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Tab Switcher
+  tabSwitcher: {
+    flexDirection: 'row',
+    borderTopWidth: 0.5,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#fff',
+  },
+
+  // Grid
+  gridContainer: {
+    paddingTop: 2,
+  },
+  gridItem: {
+    width: imageSize,
+    height: imageSize,
+    position: 'relative',
+    backgroundColor: '#1a1a1a', // Keep this as fallback
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1a1a1a', // Keep this as fallback
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  multipleImagesIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 18,
+    marginTop: 16,
+  },
+
+  // Detail View
+  detailContainer: {
+    flex: 1,
+  },
+  detailTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  backButton: {
+    padding: 4,
+  },
+  detailTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  detailCard: {
+    marginBottom: 24,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  detailAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+  },
+  detailHeaderText: {
+    flex: 1,
+  },
+  detailClubName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  detailTime: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 1,
+  },
+  imageContainer: {
+    height: screenWidth,
+  },
+  detailImage: {
+    width: screenWidth,
+    height: screenWidth,
+  },
+  detailPlaceholder: {
+    width: screenWidth,
+    height: screenWidth,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#666',
+    fontSize: 14,
     marginTop: 8,
   },
-  subscribeIcon: {
-    marginRight: 8,
+  imageIndicators: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 6,
   },
-  subscribeText: {
-    fontSize: 16,
-    fontWeight: "600",
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#0095f6',
   },
-  profileFields: {
+  
+  // Post Actions and Stats (new styles)
+  postActions: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
   },
-  fieldContainer: {
-    marginBottom: 24,
+  postActionButtons: {
+    flexDirection: 'row',
+    gap: 16,
   },
-  fieldLabel: {
+  actionButton: {
+    padding: 4,
+  },
+  postStats: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  likesText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  commentsText: {
+    color: '#999',
+    fontSize: 14,
+  },
+  
+  detailContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  eventName: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  fieldRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  detailDescription: {
+    fontSize: 14,
+    lineHeight: 18,
   },
-  fieldValue: {
-    fontSize: 16,
+  eventVenue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#111',
+    marginBottom: 2,
+  },
+  venueText: {
+    color: '#0095f6',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  eventDetails: {
+    marginTop: 12,
+    gap: 8,
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eventDetailText: {
+    color: '#ccc',
+    fontSize: 13,
+    marginLeft: 8,
     flex: 1,
-  },
-  bioText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  loadingText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 16,
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  bottomPadding: {
-    height: 32,
   },
 });

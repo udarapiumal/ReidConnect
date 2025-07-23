@@ -92,7 +92,7 @@ public class PostController {
 
 
     //Get all posts
-    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
+    // @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
         List<PostResponseDto> posts = postService.getAllPosts();
@@ -100,8 +100,7 @@ public class PostController {
     }
 
     //Get a post by ID
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')" +
-            "")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
         PostResponseDto post = postService.getPostById(id);
@@ -109,7 +108,7 @@ public class PostController {
     }
 
     // Get all posts by club ID
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<PostResponseDto>> getPostsByClubId(@PathVariable Long clubId) {
         List<PostResponseDto> posts = postService.getPostsByClubId(clubId);
@@ -126,7 +125,7 @@ public class PostController {
 
 
     //Update a post by ID
-    @PreAuthorize("hasRole('ROLE_CLUB')")
+    @PreAuthorize("hasRole('CLUB')")
     @PutMapping("/{id}")
     public ResponseEntity<String> updatePost(@PathVariable Long id, @RequestBody PostUpdateDto dto) {
         postService.updatePost(id, dto);
@@ -142,7 +141,7 @@ public class PostController {
     }
 
     // Add a like to a post
-    @PreAuthorize("hasRole('ROLE_CLUB') or hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/{postId}/like")
     public ResponseEntity<String> likePost(
             @PathVariable Long postId,

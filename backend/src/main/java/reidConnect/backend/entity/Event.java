@@ -59,7 +59,7 @@ public class Event {
     private List<EventFaculty> targetFaculties = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true) // Temporarily allow null until we fix existing data
     private EventCategory category;
 
     @CreationTimestamp
