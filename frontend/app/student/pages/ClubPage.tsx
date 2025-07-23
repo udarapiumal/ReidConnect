@@ -17,8 +17,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
-import { useStudent } from "../../context/StudentContext";
 import { useThemeColor } from '../../../hooks/useThemeColor';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 const imageSize = (screenWidth - 4) / 3; // 3 columns with 2px gaps
@@ -41,7 +45,7 @@ const formatTimeAgo = (timestamp: string) => {
 };
 
 export default function ClubProfileScreen() {
-  const { token, user } = useStudent();
+  const [token, setToken] = useState<string | null>(null);
   const { clubId } = useLocalSearchParams();
   const [selectedTab, setSelectedTab] = useState('posts');
   const [posts, setPosts] = useState([]);
@@ -56,6 +60,7 @@ export default function ClubProfileScreen() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [clubDetails, setClubDetails] = useState<any>(null);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // Get theme colors
   const backgroundColor = useThemeColor({}, 'background');
@@ -65,12 +70,44 @@ export default function ClubProfileScreen() {
   const cardColor = useThemeColor({}, 'card');
   const borderColor = useThemeColor({}, 'border');
 
+  useFocusEffect(
+  useCallback(() => {
+    const loadToken = async () => {
+  try {
+    const storedToken = await AsyncStorage.getItem('token');
+    if (!storedToken) {
+      console.warn('No token found');
+      return;
+    }
+
+    setToken(storedToken);
+
+    try {
+      const decoded: any = jwtDecode(storedToken);
+      console.log('Decoded token:', decoded);
+      setUser(decoded); // ✅ SET USER HERE
+    } catch (decodeErr) {
+      console.error('Token decode error:', decodeErr);
+    }
+
+  } catch (err) {
+    console.error('Error loading token:', err);
+  }
+};
+
+
+    loadToken();
+  }, [])
+);
+
+
   // Function to fetch club details (should be passed as props or from route params)
   const fetchClubDetails = async (clubId: string) => {
     try {
       const res = await axios.get(`${BASE_URL}/api/club/${clubId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log(res.data);
       setClubDetails(res.data);
     } catch (error) {
       console.error('Error fetching club details:', error);
@@ -238,24 +275,28 @@ export default function ClubProfileScreen() {
   };
 
   useEffect(() => {
-    if (selectedTab === 'posts') fetchPosts();
-    else fetchEvents();
-  }, [selectedTab]);
+  if (!token || !clubDetails?.id) return;
+  if (selectedTab === 'posts') fetchPosts();
+  else fetchEvents();
+}, [selectedTab, token, clubDetails]);
+
 
   useEffect(() => {
-    if (clubDetails?.id) {
-      fetchCounts();
-      fetchSubCount();
-      checkSubscriptionStatus();
-    }
-  }, [clubDetails]);
+  if (token && clubDetails?.id) {
+    fetchCounts();
+    fetchSubCount();
+    checkSubscriptionStatus();
+  }
+}, [clubDetails, token]);
+
 
   // Initialize club details from route params
   useEffect(() => {
-    if (clubId && typeof clubId === 'string') {
-      fetchClubDetails(clubId);
-    }
-  }, [clubId]);
+  if (clubId && typeof clubId === 'string' && token) {
+    fetchClubDetails(clubId);
+  }
+}, [clubId, token]);
+
 
   const currentData = selectedTab === 'posts' ? posts : events;
 
