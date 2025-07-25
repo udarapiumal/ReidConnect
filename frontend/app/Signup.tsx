@@ -71,112 +71,63 @@ export default function SignUp() {
     useEffect(() => { validateStep2(); }, [email, password, confirmPassword]);
     useEffect(() => { validateStep3(); }, [contact_number]);
 
-    const pickImage = async (): Promise<void> => {
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!permissionResult.granted) {
-            alert("Permission to access media library is required!");
-            return;
-        }
+    const pickImage = async () => {
+  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permissionResult.granted) {
+    alert("Permission to access media library is required!");
+    return;
+  }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.7,
-            selectionLimit: 1,
-            exif: false,
-            base64: false,
-        });
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.7,
+  });
 
-        if (!result.canceled && result.assets.length > 0) {
-            const asset = result.assets[0] as ExtendedImagePickerAsset;
-            console.log("Selected image properties:", Object.keys(asset));
-            console.log("Selected image details:", {
-                uri: asset.uri,
-                type: asset.type,
-                fileName: asset.fileName,
-                fileSize: asset.fileSize,
-                mimeType: asset.mimeType,
-                hasFile: !!(asset as any).file,
-            });
-            setSelectedImage(asset);
-        }
-    };
+  if (!result.canceled && result.assets.length > 0) {
+    setSelectedImage(result.assets[0]);
+  }
+};
+
 
     const handleSubmit = async (): Promise<void> => {
-        const formData = new FormData();
-        formData.append("username", name);
-        formData.append("email", email);
-        formData.append("password", password);
-        formData.append("contactNumber", contact_number);
-        formData.append("academicYear", academic_year);
+  const formData = new FormData();
+  formData.append("username", name);
+  formData.append("email", email);
+  formData.append("password", password);
+  formData.append("contactNumber", contact_number);
+  formData.append("academicYear", academic_year);
 
-        if (selectedImage) {
-            // Check if we're in a web environment with a File object
-            if ((selectedImage as any).file) {
-                // For web/Expo web - use the actual File object
-                const file = (selectedImage as any).file as File;
-                formData.append("profilePic", file, selectedImage.fileName || "profile.jpg");
-                console.log("Appending File object:", {
-                    name: selectedImage.fileName,
-                    size: selectedImage.fileSize,
-                    type: selectedImage.mimeType
-                });
-            } else if (selectedImage.uri && !selectedImage.uri.startsWith('data:')) {
-                // For native React Native - use the URI format
-                const uriParts = selectedImage.uri.split('.');
-                const fileType = uriParts[uriParts.length - 1];
-                
-                formData.append("profilePic", {
-                    uri: selectedImage.uri,
-                    name: selectedImage.fileName || `profile.${fileType}`,
-                    type: selectedImage.mimeType || `image/${fileType}`,
-                } as any);
-                
-                console.log("Appending native file:", {
-                    uri: selectedImage.uri,
-                    name: selectedImage.fileName,
-                    type: selectedImage.mimeType
-                });
-            } else if (selectedImage.uri && selectedImage.uri.startsWith('data:')) {
-                // Handle base64 data URI (fallback)
-                console.log("Converting base64 to blob...");
-                try {
-                    const response = await fetch(selectedImage.uri);
-                    const blob = await response.blob();
-                    formData.append("profilePic", blob, selectedImage.fileName || "profile.jpg");
-                    
-                    console.log("Appending blob from base64:", {
-                        name: selectedImage.fileName,
-                        size: blob.size,
-                        type: blob.type
-                    });
-                } catch (error) {
-                    console.error("Error converting base64 to blob:", error);
-                }
-            }
-        }
+  if (selectedImage) {
+    formData.append("profilePic", {
+      uri: selectedImage.uri,
+      name: "profile.jpg",
+      type: "image/jpeg",
+    } as any);
+  }
 
-        try {
-            const res = await axios.post(`${BASE_URL}/auth/signup`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-                timeout: 10000,
-            });
+  try {
+    const res = await fetch(`${BASE_URL}/auth/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      body: formData,
+    });
 
-            console.log("Signup response:", res.data);
-            Alert.alert("Success", "Verification code sent to email. Please verify your account.");
-        } catch (err) {
-            if (axios.isAxiosError(err)) {
-                console.error("Axios error response:", err.response);
-                Alert.alert("Signup failed", JSON.stringify(err.response?.data || err.message));
-            } else {
-                Alert.alert("Signup failed", "Try again later.");
-                console.error("Unknown error:", err);
-            }
-        }
-    };
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
+    Alert.alert("Success", "Verification code sent to email. Please verify your account.");
+  } catch (err: any) {
+    console.error("Signup error:", err.message);
+    Alert.alert("Signup failed", "Try again later.");
+  }
+};
+
 
     const handleVerify = async (): Promise<void> => {
         try {

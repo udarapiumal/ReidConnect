@@ -67,10 +67,13 @@ function ClubCard({ club, onPress }: ClubCardProps) {
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Image 
-        source={{ uri: `${BASE_URL}${club.profilePicture}` }}
-        style={styles.clubImage}
-      />
+      <View style={styles.clubImageWrapper}>
+  <Image 
+    source={{ uri: `${BASE_URL}${club.profilePicture}` }}
+    style={styles.clubImage}
+  />
+</View>
+
       <View style={styles.clubInfo}>
         <View style={styles.clubHeader}>
           <ThemedText style={[styles.clubName, { color: textColor }]}>{club.clubName}</ThemedText>
@@ -80,15 +83,12 @@ function ClubCard({ club, onPress }: ClubCardProps) {
             </View>
           )}
         </View>
-        <ThemedText style={[styles.clubDescription, { color: secondaryTextColor }]}>
+        <ThemedText style={[styles.clubDescription]}>
           {club.bio}
         </ThemedText>
         <View style={styles.clubMeta}>
-          <ThemedText style={[styles.clubCategory, { color: tintColor }]}>
+          <ThemedText style={[styles.clubCategory]}>
             {club.website}
-          </ThemedText>
-          <ThemedText style={[styles.memberCount, { color: secondaryTextColor }]}>
-            {club.subCount} members
           </ThemedText>
         </View>
       </View>
@@ -275,64 +275,165 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   backButton: {
-    marginRight: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  searchContainer: {
-    flexDirection: 'row',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    borderWidth: 1,
+    marginRight: 12,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
+  headerTitleContainer: {
     flex: 1,
+  },
+  // Updates and additions for modern clean look
+header: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 20,
+  paddingVertical: 16,
+  borderBottomWidth: 1,
+  borderColor: '#e0e0e0',
+},
+
+searchContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderRadius: 14,
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+  marginHorizontal: 20,
+  marginTop: 16,
+  marginBottom: 8,
+  backgroundColor: '#f2f2f2',
+  elevation: 2,
+},
+
+searchInput: {
+  flex: 1,
+  fontSize: 16,
+  fontWeight: '500',
+  paddingVertical: 4,
+  marginLeft: 8,
+},
+
+joinedBadge: {
+  backgroundColor: '#2DC653',
+  borderRadius: 12,
+  paddingVertical: 4,
+  paddingHorizontal: 10,
+},
+
+joinedText: {
+  fontSize: 12,
+  fontWeight: '600',
+  color: 'white',
+},
+
+clubCategory: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#1591EA',
+},
+
+retryButton: {
+  backgroundColor: '#2DC653',
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 10,
+  marginTop: 16,
+  elevation: 2,
+},
+
+retryButtonText: {
+  fontSize: 15,
+  fontWeight: '600',
+  color: '#fff',
+},
+
+centerContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 32,
+  gap: 12,
+},
+
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
     fontSize: 16,
+    fontWeight: '600',
+    marginTop: -2,
+  },
+  headerDivider: {
+    height: 1,
+    marginTop: 16,
+    marginHorizontal: 20,
+    opacity: 0.3,
+  },
+  searchSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  searchIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  resultsCount: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 12,
+    marginLeft: 4,
   },
   clubsList: {
     flex: 1,
   },
   clubsListContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  clubCard: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
+
+  cardGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: 'rgba(99, 102, 241, 0.5)',
   },
-  clubImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  clubImageContainer: {
+    position: 'relative',
     marginRight: 16,
+  },
+
+  imageOverlay: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 22,
+    opacity: 0.1,
+    zIndex: -1,
   },
   clubInfo: {
     flex: 1,
@@ -340,71 +441,138 @@ const styles = StyleSheet.create({
   clubHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  clubName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-  },
-  joinedBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  joinedText: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: '600',
-  },
-  clubDescription: {
-    fontSize: 14,
+    alignItems: 'flex-start',
     marginBottom: 8,
-    lineHeight: 20,
   },
+
   clubMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  clubCategory: {
-    fontSize: 14,
-    fontWeight: '600',
+  websiteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 16,
+  },
+ 
+  memberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   memberCount: {
     fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
   },
-  centerContainer: {
-    flex: 1,
+  cardArrow: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    marginLeft: 8,
+  },
+  loadingSpinner: {
+    width: 48,
+    height: 48,
+    borderWidth: 4,
+    borderRadius: 24,
+    marginBottom: 20,
   },
   loadingText: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 16,
+    fontWeight: '600',
+  },
+  errorIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 16,
-    marginBottom: 24,
+    marginBottom: 32,
+    lineHeight: 24,
   },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  noResultsText: {
+  emptyText: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 16,
+    lineHeight: 24,
+    maxWidth: 280,
   },
+  clubCard: {
+  flexDirection: 'row',
+  borderRadius: 20,
+  marginBottom: 20,
+  padding: 20,
+  backgroundColor: '#ffffff',
+  borderWidth: 1,
+  borderColor: '#ddd',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  elevation: 4,
+},
+
+clubImageWrapper: {
+  width: 85,
+  height: 85,
+  borderRadius: 100,
+  borderWidth: 2,
+  padding: 2,
+  shadowOpacity: 0.4,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 2 },
+  backgroundColor: '#fff',
+  marginRight: 16,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+clubImage: {
+  width: 80,
+  height: 80,
+  borderRadius: 100,
+},
+
+clubName: {
+  fontSize: 18,
+  fontWeight: '800',
+  marginBottom: 4,
+},
+
+clubDescription: {
+  fontSize: 14,
+  fontWeight: '500',
+  lineHeight: 20,
+  marginBottom: 8,
+  color: '#555',
+},
+
+  
 });
