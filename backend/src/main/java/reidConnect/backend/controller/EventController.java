@@ -283,7 +283,7 @@ public class EventController {
     }
 
     @GetMapping("/count/{clubId}")
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     public ResponseEntity<Long> countAllEventsByClubId(@PathVariable Long clubId) {
         long count = eventService.countAllEventsByClubId(clubId);
         return ResponseEntity.ok(count);

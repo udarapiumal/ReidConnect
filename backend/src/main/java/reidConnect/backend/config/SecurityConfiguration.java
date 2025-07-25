@@ -46,6 +46,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated() // Other event operations still require auth
                         .requestMatchers("/api/staff/**").authenticated()
+                        .requestMatchers("/api/student/**").authenticated()
                         .requestMatchers("/api/venues/**").authenticated()
                         .requestMatchers("/api/comments/**").authenticated()
                         .requestMatchers("/lost/**").authenticated()

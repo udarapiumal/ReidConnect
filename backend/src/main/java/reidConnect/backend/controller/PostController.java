@@ -190,7 +190,7 @@ public class PostController {
     }
 
     // Total number of posts for a club
-    @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
+    @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/club/{clubId}/count")
     public ResponseEntity<Long> getTotalPostCount(@PathVariable Long clubId) {
         long count = postService.getTotalPostCountByClubId(clubId);

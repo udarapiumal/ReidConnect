@@ -31,6 +31,13 @@ export default function EventDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const colorScheme = useColorScheme() ?? 'dark';
   const colors = Colors[colorScheme];
+  const [clubInfo, setClubInfo] = useState<{
+  name: string;
+  subCount: number;
+  isSubscribed: boolean;
+  image?: string;
+} | null>(null);
+
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -54,21 +61,18 @@ export default function EventDetailPage() {
         // Fetch specific event
         const eventResponse = await axiosInstance.get(`${BASE_URL}/api/events/${id}`);
         const eventData = eventResponse.data;
-        console.log('📋 Event data:', eventData);
         
         // Fetch attendance counts
         let countsData = { going: 0, interested: 0 };
         try {
           const countsResponse = await axiosInstance.get(`${BASE_URL}/api/events/${id}/attendance/counts`);
           const rawCounts = countsResponse.data;
-          console.log('📊 Raw attendance counts from API:', rawCounts);
           
           // Map API response to expected format
           countsData = {
             going: rawCounts.goingCount || 0,
             interested: rawCounts.interestedCount || 0
           };
-          console.log('📊 Mapped attendance counts:', countsData);
         } catch (error) {
           console.error('Failed to fetch attendance counts:', error);
         }
@@ -82,7 +86,6 @@ export default function EventDetailPage() {
 
             
             const responseData = userStatusResponse.data;
-            console.log('👤 Full user status response:', responseData);
             
             // Extract status from the response
             const rawStatus = responseData.status;
@@ -100,6 +103,76 @@ export default function EventDetailPage() {
             userStatus = 'none';
           }
         }
+
+        // Fetch club information with better error handling and fallbacks
+        if (eventData.clubId) {
+          try {
+            
+            // Fetch club details
+            let clubData = null;
+            try {
+              const clubRes = await axiosInstance.get(`${BASE_URL}/api/club/${eventData.clubId}`);
+              clubData = clubRes.data;
+            } catch (clubError) {
+              console.error('🔴 Failed to fetch club details:', clubError);
+              // Fallback to event.club name if available
+              clubData = { name: eventData.club || 'Unknown Club' };
+            }
+
+            // Fetch subscriber count
+            let subCount = 0;
+            try {
+              const countRes = await axiosInstance.get(`${BASE_URL}/api/subscriptions/club/${eventData.clubId}/count`);
+              subCount = countRes.data || 0;
+            } catch (countError) {
+              console.error('🔴 Failed to fetch subscriber count:', countError);
+              subCount = 0;
+            }
+
+            // Fetch subscription status
+            let isSubscribed = false;
+            if (userId) {
+              try {
+                const subStatusRes = await axiosInstance.get(`${BASE_URL}/api/subscriptions/check/${eventData.clubId}?userId=${userId}`);
+                isSubscribed = subStatusRes.data === true || subStatusRes.data.isSubscribed === true;
+              } catch (subError) {
+                console.error('🔴 Failed to fetch subscription status:', subError);
+                isSubscribed = false;
+              }
+            }
+
+            // Set club info with all collected data
+            const clubInfo = {
+              name: clubData?.clubName || eventData.club || 'Unknown Club',
+              subCount: subCount,
+              isSubscribed: isSubscribed,
+              image: clubData?.profilePicture, // Add club image
+            };
+
+            setClubInfo(clubInfo);
+
+          } catch (err) {
+            console.error('🔴 Failed to load club info:', err);
+            // Set fallback club info so the section still renders
+            setClubInfo({
+              name: eventData.club || 'Unknown Club',
+              subCount: 0,
+              isSubscribed: false,
+              image: undefined,
+            });
+          }
+        } else {
+          // Set fallback club info using event.club if available
+          if (eventData.club) {
+            setClubInfo({
+              name: eventData.club,
+              subCount: 0,
+              isSubscribed: false,
+              image: undefined
+            });
+          }
+        }
+
         
         // Combine event data with counts and user status
         const combinedEvent = {
@@ -160,6 +233,49 @@ export default function EventDetailPage() {
 
     fetchEvent();
   }, [id]);
+
+  const handleFollowClub = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token || !event?.clubId) {
+      console.log('🔴 No token or clubId available for follow action');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<UserType>(token);
+      const userId = decoded.id;
+
+      const endpoint = clubInfo?.isSubscribed ? "unsubscribe" : "subscribe";
+
+      await axiosInstance.post(`${BASE_URL}/api/subscriptions/${endpoint}`, {
+        userId,
+        clubId: event.clubId,
+      });
+
+      // Update club info optimistically
+      setClubInfo((prev) => {
+        if (!prev) return prev;
+        const newIsSubscribed = !prev.isSubscribed;
+        const newSubCount = prev.subCount + (prev.isSubscribed ? -1 : 1);
+        
+        console.log('🏢 Updated club info:', {
+          ...prev,
+          isSubscribed: newIsSubscribed,
+          subCount: newSubCount,
+        });
+        
+        return {
+          ...prev,
+          isSubscribed: newIsSubscribed,
+          subCount: newSubCount,
+        };
+      });
+
+    } catch (error) {
+      console.error('🔴 Subscription action failed:', error);
+    }
+  };
+
 
   const handleInteraction = async (newStatus: 'interested' | 'going') => {
     if (!event || isSubmitting) return;
@@ -238,7 +354,6 @@ export default function EventDetailPage() {
       }
 
       const responseText = await response.text();
-      console.log('✅ API Response:', responseText);
 
       // After successful API call, fetch updated counts from server to ensure accuracy
       try {
@@ -302,6 +417,7 @@ export default function EventDetailPage() {
       <ThemedText style={[styles.infoText, { color: colors.text }]}>{text}</ThemedText>
     </View>
   );
+  
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -395,18 +511,39 @@ export default function EventDetailPage() {
 
         {/* Host Section */}
         <View style={[styles.hostSection, { borderTopColor: colors.border }]}>
-          <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Meet your host</ThemedText>
-          <View style={[styles.hostProfile, { backgroundColor: colors.card }]}>
-            <Image source={event.host?.logo} style={styles.hostLogo} />
-            <ThemedText style={[styles.hostName, { color: colors.text }]}>{event.host?.name}</ThemedText>
-            <ThemedText style={[styles.hostStats, { color: colors.icon }]}>{`${event.host?.pastEvents} past event · ${event.host?.followers} followers`}</ThemedText>
-            <ThemedText style={[styles.hostDescription, { color: colors.text }]}>{event.host?.description}</ThemedText>
-            <TouchableOpacity style={[styles.followButton, { backgroundColor: colors.secondaryButton }]}>
-              <Ionicons name="add" size={20} color={colors.secondaryButtonText} />
-              <ThemedText style={[styles.buttonText, { color: colors.secondaryButtonText }]}>Follow</ThemedText>
-            </TouchableOpacity>
-          </View>
+          <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Hosted by</ThemedText>
+          {clubInfo && (
+            <View style={[styles.hostProfile, { backgroundColor: colors.card }]}>
+              {/* Club Image */}
+              {clubInfo.image ? (
+                <Image 
+                  source={{ uri: `${BASE_URL}${clubInfo.image}` }}
+                  style={styles.hostLogo}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.hostLogo, styles.hostLogoPlaceholder, { backgroundColor: colors.border }]}>
+                  <Ionicons name="people-outline" size={40} color={colors.icon} />
+                </View>
+              )}
+              
+              <ThemedText style={[styles.hostName, { color: colors.text }]}>{clubInfo.name}</ThemedText>
+              <ThemedText style={[styles.hostStats, { color: colors.icon }]}>
+                {clubInfo.subCount} followers
+              </ThemedText>
+              <TouchableOpacity 
+                style={[styles.followButton, { backgroundColor: colors.secondaryButton }]}
+                onPress={handleFollowClub}
+              >
+                <Ionicons name={clubInfo.isSubscribed ? "checkmark" : "add"} size={20} color={colors.secondaryButtonText} />
+                <ThemedText style={[styles.buttonText, { color: colors.secondaryButtonText }]}>
+                  {clubInfo.isSubscribed ? "Following" : "Follow"}
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
+
         
         {/* Related Events Section */}
         {relatedEvents.length > 0 && (
@@ -587,11 +724,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
   },
-  hostLogo: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
+  
   hostName: {
     fontSize: 17,
     fontWeight: '600',
@@ -619,4 +752,19 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     borderTopWidth: 8,
   },
+   hostLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
+  },
+  hostLogoPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 40,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
 });

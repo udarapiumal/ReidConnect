@@ -42,6 +42,7 @@ const fetchClubs = async (): Promise<ClubData[]> => {
       ...club,
       isJoined: false, // Default value, can be updated based on user interaction
     }));
+    
   } catch (error) {
     console.error('Error fetching clubs:', error);
     throw error;
@@ -60,8 +61,6 @@ function ClubCard({ club, onPress }: ClubCardProps) {
   const tintColor = useThemeColor({}, 'tint');
   const borderColor = useThemeColor({}, 'border');
 
-  const [imageError, setImageError] = useState(false);
-
   return (
     <TouchableOpacity 
       style={[styles.clubCard, { backgroundColor: cardColor, borderColor }]}
@@ -69,9 +68,8 @@ function ClubCard({ club, onPress }: ClubCardProps) {
       activeOpacity={0.8}
     >
       <Image 
-        source={imageError ? require('@/assets/clubImages/profilePictures/1.jpeg') : { uri: club.profilePicture }}
+        source={{ uri: `${BASE_URL}${club.profilePicture}` }}
         style={styles.clubImage}
-        onError={() => setImageError(true)}
       />
       <View style={styles.clubInfo}>
         <View style={styles.clubHeader}>
