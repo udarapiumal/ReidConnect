@@ -2,6 +2,7 @@ package reidConnect.backend.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -12,5 +13,5 @@ public class RegisterUserDto {
 
     private String contactNumber;
     private String academicYear;
-    private int age;
+    private MultipartFile profilePic;
 }

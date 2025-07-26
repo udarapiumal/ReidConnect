@@ -1,0 +1,107 @@
+/* Club Row (Table Row) Styles */
+.club-row {
+  transition: background-color 0.2s ease;
+}
+
+.club-row:hover {
+  background-color: #1f1f1f;
+}
+
+.club-row.selected {
+  background-color: #2a2a2a;
+}
+
+/* Table Columns */
+.club-row td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #333;
+  font-size: 0.95rem;
+  color: #f9fafb;
+}
+
+/* Club Name Cell */
+.club-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Club Avatar */
+.club-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.club-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 2px solid #444;
+}
+
+/* Club Name Text */
+.club-name {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Website Column */
+.website-link {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.website-link:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.no-website {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Club Bio */
+.club-bio {
+  color: #d1d5db;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+  display: inline-block;
+}
+
+/* Owner Info */
+.owner-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.owner-name {
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.owner-email {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  word-break: break-all;
+}
+
+.no-owner {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Checkbox */
+.table-checkbox {
+  accent-color: #ef4444;
+  width: 16px;
+  height: 16px;
+}

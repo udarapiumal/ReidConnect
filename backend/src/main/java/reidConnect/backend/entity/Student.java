@@ -17,8 +17,6 @@ public class Student {
     @Column(name = "academic_year", nullable = false)
     private String academicYear;
 
-    @Column(nullable = false)
-    private int age;
 
     @Column(name = "contact_number", nullable = false)
     private String contactNumber;
@@ -26,7 +24,10 @@ public class Student {
     @Column(name = "student_name", nullable = false)
     private String studentName;
 
-    @ManyToOne(optional = false)
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
+    @OneToOne(optional = false)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 }
