@@ -16,6 +16,7 @@ import ClubGallery from './components/union/ClubGallery';
 import ClubDetail from './components/union/ClubDetail';
 import AcademicSidebar from './components/academic/AcademicSidebar';
 import EventsPage from './components/union/EventsPage';
+import TimeTable from './components/academic/TimeTable';
 
 function AppWrapper() {
   const location = useLocation();
@@ -46,6 +47,7 @@ function AppWrapper() {
 
         {/* Academic Routes */}
         <Route path="/academic/dashboard" element={<AcademicDashboard />} />
+        <Route path="/academic/timetable" element={<TimeTable />} />
         <Route path="/academic/lecturers" element={<LecturerManagement />} />
         <Route path="/academic/courses" element={<CourseManagement />} />
         <Route path="/academic/events" element={<EventSchedule />} />

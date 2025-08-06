@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
 import axios from '../../api/axiosInstance';
 import Select from 'react-select';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
+
 
 const API_URL = 'http://localhost:8080/api/staff';
 
@@ -62,10 +65,38 @@ const LecturerManagement = () => {
     setShowAddForm(true);
   };
 
-  const handleDeleteLecturer = async (lecturerId) => {
+ const handleDeleteLecturer = async (lecturerId) => {
+  try {
     await axios.delete(`${API_URL}/${lecturerId}`);
     fetchLecturers();
-  };
+    Swal.fire({
+      icon: 'success',
+      title: 'Deleted!',
+      text: 'Lecturer has been removed successfully.',
+      confirmButtonColor: '#3085d6'
+    });
+  } catch (error) {
+    if (error.response && error.response.status === 400) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Cannot Delete Lecturer',
+        background: 'rgba(20, 20, 20, 0.95)',
+        color: 'white',
+        text: error.response.data,
+        confirmButtonColor: '#ff3e3e'
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Unexpected Error',
+        text: 'Something went wrong while deleting the lecturer.',
+        confirmButtonColor: '#ff3e3e'
+      });
+    }
+  }
+};
+
+
 
   const handleSubmit = async () => {
     const data = { ...formData };
