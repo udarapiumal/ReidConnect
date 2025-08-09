@@ -25,6 +25,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="pages/ClubsPage" options={{ headerShown: false }} />
           <Stack.Screen name="pages/ClubPage" options={{ headerShown: false }} />
+          <Stack.Screen name="profile/profileEdit" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

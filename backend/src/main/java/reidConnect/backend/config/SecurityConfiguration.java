@@ -54,6 +54,9 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated() // This should come after the specific /uploads/** rule
+                        // In your SecurityConfig
+                        .requestMatchers(HttpMethod.POST, "/student/me/profile-picture").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/student/me/profile-picture").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

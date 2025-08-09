@@ -5,12 +5,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
+import reidConnect.backend.dto.student.StudentUpdateRequest;
 import reidConnect.backend.dto.student.StudentResponseDto;
+import reidConnect.backend.dto.student.PasswordChangeRequest;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.ClubDto;
+import reidConnect.backend.dto.PasswordChangeResponse;
+import reidConnect.backend.entity.Student;
 import reidConnect.backend.entity.User;
 import reidConnect.backend.service.StudentService;
+import reidConnect.backend.service.UserService;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,6 +25,7 @@ import java.util.List;
 public class StudentController {
     
     private final StudentService studentService;
+    private final UserService userService;
 
     @GetMapping("/me")
     public ResponseEntity<StudentResponseDto> getCurrentStudentProfile() {
@@ -101,5 +107,59 @@ public class StudentController {
         List<ClubDto> clubs = studentService.getSubscribedClubs(currentUser.getId());
         return ResponseEntity.ok(clubs);
     }   
+
+    @PutMapping("/{id}")
+    public ResponseEntity<StudentResponseDto> updateStudent(@PathVariable Long id, @RequestBody StudentUpdateRequest studentUpdateRequest) {
+        Student updatedStudent = studentService.updateStudentDetails(id, studentUpdateRequest);
+        StudentResponseDto responseDto = studentService.getStudentById(updatedStudent.getId());
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<StudentResponseDto> updateCurrentStudent(@RequestBody StudentUpdateRequest studentUpdateRequest) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        
+        // Get the student by user ID first
+        StudentResponseDto currentStudent = studentService.getStudentByUserId(currentUser.getId());
+        
+        // Update the student using their student ID
+        Student updatedStudent = studentService.updateStudentDetails(currentStudent.getId(), studentUpdateRequest);
+        StudentResponseDto responseDto = studentService.getStudentById(updatedStudent.getId());
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping("/me/profile-picture")
+    public ResponseEntity<StudentResponseDto> uploadProfilePicture(@RequestParam("profilePicture") MultipartFile profilePicture) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        
+        // Use the service method to update profile picture
+        Student updatedStudent = studentService.updateProfilePicture(currentUser.getId(), profilePicture);
+        StudentResponseDto responseDto = studentService.getStudentById(updatedStudent.getId());
+        
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @DeleteMapping("/me/profile-picture")
+    public ResponseEntity<StudentResponseDto> removeProfilePicture() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        
+        // Use the service method to remove profile picture
+        Student updatedStudent = studentService.removeProfilePicture(currentUser.getId());
+        StudentResponseDto responseDto = studentService.getStudentById(updatedStudent.getId());
+        
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<PasswordChangeResponse> changePassword(@RequestBody PasswordChangeRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        
+        userService.changePassword(currentUser.getEmail(), request);
+        return ResponseEntity.ok(PasswordChangeResponse.success("Password changed successfully"));
+    }
+
 }
-    

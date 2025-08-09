@@ -1,6 +1,9 @@
 package reidConnect.backend.service;
 
 import reidConnect.backend.dto.student.StudentResponseDto;
+import reidConnect.backend.dto.student.StudentUpdateRequest;
+import reidConnect.backend.entity.Student;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,4 +22,9 @@ public interface StudentService {
     long countPastEventsByAttendanceStatus(Long userId, String status);
     long countSubscribedClubs(Long userId);
     List<ClubDto> getSubscribedClubs(Long userId);
+    Student updateStudentDetails(Long id, StudentUpdateRequest studentUpdateRequest);
+    
+    // Profile picture management
+    Student updateProfilePicture(Long userId, MultipartFile profilePicture);
+    Student removeProfilePicture(Long userId);
 }

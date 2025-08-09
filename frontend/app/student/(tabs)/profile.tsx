@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, RefreshControl, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,13 +31,16 @@ interface UserData {
   userId?: number;
 }
 
-interface ClubData {
+export type ClubData = {
   id: number;
-  name: string;
-  description: string;
-  avatar?: string;
-  memberCount?: number;
-}
+  clubName: string;
+  userId: number;
+  website: string;
+  profilePicture: string;
+  bio: string;
+  subCount: number;
+  isJoined?: boolean;
+};
 
 // Default fallback data structure
 const defaultUserData = {
@@ -56,6 +59,10 @@ const defaultUserData = {
   interests: [] as string[],
 };
 
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // API Functions (using provided endpoints)
 const fetchStudentDetails = async (): Promise<UserData | null> => {
@@ -128,54 +135,105 @@ const fetchSubscribedClubs = async () => {
   }
 };
 
+// API function to update student details
+const updateStudentDetails = async (data: {
+  username: string;
+  studentName: string;
+  profilePictureUrl: string;
+  contactNumber: string;
+}) => {
+  try {
+    const response = await axiosInstance.put('/student/me', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating student details:', error);
+    throw error;
+  }
+};
+
 const settingsOptions = [
-  { id: '1', title: 'Edit Profile', icon: 'user' },
-  { id: '2', title: 'Notifications', icon: 'bell' },
-  { id: '3', title: 'Privacy', icon: 'lock' },
+  { 
+    id: '1', 
+    title: 'Edit Profile', 
+    icon: 'user',
+    subItems: [
+      { id: '1a', title: 'Personal Information', icon: 'edit-3' },
+      { id: '1b', title: 'Change Password', icon: 'key' },
+    ]
+  },
+  { 
+    id: '2', 
+    title: 'Notifications', 
+    icon: 'bell',
+  },
   { id: '4', title: 'Help & Support', icon: 'help-circle' },
   { id: '5', title: 'Log Out', icon: 'log-out' },
 ];
 
-type TabName = 'Events' | 'Clubs' | 'Activity' | 'Settings';
-
-
+type TabName = 'Events' | 'Clubs' | 'Notifications' | 'Settings';
 
 type ClubItemProps = {
   club: any;
   onPress?: () => void;
 };
 
-const ClubItem = ({ club, onPress }: ClubItemProps) => {
+
+type ClubCardProps = {
+  club: ClubData;
+  onPress: () => void;
+};
+
+function ClubCard({ club, onPress }: ClubCardProps) {
   const cardColor = useThemeColor({}, 'card');
-  const iconColor = useThemeColor({}, 'icon');
-  
+  const textColor = useThemeColor({}, 'text');
+  const secondaryTextColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const borderColor = useThemeColor({}, 'border');
+
   return (
-    <TouchableOpacity style={[styles.clubItem, { backgroundColor: cardColor }]} onPress={onPress}>
-      <Image 
-        source={{ uri: club.avatar }}
-        style={styles.clubAvatar}
-        contentFit="cover"
-      />
-      <View style={styles.clubContent}>
-        <ThemedText style={styles.clubName}>{club.name}</ThemedText>
-        <ThemedText style={styles.clubDescription} numberOfLines={2}>{club.description}</ThemedText>
+    <TouchableOpacity 
+      style={[styles.clubCard, { backgroundColor: cardColor, borderColor }]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.clubImageWrapper}>
+        <Image 
+          source={{ uri: `${BASE_URL}/${club.profilePicture}` }}
+          style={styles.clubImage}
+        />
+      </View>
+
+      <View style={styles.clubInfo}>
+        <View style={styles.clubHeader}>
+          <ThemedText style={[styles.clubName, { color: textColor }]}>{club.clubName}</ThemedText>
+          {club.isJoined && (
+            <View style={[styles.joinedBadge, { backgroundColor: tintColor }]}>
+              <ThemedText style={styles.joinedText}>Joined</ThemedText>
+            </View>
+          )}
+        </View>
+        <ThemedText style={[styles.clubDescription]}>
+          {club.bio}
+        </ThemedText>
         <View style={styles.clubMeta}>
-          <Feather name="users" size={14} color={iconColor} />
-          <ThemedText style={styles.clubMetaText}>{club.memberCount} members</ThemedText>
+          <ThemedText style={[styles.clubCategory]}>
+            {club.website}
+          </ThemedText>
         </View>
       </View>
-      <Feather name="chevron-right" size={20} color={iconColor} />
     </TouchableOpacity>
   );
-};
+}
 
 type SettingsItemProps = {
   title: string;
   icon: keyof typeof Feather.glyphMap;
-  onPress?: () => void;
+  onPress: () => void;
+  isExpanded?: boolean;
+  hasSubItems?: boolean;
 };
 
-const SettingsItem = ({ title, icon, onPress }: SettingsItemProps) => {
+const SettingsItem = ({ title, icon, onPress, isExpanded, hasSubItems }: SettingsItemProps) => {
   const cardColor = useThemeColor({}, 'card');
   const iconColor = useThemeColor({}, 'icon');
   const secondaryButtonColor = useThemeColor({}, 'secondaryButton');
@@ -186,7 +244,25 @@ const SettingsItem = ({ title, icon, onPress }: SettingsItemProps) => {
         <Feather name={icon} size={18} color={iconColor} />
       </View>
       <ThemedText style={styles.settingsTitle}>{title}</ThemedText>
-      <Feather name="chevron-right" size={20} color={iconColor} />
+      {/* Show chevron only if it has sub-items, and change icon based on state */}
+      {hasSubItems && (
+         <Feather name={isExpanded ? "chevron-down" : "chevron-right"} size={20} color={iconColor} />
+      )}
+    </TouchableOpacity>
+  );
+};
+
+const SubSettingItem = ({ title, icon, onPress }: Omit<SettingsItemProps, 'isExpanded' | 'hasSubItems'>) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'icon');
+  const secondaryButtonColor = useThemeColor({}, 'secondaryButton');
+
+  return (
+    <TouchableOpacity style={[styles.settingsItem, styles.subSettingsItem, { backgroundColor }]} onPress={onPress}>
+      <View style={[styles.settingsIconContainer, { backgroundColor: secondaryButtonColor }]}>
+        <Feather name={icon} size={18} color={iconColor} />
+      </View>
+      <ThemedText style={styles.settingsTitle}>{title}</ThemedText>
     </TouchableOpacity>
   );
 };
@@ -202,6 +278,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -210,6 +287,29 @@ export default function ProfilePage() {
 
   const handleEventPress = (eventId: number) => {
     router.push(`/student/pages/EventPage?id=${eventId}`);
+  };
+
+  const handleClubPress = (club: ClubData) => {
+      // Navigate to club details page
+      console.log('Navigate to club:', club.clubName);
+      router.push({
+        pathname: '/student/pages/ClubPage',
+        params: { clubId: club.id.toString() }
+      });
+    };
+
+  const handleItemPress = (option: (typeof settingsOptions)[0]) => {
+      if (option.subItems) {
+          // Animate the layout change
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          // Toggle expansion
+          setExpandedId(expandedId === option.id ? null : option.id);
+      } else if (option.title === 'Log Out') {
+          // handleLogout();
+      } else {
+          // Handle navigation for items without sub-menus
+          // navigation.navigate('PrivacyScreen');
+      }
   };
 
   // Theme colors
@@ -290,19 +390,37 @@ export default function ProfilePage() {
         return (
           <View>
             <ThemedText style={styles.sectionTitle}>Going Events</ThemedText>
-            {goingEvents.map(event => (
-              <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
-            ))}
-            
+            {goingEvents.length > 0 ? (
+              goingEvents.map(event => (
+                <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginBottom: 16 }}>
+                No events to show
+              </ThemedText>
+            )}
+
             <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Interested Events</ThemedText>
-            {interestedEvents.map(event => (
-              <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
-            ))}
-            
+            {interestedEvents.length > 0 ? (
+              interestedEvents.map(event => (
+                <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginBottom: 16 }}>
+                No events to show
+              </ThemedText>
+            )}
+
             <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Past Events</ThemedText>
-            {pastEvents.map(event => (
-              <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
-            ))}
+            {pastEvents.length > 0 ? (
+              pastEvents.map(event => (
+                <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginBottom: 16 }}>
+                No events to show
+              </ThemedText>
+            )}
           </View>
         );
       case 'Clubs':
@@ -313,7 +431,7 @@ export default function ProfilePage() {
               <ActivityIndicator size="large" color={tintColor} style={{ marginTop: 20 }} />
             ) : subscribedClubs.length > 0 ? (
               subscribedClubs.map(club => (
-                <ClubItem key={club.id} club={club} />
+                <ClubCard key={club.id} club={club} onPress={() => handleClubPress(club)} />
               ))
             ) : (
               <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginTop: 20 }}>
@@ -322,24 +440,24 @@ export default function ProfilePage() {
             )}
           </View>
         );
-      case 'Activity':
+      case 'Notifications':
         return (
           <View>
-            <ThemedText style={styles.sectionTitle}>Recent Activity</ThemedText>
-            <View style={[styles.activityItem, { backgroundColor: cardColor }]}>
+            <ThemedText style={styles.sectionTitle}>Recent Notifications</ThemedText>
+            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
               <Feather name="heart" size={20} color="#FF6B6B" />
-              <ThemedText style={styles.activityText}>Liked Tech Conference 2025</ThemedText>
-              <ThemedText style={styles.activityTime}>2 hours ago</ThemedText>
+              <ThemedText style={styles.NotificationsText}>Liked Tech Conference 2025</ThemedText>
+              <ThemedText style={styles.NotificationsTime}>2 hours ago</ThemedText>
             </View>
-            <View style={[styles.activityItem, { backgroundColor: cardColor }]}>
+            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
               <Feather name="user-plus" size={20} color="#4ECDC4" />
-              <ThemedText style={styles.activityText}>Joined Music Society</ThemedText>
-              <ThemedText style={styles.activityTime}>1 day ago</ThemedText>
+              <ThemedText style={styles.NotificationsText}>Joined Music Society</ThemedText>
+              <ThemedText style={styles.NotificationsTime}>1 day ago</ThemedText>
             </View>
-            <View style={[styles.activityItem, { backgroundColor: cardColor }]}>
+            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
               <Feather name="check-circle" size={20} color="#45B7D1" />
-              <ThemedText style={styles.activityText}>Attended Career Fair 2025</ThemedText>
-              <ThemedText style={styles.activityTime}>2 weeks ago</ThemedText>
+              <ThemedText style={styles.NotificationsText}>Attended Career Fair 2025</ThemedText>
+              <ThemedText style={styles.NotificationsTime}>2 weeks ago</ThemedText>
             </View>
           </View>
         );
@@ -348,12 +466,39 @@ export default function ProfilePage() {
           <View>
             <ThemedText style={styles.sectionTitle}>Account Settings</ThemedText>
             {settingsOptions.map(option => (
-              <SettingsItem 
-                key={option.id} 
-                title={option.title} 
-                icon={option.icon as keyof typeof Feather.glyphMap} 
-                onPress={option.title === 'Log Out' ? handleLogout : undefined}
-              />
+                <View key={option.id}>
+                    {/* Main Setting Item */}
+                    <SettingsItem
+                        title={option.title}
+                        icon={option.icon as keyof typeof Feather.glyphMap}
+                        onPress={() => handleItemPress(option)}
+                        hasSubItems={!!option.subItems}
+                        isExpanded={expandedId === option.id}
+                    />
+
+                    {/* Conditionally Rendered Sub-Items */}
+                    {expandedId === option.id && option.subItems && (
+                        <View>
+                            {option.subItems.map(subItem => (
+                                <SubSettingItem
+                                    key={subItem.id}
+                                    title={subItem.title}
+                                    icon={subItem.icon as keyof typeof Feather.glyphMap}
+                                    onPress={() => {
+                                        // Handle sub-item press (e.g., navigate)
+                                        if (subItem.title === 'Personal Information') {
+                                            router.push('/student/profile/profileEdit');
+                                        } else if (subItem.title === 'Change Password') {
+                                            router.push('/student/profile/changePassword');
+                                        } else {
+                                            console.log(`Pressed ${subItem.title}`);
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </View>
+                    )}
+                </View>
             ))}
           </View>
         );
@@ -439,7 +584,7 @@ export default function ProfilePage() {
 
         {/* Tab Navigation */}
         <View style={[styles.tabContainer, { borderBottomColor: borderColor }]}>
-          {(['Events', 'Clubs', 'Activity', 'Settings'] as TabName[]).map(tab => (
+          {(['Events', 'Clubs', 'Notifications', 'Settings'] as TabName[]).map(tab => (
             <TouchableOpacity
               key={tab}
               style={[
@@ -634,51 +779,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderLeftWidth: 1,
   },
-  // Club Item Styles
-  clubItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  clubAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-    backgroundColor: '#eee',
-  },
-  clubContent: {
-    flex: 1,
-  },
-  clubName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  clubDescription: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginBottom: 4,
-    lineHeight: 18,
-  },
-  clubMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  clubMetaText: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginLeft: 4,
-  },
-  // Activity Item Styles
-  activityItem: {
+  // Notifications Item Styles
+  NotificationsItem: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
@@ -690,12 +792,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  activityText: {
+  NotificationsText: {
     flex: 1,
     fontSize: 14,
     marginLeft: 12,
   },
-  activityTime: {
+  NotificationsTime: {
     fontSize: 12,
     opacity: 0.6,
   },
@@ -724,6 +826,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
+  },
+  subSettingsItem: {
+    marginLeft: 0,
   },
   bottomPadding: {
     height: 80,
@@ -764,4 +869,86 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  //club cards
+  clubCard: {
+  flexDirection: 'row',
+  borderRadius: 20,
+  marginBottom: 20,
+  padding: 20,
+  backgroundColor: '#ffffff',
+  borderWidth: 1,
+  borderColor: '#ddd',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  elevation: 4,
+},
+
+clubImageWrapper: {
+  width: 85,
+  height: 85,
+  borderRadius: 100,
+  borderWidth: 2,
+  padding: 2,
+  shadowOpacity: 0.4,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 2 },
+  backgroundColor: '#fff',
+  marginRight: 16,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+clubImage: {
+  width: 80,
+  height: 80,
+  borderRadius: 100,
+},
+
+clubName: {
+  fontSize: 18,
+  fontWeight: '800',
+  marginBottom: 4,
+},
+
+clubDescription: {
+  fontSize: 14,
+  fontWeight: '500',
+  lineHeight: 20,
+  marginBottom: 8,
+  color: '#555',
+},
+clubInfo: {
+    flex: 1,
+  },
+  clubHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+
+  clubMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  joinedBadge: {
+  backgroundColor: '#2DC653',
+  borderRadius: 12,
+  paddingVertical: 4,
+  paddingHorizontal: 10,
+},
+
+joinedText: {
+  fontSize: 12,
+  fontWeight: '600',
+  color: 'white',
+},
+
+clubCategory: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#1591EA',
+},
 });

@@ -29,6 +29,7 @@ export const Colors = {
     tabIconDefault: '#B0B3B8',
     tabIconSelected: tintColorDark,
     card: '#1C1C1E',
+    subCard: '#2C2C2E',
     border: '#3E4042',
     button: tintColorDark,
     buttonText: '#FFFFFF',

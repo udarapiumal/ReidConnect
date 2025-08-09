@@ -68,11 +68,11 @@ function ClubCard({ club, onPress }: ClubCardProps) {
       activeOpacity={0.8}
     >
       <View style={styles.clubImageWrapper}>
-  <Image 
-    source={{ uri: `${BASE_URL}${club.profilePicture}` }}
-    style={styles.clubImage}
-  />
-</View>
+        <Image 
+          source={{ uri: `${BASE_URL}/${club.profilePicture}` }}
+          style={styles.clubImage}
+        />
+      </View>
 
       <View style={styles.clubInfo}>
         <View style={styles.clubHeader}>
