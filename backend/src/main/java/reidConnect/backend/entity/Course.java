@@ -3,6 +3,8 @@ package reidConnect.backend.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import reidConnect.backend.enums.Degree;
+import reidConnect.backend.enums.Years;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -33,4 +35,25 @@ public class Course {
             inverseJoinColumns = @JoinColumn(name = "staff_id")
     )
     private Set<Staff> lecturers = new HashSet<>();
+
+    @ManyToOne
+    @JoinColumn(name = "lecture_venue_id")
+    private Venue lectureVenue;
+
+    @ManyToOne
+    @JoinColumn(name = "practical_venue_id")
+    private Venue practicalVenue;
+
+    @ManyToOne
+    @JoinColumn(name = "tutorial_venue_id")
+    private Venue tutorialVenue;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Degree degree;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Years year;
+
 }

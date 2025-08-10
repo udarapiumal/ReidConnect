@@ -7,6 +7,7 @@ import { ActivityIndicator, Dimensions, Image, ScrollView, StyleSheet, Text, Tou
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
+import { Alert } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -158,21 +159,42 @@ const EventDetailsScreen = () => {
     return `${hour12}:${minute} ${suffix}`;
   };
 
-  const deleteEvent = async () => {
-  try {
-    await axios.delete(`${BASE_URL}/api/events/${event.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
 
-    alert('Event deleted successfully');
-    router.back(); // Or navigate to a different page like router.replace('/club/events')
-  } catch (error) {
-    console.error('Failed to delete event:', error);
-    alert('Failed to delete event. Please try again.');
+
+const deleteEvent = () => {
+  if (!event?.id) {
+    Alert.alert("Error", "Invalid event ID.");
+    return;
   }
+
+  Alert.alert(
+    "Delete Event",
+    "Are you sure you want to delete this event?",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        onPress: async () => {
+          try {
+            await axios.delete(`${BASE_URL}/api/events/${event.id}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            Alert.alert("Success", "Event deleted successfully");
+            router.back();
+          } catch (error) {
+            console.error('Failed to delete event:', error?.response?.data || error.message);
+            Alert.alert("Error", "Failed to delete event. Please try again.");
+          }
+        },
+        style: "destructive",
+      },
+    ]
+  );
 };
+
 
 
   useEffect(() => {

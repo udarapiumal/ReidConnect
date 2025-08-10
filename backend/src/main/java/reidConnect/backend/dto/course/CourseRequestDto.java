@@ -1,6 +1,8 @@
 package reidConnect.backend.dto.course;
 
 import lombok.Data;
+import reidConnect.backend.enums.Degree;
+import reidConnect.backend.enums.Years;
 
 import java.util.Set;
 
@@ -10,4 +12,10 @@ public class CourseRequestDto {
     private String name;
     private int credits;
     private Set<Long> lecturerIds;
+    private Long lectureVenueId;
+    private Long practicalVenueId;
+    private Long tutorialVenueId;
+    private Degree degree;
+    private Years year;
+
 }

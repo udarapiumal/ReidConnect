@@ -6,6 +6,7 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate, isDarkMode = tr
 
     const navigationItems = [
         { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
+        { id: 'Time Table', icon: 'fa-solid fa-chart-bar', label: 'Time Table', route: '/academic/timetable' },
         { id: 'Academic Staff', icon: 'fa-solid fa-users', label: 'Academic Staff', route: '/academic/lecturers' },
         { id: 'Courses', icon: 'fa-solid fa-book', label: 'Courses', route: '/academic/courses' },
         { id: 'Event Schedule', icon: 'fa-solid fa-calendar-days', label: 'Events', route: '/academic/events' },

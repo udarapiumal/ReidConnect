@@ -237,7 +237,7 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
               </View>
               
               {/* Interest Button */}
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 onPress={handleLikePress} 
                 style={[
                   styles.interestButton, 
@@ -260,7 +260,7 @@ export function EventCard({ event, size = 'large', onPress, onChangePhoto }: Eve
                     Interested
                   </ThemedText>
                 )}
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
 
             {/* Event Title */}

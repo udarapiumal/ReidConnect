@@ -209,7 +209,6 @@ export function PostCard({ post, onPress }: PostCardProps) {
   // Handle different image source types with better debugging
   const getImageSource = (image: string | number | undefined) => {
     if (typeof image === 'string') {
-      console.log(`PostCard - Image URL for post ${post.id}:`, image);
       return { uri: image };
     } else if (typeof image === 'number') {
       return image; // This is a require() result
@@ -220,11 +219,9 @@ export function PostCard({ post, onPress }: PostCardProps) {
   // Image error handler
   const handleImageError = (error: any) => {
     console.error(`Image load error for post ${post.id}:`, error);
-    console.log(`Failed image URL:`, post.image);
   };
 
   const handleImageLoad = () => {
-    console.log(`Image loaded successfully for post ${post.id}`);
   };
 
   return (

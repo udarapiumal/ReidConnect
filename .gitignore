@@ -18,6 +18,10 @@ frontend/dist/
 frontend/coverage/
 frontend/.vscode/
 
+# === Node (frontend-web) ===
+frontend-web/node_modules/
+frontend/.vscode/
+
 # === Java (backend) ===
 backend/target/
 backend/.idea/

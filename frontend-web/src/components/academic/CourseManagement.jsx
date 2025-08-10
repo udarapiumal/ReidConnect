@@ -5,6 +5,7 @@ import Select from 'react-select';
 
 const COURSES_API_URL = 'http://localhost:8080/api/courses';
 const LECTURERS_API_URL = 'http://localhost:8080/api/staff';
+const VENUES_API_URL = 'http://localhost:8080/api/venues';
 
 const CourseManagement = () => {
   const [activeNavItem, setActiveNavItem] = useState("Courses");
@@ -16,15 +17,21 @@ const CourseManagement = () => {
     name: '',
     code: '',
     credits: 1,
-    lecturerIds: []
+    lecturerIds: [],
+     lectureVenueId: '',
+    practicalVenueId: '',
+    tutorialVenueId: ''
   });
   const [courses, setCourses] = useState([]);
   const [lecturers, setLecturers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [venues, setVenues] = useState([]);
+  const [venueId, setVenueId] = useState(null);
 
   useEffect(() => {
     fetchCourses();
     fetchLecturers();
+     fetchVenues();
   }, []);
 
   const fetchCourses = async () => {
@@ -51,6 +58,16 @@ const CourseManagement = () => {
       setLecturers([]);
     }
   };
+  const fetchVenues = async () => {
+  try {
+    const res = await axios.get(VENUES_API_URL);
+    const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+    setVenues(data);
+  } catch (error) {
+    console.error("Failed to fetch venues", error);
+    setVenues([]);
+  }
+};
 
   const handleNavigation = (itemId) => {
     setActiveNavItem(itemId);
@@ -64,7 +81,10 @@ const CourseManagement = () => {
       name: '',
       code: '',
       credits: 1,
-      lecturerIds: []
+      lecturerIds: [],
+      lectureVenueId: '',
+    practicalVenueId: '',
+    tutorialVenueId: ''
     });
   };
 
@@ -72,7 +92,10 @@ const CourseManagement = () => {
     setEditingCourse(course.id);
     setFormData({
       ...course,
-      lecturerIds: course.lecturerIds || []
+      lecturerIds: course.lecturerIds || [],
+      lectureVenueId: course.lectureVenueId || '',
+    practicalVenueId: course.practicalVenueId || '',
+    tutorialVenueId: course.tutorialVenueId || ''
     });
     setShowAddForm(true);
   };
@@ -93,12 +116,26 @@ const CourseManagement = () => {
     e.preventDefault();
     try {
       setLoading(true);
+      let degree = null;
+      const codePrefix = formData.code?.substring(0, 3)?.toUpperCase();
+
+      if (codePrefix === "SCS") {
+        degree = "CS";
+      } else if (codePrefix === "IS") {
+        degree = "IS";
+      }
+
       const data = {
         code: formData.code,
         name: formData.name,
         credits: formData.credits,
-        lecturerIds: formData.lecturerIds
+        lecturerIds: formData.lecturerIds,
+        lectureVenueId: formData.lectureVenueId,
+        practicalVenueId: formData.practicalVenueId,
+        tutorialVenueId: formData.tutorialVenueId,
+        degree // include the derived degree
       };
+
       if (editingCourse) {
         await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
       } else {
@@ -286,6 +323,9 @@ const CourseManagement = () => {
                       <th>ID</th>
                       <th>Course Name</th>
                       <th>Code</th>
+                      <th>Lecture Venue</th>
+                      <th>Practical Venue</th>
+                      <th>Tutorial Venue</th>
                       <th>Credits</th>
                       <th>Lecturers</th>
                       <th>Actions</th>
@@ -294,7 +334,7 @@ const CourseManagement = () => {
                   <tbody>
                     {filteredCourses.length === 0 ? (
                       <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
                           No courses found
                         </td>
                       </tr>
@@ -304,6 +344,10 @@ const CourseManagement = () => {
                           <td>{course.id}</td>
                           <td>{course.name}</td>
                           <td>{course.code}</td>
+                          <td>{course.lectureVenueName || '-'}</td>
+                          <td>{course.practicalVenueName || '-'}</td>
+                          <td>{course.tutorialVenueName || '-'}</td>
+
                           <td>{course.credits}</td>
                           <td>{getLecturerNames(course)}</td>
                           <td>
@@ -385,6 +429,54 @@ const CourseManagement = () => {
                       })}
                     />
                   </div>
+                  <div className="form-group">
+                    <label>Lecture Venue</label>
+                    <select
+                      value={formData.lectureVenueId}
+                      onChange={(e) => setFormData({ ...formData, lectureVenueId: e.target.value })}
+
+                    >
+                      <option value="">Select Lecture Venue</option>
+                      {venues.map((venue) => (
+                        <option key={venue.id} value={venue.id}>
+                          {venue.name} ({venue.faculty})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Practical Venue</label>
+                    <select
+                      value={formData.practicalVenueId}
+                      onChange={(e) => setFormData({ ...formData, practicalVenueId: e.target.value })}
+
+                    >
+                      <option value="">Select Practical Venue</option>
+                      {venues.map((venue) => (
+                        <option key={venue.id} value={venue.id}>
+                          {venue.name} ({venue.faculty})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Tutorial Venue</label>
+                    <select
+                      value={formData.tutorialVenueId}
+                      onChange={(e) => setFormData({ ...formData, tutorialVenueId: e.target.value })}
+
+                    >
+                      <option value="">Select Tutorial Venue</option>
+                      {venues.map((venue) => (
+                        <option key={venue.id} value={venue.id}>
+                          {venue.name} ({venue.faculty})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                 </div>
 
                 <div className="form-buttons">
