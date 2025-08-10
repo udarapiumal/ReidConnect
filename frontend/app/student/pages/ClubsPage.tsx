@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { BASE_URL } from '@/constants/config';
 import axios from 'axios';
@@ -274,6 +273,9 @@ export default function ClubsPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
 
   headerContent: {
@@ -574,5 +576,11 @@ clubDescription: {
   color: '#555',
 },
 
-  
+noResultsText: {
+  fontSize: 16,
+  fontWeight: '600',
+  textAlign: 'center',
+  marginTop: 12,
+  color: '#888',
+},
 });

@@ -301,12 +301,15 @@ export default function ProfilePage() {
   const handleItemPress = (option: (typeof settingsOptions)[0]) => {
       if (option.subItems) {
           // Animate the layout change
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           // Toggle expansion
           setExpandedId(expandedId === option.id ? null : option.id);
       } else if (option.title === 'Log Out') {
-          // handleLogout();
-      } else {
+          handleLogout();
+      }else if(option.title === 'Help & Support'){
+          console.log("wobbily wibbily");
+      }
+       else {
           // Handle navigation for items without sub-menus
           // navigation.navigate('PrivacyScreen');
       }
