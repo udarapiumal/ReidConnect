@@ -52,15 +52,18 @@ export default function SignUp() {
         setStep1Error(!(nameRegex.test(name)));
     };
 
-    const validateStep2 = (): void => {
-        const emailRegex = /^\d{4}[a-z]{2}\d{3}@stu\.ucsc\.cmb\.ac\.lk$/;
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-        const isEmailValid = emailRegex.test(email);
-        const isPasswordValid = passwordRegex.test(password);
-        const isConfirmMatch = password === confirmPassword;
+  const validateStep2 = (): void => {
+    const emailRegex = /^(\d{4}[a-z]{2}\d{3}@stu\.ucsc\.cmb\.ac\.lk|\d{4}(t|ba|ms|n)\d{5}@stu\.cmb\.ac\.lk)$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    
+    const isEmailValid = emailRegex.test(email);
+    const isPasswordValid = passwordRegex.test(password);
+    const isConfirmMatch = password === confirmPassword;
 
-        setStep2Error(!(isEmailValid && isPasswordValid && isConfirmMatch));
-    };
+    setStep2Error(!(isEmailValid && isPasswordValid && isConfirmMatch));
+};
+
+
 
     const validateStep3 = (): void => {
         const contactRegex = /^[0-9]{10}$/;

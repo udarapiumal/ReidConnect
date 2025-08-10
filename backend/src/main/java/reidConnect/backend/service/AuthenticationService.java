@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
@@ -59,32 +60,38 @@ public class AuthenticationService {
         String profilePictureUrl = null;
         if (input.getProfilePic() != null && !input.getProfilePic().isEmpty()) {
             String filename = UUID.randomUUID() + "_" + input.getProfilePic().getOriginalFilename();
-
             try {
-                // Use the current working directory + /uploads like the other method
                 Path uploadDir = Paths.get("C:/ReidConnect/backend/src/main/resources/static/uploads");
                 Files.createDirectories(uploadDir);
                 Path filePath = uploadDir.resolve(filename);
                 input.getProfilePic().transferTo(filePath.toFile());
-
                 profilePictureUrl = "/uploads/" + filename;
-
                 System.out.println("Saved profile pic to: " + profilePictureUrl);
             } catch (IOException e) {
                 e.printStackTrace();
-                // optionally: throw new RuntimeException("Could not save profile picture", e);
             }
         } else {
             System.out.println("No profile picture uploaded");
         }
 
-        // 3. Create and save Student with profile picture
+        // 3. Create and save Student with extra fields
         Student student = new Student();
         student.setStudentName(input.getUsername());
         student.setContactNumber(input.getContactNumber());
         student.setAcademicYear(input.getAcademicYear());
-        student.setProfilePictureUrl(profilePictureUrl); // Will be null if no picture
+        student.setProfilePictureUrl(profilePictureUrl);
         student.setUser(savedUser);
+
+        // Extract registered year from email (first 4 characters)
+        int registeredYear = Integer.parseInt(input.getEmail().substring(0, 4));
+        student.setRegisteredYear(registeredYear);
+
+        // Extract faculty code and map to faculty name
+        String email = input.getEmail().toLowerCase();
+        String facultyCode = email.substring(4, email.indexOf('@')).replaceAll("\\d", ""); // removes numbers
+        String facultyName = mapFacultyCode(facultyCode);
+        student.setFaculty(facultyName);
+
         studentRepository.save(student);
 
         // 4. Send verification email
@@ -92,6 +99,18 @@ public class AuthenticationService {
 
         return savedUser;
     }
+    private String mapFacultyCode(String code) {
+        switch (code) {
+            case "ms": return "Management";
+            case "t":  return "Technology";
+            case "ba": return "Arts";
+            case "n":  return "Nursing";
+            case "cs":
+            case "is": return "UCSC";
+            default:   return "Unknown";
+        }
+    }
+
 
     public User authenticate(LoginUserDto input) {
         User user = userRepository.findByEmail(input.getEmail()) // Fixed method name to findByEmail
