@@ -114,7 +114,7 @@ export default function CommunityPage() {
   };
           console.log('Requesting from URL:', `${BASE_URL}/api/posts`);
 
-          const response = await axiosInstance.get(`${BASE_URL}/api/posts`);
+          const response =  axiosInstance.get(`${BASE_URL}/api/posts`);
 
   const onRefresh = () => {
     fetchPosts(true);
