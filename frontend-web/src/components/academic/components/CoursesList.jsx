@@ -2,6 +2,11 @@ import React from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 export default function CoursesList({ coursesData, loading }) {
+  // Keep only unique courses by `code`
+  const uniqueCourses = Array.from(
+    new Map(coursesData.map(course => [course.code, course])).values()
+  );
+
   return (
     <section className="courses-section">
       <h3 className="courses-title">Course Codes & Names</h3>
@@ -9,7 +14,7 @@ export default function CoursesList({ coursesData, loading }) {
         <LoadingSpinner message="Loading courses..." />
       ) : (
         <div className="courses-grid">
-          {coursesData.map((course, index) => (
+          {uniqueCourses.map((course, index) => (
             <div key={course.id || index} className="course-item">
               <span className="course-code-text">{course.code}</span>
               <span className="course-name-text">
@@ -22,7 +27,7 @@ export default function CoursesList({ coursesData, loading }) {
               </span>
             </div>
           ))}
-          {coursesData.length === 0 && (
+          {uniqueCourses.length === 0 && (
             <div className="no-data">
               <p>No courses found for the selected filters.</p>
             </div>

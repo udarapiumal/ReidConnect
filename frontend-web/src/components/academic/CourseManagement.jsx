@@ -407,7 +407,7 @@ const CourseManagement = () => {
                   <label>Course Code</label>
                   <input 
                     type="text" 
-                    placeholder="Course Code (e.g., CS101)" 
+                    placeholder="Course Code (e.g., SCS 101)" 
                     required 
                     value={formData.code} 
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
@@ -420,8 +420,8 @@ const CourseManagement = () => {
                     <input
                       type="number"
                       min="1"
-                      max="10"
-                      placeholder="Enter credits (1-10)"
+                      max="4"
+                      placeholder="Enter credits (1-4)"
                       required
                       value={formData.credits}
                       onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 1 })}

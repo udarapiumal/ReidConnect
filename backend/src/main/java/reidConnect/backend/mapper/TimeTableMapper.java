@@ -55,15 +55,11 @@ public class TimeTableMapper {
     }
 
     private String getVenueForCourseType(Course course, CourseType courseType) {
-        switch (courseType) {
-            case LECTURE:
-                return course.getLectureVenue() != null ? course.getLectureVenue().getName() : "TBA";
-            case PRACTICAL:
-                return course.getPracticalVenue() != null ? course.getPracticalVenue().getName() : "TBA";
-            case TUTORIAL:
-                return course.getTutorialVenue() != null ? course.getTutorialVenue().getName() : "TBA";
-            default:
-                return "TBA";
-        }
+        return switch (courseType) {
+            case LECTURE -> course.getLectureVenue() != null ? course.getLectureVenue().getName() : "TBA";
+            case PRACTICAL -> course.getPracticalVenue() != null ? course.getPracticalVenue().getName() : "TBA";
+            case TUTORIAL -> course.getTutorialVenue() != null ? course.getTutorialVenue().getName() : "TBA";
+            default -> "TBA";
+        };
     }
 }

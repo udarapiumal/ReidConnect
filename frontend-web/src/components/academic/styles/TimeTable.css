@@ -196,7 +196,7 @@
 }
 
 .schedule-cell.selected:hover {
-  background-color: #0aa370; /* a slightly darker shade on hover */
+  background-color: #10B981; /* a slightly darker shade on hover */
 }
 
 
@@ -740,6 +740,7 @@
 
   .time-header-print {
     background-color: #e0e0e0 !important;
+    font-family: Arial, sans-serif !important; 
     font-weight: bold !important;
     width: 10px !important;
     font-size: 7px !important;
@@ -756,9 +757,10 @@
 
   .time-cell-print {
     background-color: #f9f9f9 !important;
+     font-family: Arial, sans-serif !important; 
     font-weight: bold !important;
     width: 10px !important;
-    font-size: 6px !important;
+    font-size: px !important;
     text-align: center !important;
     color: black !important;
     height: 25px !important;
