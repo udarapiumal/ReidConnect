@@ -7,6 +7,8 @@ import reidConnect.backend.dto.course.CourseRequestDto;
 import reidConnect.backend.dto.course.CourseResponseDto;
 import reidConnect.backend.entity.Course;
 import reidConnect.backend.entity.Staff;
+import reidConnect.backend.enums.Degree;
+import reidConnect.backend.enums.Years;
 import reidConnect.backend.exception.ResourceNotFoundException;
 import reidConnect.backend.mapper.CourseMapper;
 import reidConnect.backend.repository.CourseRepository;
@@ -66,4 +68,22 @@ public class CourseServiceImpl implements CourseService {
         }
         courseRepository.deleteById(id);
     }
+
+    @Override
+    public List<CourseResponseDto> getCoursesByDegree(Degree degree) {
+        return courseRepository.findByDegree(degree)
+                .stream()
+                .map(courseMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CourseResponseDto> getCoursesByDegreeAndYear(Degree degree, Years year) {
+        return courseRepository.findByDegreeAndYear(degree, year)
+                .stream()
+                .map(courseMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+
 }

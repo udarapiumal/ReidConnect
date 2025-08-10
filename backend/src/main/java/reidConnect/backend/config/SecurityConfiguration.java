@@ -43,6 +43,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/timetable/**").authenticated()
                         .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated() // Other event operations still require auth
                         .requestMatchers("/api/staff/**").authenticated()
@@ -83,7 +84,12 @@ public class SecurityConfiguration {
                 "exp://192.168.1.5:8081",
                 "exp://192.168.1.6:8081",
                 "exp://192.168.1.4:8081",
-                "exp://10.149.164.83:8081"
+                "exp://10.149.164.83:8081",
+                "http://localhost:5091/",
+                "http://localhost:11449/",
+                "http://localhost:4338/",
+                "http://localhost:5081/",
+                "http://localhost:11883/"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         configuration.setAllowedHeaders(List.of("*")); // Allow all headers

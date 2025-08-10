@@ -1,6 +1,7 @@
 package reidConnect.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.staff.StaffRequestDto;
 import reidConnect.backend.dto.staff.StaffResponseDto;
@@ -45,7 +46,11 @@ public class StaffServiceImpl implements StaffService {
     public void deleteStaff(Long id) {
         Staff staff = staffRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff not found with id: " + id));
-        staffRepository.delete(staff);
+        try {
+            staffRepository.delete(staff);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("Staff is currently assigned to a course. Cannot delete.");
+        }
     }
 
     @Override

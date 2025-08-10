@@ -27,9 +27,13 @@ public class StaffController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteStaff(@PathVariable Long id) {
-        staffService.deleteStaff(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteStaff(@PathVariable Long id) {
+        try {
+            staffService.deleteStaff(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
