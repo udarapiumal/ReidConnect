@@ -16,11 +16,13 @@ const CourseManagement = () => {
     id: '',
     name: '',
     code: '',
-    credits: 1,
+    credits: '',
     lecturerIds: [],
-     lectureVenueId: '',
+    lectureVenueId: '',
     practicalVenueId: '',
-    tutorialVenueId: ''
+    tutorialVenueId: '',
+    degree: '',
+    year: '',
   });
   const [courses, setCourses] = useState([]);
   const [lecturers, setLecturers] = useState([]);
@@ -80,11 +82,13 @@ const CourseManagement = () => {
       id: '',
       name: '',
       code: '',
-      credits: 1,
+      credits: '',
       lecturerIds: [],
       lectureVenueId: '',
     practicalVenueId: '',
-    tutorialVenueId: ''
+    tutorialVenueId: '',
+    degree: '',
+    year: '',
     });
   };
 
@@ -113,44 +117,62 @@ const CourseManagement = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      let degree = null;
-      const codePrefix = formData.code?.substring(0, 3)?.toUpperCase();
+  e.preventDefault();
+  try {
+    setLoading(true);
 
-      if (codePrefix === "SCS") {
-        degree = "CS";
-      } else if (codePrefix === "IS") {
-        degree = "IS";
-      }
+    const code = formData.code?.toUpperCase() || "";
+    let degree = null;
+    let year = null;
 
-      const data = {
-        code: formData.code,
-        name: formData.name,
-        credits: formData.credits,
-        lecturerIds: formData.lecturerIds,
-        lectureVenueId: formData.lectureVenueId,
-        practicalVenueId: formData.practicalVenueId,
-        tutorialVenueId: formData.tutorialVenueId,
-        degree // include the derived degree
-      };
-
-      if (editingCourse) {
-        await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
-      } else {
-        await axios.post(COURSES_API_URL, data);
-      }
-      fetchCourses();
-      setShowAddForm(false);
-      setEditingCourse(null);
-    } catch (error) {
-      console.error("Failed to save course", error);
-      alert("Failed to save course. Please check all fields and try again.");
-    } finally {
-      setLoading(false);
+    if (code.startsWith("SCS")) {
+      degree = "CS";
+    } else if (code.startsWith("IS")) {
+      degree = "IS";
     }
-  };
+
+    // Extract year digit after prefix: For SCS, the prefix length is 3, for IS prefix length is 2
+    let prefixLength = 0;
+    if (code.startsWith("SCS")) prefixLength = 3;
+    else if (code.startsWith("IS")) prefixLength = 2;
+
+    if (prefixLength > 0 && code.length > prefixLength) {
+      const yearChar = code.charAt(prefixLength);
+      if (["1", "2", "3", "4"].includes(yearChar)) {
+        year = `YEAR_${yearChar}`;
+      }
+    }
+
+    const data = {
+      code: formData.code,
+      name: formData.name,
+      credits: formData.credits,
+      lecturerIds: formData.lecturerIds,
+      lectureVenueId: formData.lectureVenueId,
+      practicalVenueId: formData.practicalVenueId,
+      tutorialVenueId: formData.tutorialVenueId,
+      degree,
+      year
+    };
+
+    if (editingCourse) {
+      await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
+    } else {
+      await axios.post(COURSES_API_URL, data);
+    }
+
+    fetchCourses();
+    setShowAddForm(false);
+    setEditingCourse(null);
+
+  } catch (error) {
+    console.error("Failed to save course", error);
+    alert("Failed to save course. Please check all fields and try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleCancel = () => {
     setShowAddForm(false);
