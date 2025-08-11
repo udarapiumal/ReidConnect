@@ -93,127 +93,127 @@ export default function PrintLayout({ printData }) {
                   </tr>
                 </thead>
                 <tbody>
-  {(() => {
-    let skipMap = {};
+                  {(() => {
+                    let skipMap = {};
 
-    return timeSlots.map((timeSlot, slotIndex) => {
-      // Check if current row is the lunch break row
-      const isLunchBreak = timeSlot.start === "12:00" && timeSlot.end === "13:00";
+                    return timeSlots.map((timeSlot, slotIndex) => {
+                      // Check if current row is the lunch break row
+                      const isLunchBreak = timeSlot.start === "12:00" && timeSlot.end === "13:00";
 
-      if (isLunchBreak) {
-        return (
-          <tr key={`${year}-${timeSlot.start}`}>
-            {/* Time column */}
-            <td className="time-cell-print" style={{ fontWeight: 'bold', fontStyle: 'italic' }}>
-              {timeSlot.start} - {timeSlot.end}
-            </td>
-            {/* Single merged cell spanning all other columns (5 days * 2 degrees = 10 columns) */}
-            <td
-              className="schedule-cell-print"
-              colSpan={10}
-              style={{ textAlign: 'center', fontWeight: 'bold', fontStyle: 'italic' }}
-            >
-              Lunch Break
-            </td>
-          </tr>
-        );
-      }
+                      if (isLunchBreak) {
+                        return (
+                          <tr key={`${year}-${timeSlot.start}`}>
+                            {/* Time column */}
+                            <td className="time-cell-print" style={{ fontWeight: 'bold', fontStyle: 'italic' }}>
+                              {timeSlot.start} - {timeSlot.end}
+                            </td>
+                            {/* Single merged cell spanning all other columns (5 days * 2 degrees = 10 columns) */}
+                            <td
+                              className="schedule-cell-print"
+                              colSpan={10}
+                              style={{ textAlign: 'center', fontWeight: 'bold', fontStyle: 'italic' }}
+                            >
+                              Lunch Break
+                            </td>
+                          </tr>
+                        );
+                      }
 
-      // Normal rows
-      return (
-        <tr key={`${year}-${timeSlot.start}`}>
-          {/* TIME COLUMN */}
-          <td className="time-cell-print">
-            {timeSlot.start} - {timeSlot.end}
-          </td>
+                      // Normal rows
+                      return (
+                        <tr key={`${year}-${timeSlot.start}`}>
+                          {/* TIME COLUMN */}
+                          <td className="time-cell-print">
+                            {timeSlot.start} - {timeSlot.end}
+                          </td>
 
-          {/* DAYS + DEGREES */}
-          {days.map(day => {
-            return ["IS", "CS"].map(degree => {
-              const skipKey = `${day}-${degree}-${slotIndex}`;
-              if (skipMap[skipKey]) return null;
+                          {/* DAYS + DEGREES */}
+                          {days.map(day => {
+                            return ["IS", "CS"].map(degree => {
+                              const skipKey = `${day}-${degree}-${slotIndex}`;
+                              if (skipMap[skipKey]) return null;
 
-              const currentClasses = timeUtils.getClassesForTimeSlot(
-                day,
-                timeSlot,
-                yearData[degree] || []
-              );
+                              const currentClasses = timeUtils.getClassesForTimeSlot(
+                                day,
+                                timeSlot,
+                                yearData[degree] || []
+                              );
 
-              const classesEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+                              const classesEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-              // Empty slot merging logic (only merge exactly 2 consecutive empties)
-              if (!currentClasses || currentClasses.length === 0) {
-                let nextIndex = slotIndex + 1;
-                if (
-                  nextIndex < timeSlots.length &&
-                  !skipMap[`${day}-${degree}-${nextIndex}`]
-                ) {
-                  const nextClasses = timeUtils.getClassesForTimeSlot(
-                    day,
-                    timeSlots[nextIndex],
-                    yearData[degree] || []
-                  );
-                  if (
-                    (!nextClasses || nextClasses.length === 0) &&
-                    !skipMap[`${day}-${degree}-${nextIndex}`]
-                  ) {
-                    skipMap[`${day}-${degree}-${nextIndex}`] = true;
-                    return (
-                      <td
-                        key={`${year}-${day}-${degree}-${timeSlot.start}`}
-                        className="schedule-cell-print"
-                        rowSpan={2}
-                      >
-                        {formatClassCellForPrint(currentClasses)}
-                      </td>
-                    );
-                  }
-                }
-                return (
-                  <td
-                    key={`${year}-${day}-${degree}-${timeSlot.start}`}
-                    className="schedule-cell-print"
-                  >
-                    {formatClassCellForPrint(currentClasses)}
-                  </td>
-                );
-              }
+                              // Empty slot merging logic (only merge exactly 2 consecutive empties)
+                              if (!currentClasses || currentClasses.length === 0) {
+                                let nextIndex = slotIndex + 1;
+                                if (
+                                  nextIndex < timeSlots.length &&
+                                  !skipMap[`${day}-${degree}-${nextIndex}`]
+                                ) {
+                                  const nextClasses = timeUtils.getClassesForTimeSlot(
+                                    day,
+                                    timeSlots[nextIndex],
+                                    yearData[degree] || []
+                                  );
+                                  if (
+                                    (!nextClasses || nextClasses.length === 0) &&
+                                    !skipMap[`${day}-${degree}-${nextIndex}`]
+                                  ) {
+                                    skipMap[`${day}-${degree}-${nextIndex}`] = true;
+                                    return (
+                                      <td
+                                        key={`${year}-${day}-${degree}-${timeSlot.start}`}
+                                        className="schedule-cell-print"
+                                        rowSpan={2}
+                                      >
+                                        {formatClassCellForPrint(currentClasses)}
+                                      </td>
+                                    );
+                                  }
+                                }
+                                return (
+                                  <td
+                                    key={`${year}-${day}-${degree}-${timeSlot.start}`}
+                                    className="schedule-cell-print"
+                                  >
+                                    {formatClassCellForPrint(currentClasses)}
+                                  </td>
+                                );
+                              }
 
-              // Merge consecutive identical non-empty slots
-              let rowSpan = 1;
-              for (let i = slotIndex + 1; i < timeSlots.length; i++) {
-                const nextClasses = timeUtils.getClassesForTimeSlot(
-                  day,
-                  timeSlots[i],
-                  yearData[degree] || []
-                );
-                if (
-                  nextClasses.length > 0 &&
-                  classesEqual(currentClasses, nextClasses)
-                ) {
-                  rowSpan++;
-                  skipMap[`${day}-${degree}-${i}`] = true;
-                } else {
-                  break;
-                }
-              }
+                              // Merge consecutive identical non-empty slots
+                              let rowSpan = 1;
+                              for (let i = slotIndex + 1; i < timeSlots.length; i++) {
+                                const nextClasses = timeUtils.getClassesForTimeSlot(
+                                  day,
+                                  timeSlots[i],
+                                  yearData[degree] || []
+                                );
+                                if (
+                                  nextClasses.length > 0 &&
+                                  classesEqual(currentClasses, nextClasses)
+                                ) {
+                                  rowSpan++;
+                                  skipMap[`${day}-${degree}-${i}`] = true;
+                                } else {
+                                  break;
+                                }
+                              }
 
-              return (
-                <td
-                  key={`${year}-${day}-${degree}-${timeSlot.start}`}
-                  className="schedule-cell-print"
-                  rowSpan={rowSpan}
-                >
-                  {formatClassCellForPrint(currentClasses)}
-                </td>
-              );
-            });
-          })}
-        </tr>
-      );
-    });
-  })()}
-</tbody>
+                              return (
+                                <td
+                                  key={`${year}-${day}-${degree}-${timeSlot.start}`}
+                                  className="schedule-cell-print"
+                                  rowSpan={rowSpan}
+                                >
+                                  {formatClassCellForPrint(currentClasses)}
+                                </td>
+                              );
+                            });
+                          })}
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
 
               </table>
 
