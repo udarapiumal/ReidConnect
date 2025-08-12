@@ -27,18 +27,24 @@ export default function PrintLayout({ printData }) {
       if (cls.courseType === 'LECTURE') content += ' L';
       else if (cls.courseType === 'PRACTICAL') content += ' P';
       else if (cls.courseType === 'TUTORIAL') content += ' T';
+
+      if (cls.lecturerCodes) {
+        content += `\n(${cls.lecturerCodes})`;
+      }
       
       if (cls.venue && cls.venue !== 'TBA') {
-        content += `\n(${cls.venue})`;
+        content += `\n${cls.venue}`;
       }
-      
-      if (cls.lecturerCodes) {
-        content += `\n${cls.lecturerCodes}`;
-      }
-      
       if (cls.group && cls.group !== 'ALL') {
-        content += `\nGrp ${cls.group}`;
-      }
+  if (cls.group === 'GROUP_1') {
+    content += `\nGr. 1`;
+  } else if (cls.group === 'GROUP_2') {
+    content += `\nGr. 2`;
+  } else {
+    content += `\nGrp ${cls.group}`;
+  }
+}
+
       
       return content;
     }).join('\n\n');
@@ -104,14 +110,14 @@ export default function PrintLayout({ printData }) {
                         return (
                           <tr key={`${year}-${timeSlot.start}`}>
                             {/* Time column */}
-                            <td className="time-cell-print" style={{ fontWeight: 'bold', fontStyle: 'italic' }}>
+                            <td className="time-cell-print" style={{ fontWeight: 'bold' }}>
                               {timeSlot.start} - {timeSlot.end}
                             </td>
                             {/* Single merged cell spanning all other columns (5 days * 2 degrees = 10 columns) */}
                             <td
                               className="schedule-cell-print"
                               colSpan={10}
-                              style={{ textAlign: 'center', fontWeight: 'bold', fontStyle: 'italic' }}
+                              style={{ textAlign: 'center', fontWeight: 'bold' }}
                             >
                               Lunch Break
                             </td>
@@ -214,47 +220,65 @@ export default function PrintLayout({ printData }) {
                     });
                   })()}
                 </tbody>
-
               </table>
 
               <div className="print-courses">
-              <div className="print-courses-column">
-                <div className="course-list">
-                  {yearData.courses?.IS?.length > 0 ? (
-                    Array.from(
-                      new Map(yearData.courses.IS.map(course => [`${course.code}-${course.name}`, course])).values()
-                    ).map((course, index) => (
-                      <div key={course.id || `is-${index}`} className="print-course-item">
-                        <strong>{course.code}</strong> {course.name} ({course.credits} Credits)
-                        {course.lecturerNames?.length > 0 && (
-                          <span className="lecturer-info"> - {course.lecturerNames.join(', ')}</span>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="print-course-item">No IS courses found for this year</div>
-                  )}
+                <div className="print-courses-column">
+                  <div className="course-list">
+                    {yearData.courses?.IS?.length > 0 ? (
+                      Array.from(
+                        new Map(yearData.courses.IS.map(course => [course.code, course])).values()
+                      ).map((course, index) => (
+                        <div key={course.id || `is-${index}`} className="print-course-item">
+                          <strong>{course.code}</strong> {course.name} 
+                          {course.lecturerNames?.length > 0 && (
+                            <span className="lecturer-info">
+                              {" (" + course.lecturerCodes.join(" & ") + ") "}
+                            </span>
+                          )}
+                          (
+                            {course.lectureCredits > 0 ? `${course.lectureCredits}L` : ''}
+                            {course.lectureCredits > 0 && course.practicalCredits > 0 && ' + '}
+                            {course.practicalCredits > 0 ? `${course.practicalCredits}P` : ''}
+                          )
+                          
+                        </div>
+                      ))
+                    ) : (
+                      <div className="print-course-item">No IS courses found for this year</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="print-courses-column">
+                  <div className="course-list">
+                    {yearData.courses?.CS?.length > 0 ? (
+                      Array.from(
+                        new Map(yearData.courses.CS.map(course => [course.code, course])).values()
+                      ).map((course, index) => (
+                        <div key={course.id || `cs-${index}`} className="print-course-item">
+                          <strong>{course.code}</strong> {course.name}
+                          {course.lecturerNames?.length > 0 && (
+                            <span className="lecturer-info">
+                              {" (" + course.lecturerCodes.join(" & ") + ") "}
+                            </span>
+
+                          )}
+                           (
+                            {course.lectureCredits > 0 ? ` ${course.lectureCredits}L` : ''}
+                            {course.lectureCredits > 0 && course.practicalCredits > 0 && ' + '}
+                            {course.practicalCredits > 0 ? `${course.practicalCredits}P` : ''}
+                          )
+                          
+                        </div>
+                      ))
+                    ) : (
+                      <div className="print-course-item">No CS courses found for this year</div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="print-courses-column">
-                <div className="course-list">
-                  {yearData.courses?.CS?.length > 0 ? (
-                    Array.from(
-                      new Map(yearData.courses.CS.map(course => [`${course.code}-${course.name}`, course])).values()
-                    ).map((course, index) => (
-                      <div key={course.id || `cs-${index}`} className="print-course-item">
-                        <strong>{course.code}</strong> {course.name} ({course.credits} Credits)
-                        {course.lecturerNames?.length > 0 && (
-                          <span className="lecturer-info"> - {course.lecturerNames.join(', ')}</span>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="print-course-item">No CS courses found for this year</div>
-                  )}
-                </div>
-              </div>
-            </div>
+
             </div>
           );
         })

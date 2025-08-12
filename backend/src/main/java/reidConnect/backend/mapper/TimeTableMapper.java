@@ -27,7 +27,8 @@ public class TimeTableMapper {
         dto.setCourseName(course.getName());
         dto.setDegree(course.getDegree());
         dto.setYear(course.getYear());
-        dto.setCredits(course.getCredits());
+        dto.setLectureCredits(course.getLectureCredits());
+        dto.setPracticalCredits(course.getPracticalCredits());
 
         // Slot IDs - sorted by slot ID for proper time ordering
         dto.setSlotIds(

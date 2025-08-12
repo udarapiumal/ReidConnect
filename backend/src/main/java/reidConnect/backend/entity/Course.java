@@ -26,7 +26,10 @@ public class Course {
     private String name;
 
     @Column(nullable = false)
-    private int credits;
+    private int lectureCredits = 0;
+
+    @Column(nullable = false)
+    private int practicalCredits = 0;
 
     @ManyToMany
     @JoinTable(

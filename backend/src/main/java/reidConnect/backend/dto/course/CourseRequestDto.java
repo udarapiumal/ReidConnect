@@ -10,7 +10,8 @@ import java.util.Set;
 public class CourseRequestDto {
     private String code;
     private String name;
-    private int credits;
+    private int lectureCredits;
+    private int practicalCredits;
     private Set<Long> lecturerIds;
     private Long lectureVenueId;
     private Long practicalVenueId;

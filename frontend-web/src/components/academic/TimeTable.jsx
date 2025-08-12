@@ -8,6 +8,9 @@ import CoursesList from './components/CoursesList';
 import PrintLayout from './components/PrintLayout';
 import { useTimeTableData } from './hooks/useTimeTableData';
 import { timeSlotConfig } from './utils/timeSlotConfig';
+import { PRIVILEGES } from '../../api/rolePrivileges';
+import { getCurrentUserRole } from '../../utils/auth';
+
 import './styles/TimeTable.css';
 
 export default function TimeTable() {
@@ -18,6 +21,11 @@ export default function TimeTable() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [courses, setCourses] = useState([]);
   const [refreshToggle, setRefreshToggle] = useState(false); 
+  const role = getCurrentUserRole();
+  const userPrivs = PRIVILEGES[role] || [];
+  const canEditTimetable = userPrivs.includes("TIMETABLE_EDIT");
+
+
 
   const {
     timetableData,
@@ -133,7 +141,8 @@ export default function TimeTable() {
                 lecturerCodes: entry.lecturerCodes || '',
                 lecturerNames: entry.lecturerNames || '',
                 degree: entry.degree,
-                credits: entry.credits
+                lectureCredits: entry.lectureCredits,
+                practicalCredits: entry.practicalCredits
               };
             }).filter(Boolean);
 
@@ -145,9 +154,11 @@ export default function TimeTable() {
                   id: entry.id,
                   code: entry.courseCode,
                   name: entry.courseName,
-                  credits: entry.credits,
+                  lectureCredits: entry.lectureCredits,
+                  practicalCredits: entry.practicalCredits,
                   degree: entry.degree,
-                  lecturerNames: entry.lecturerNames ? entry.lecturerNames.split(', ') : []
+                  lecturerNames: entry.lecturerNames ? entry.lecturerNames.split(', ') : [],
+                  lecturerCodes: entry.lecturerCodes ? entry.lecturerCodes.split(', ') : []
                 });
               }
               return courses;
@@ -192,12 +203,15 @@ export default function TimeTable() {
                 onPrint={handlePrint}
                 isLoadingPrint={isLoadingPrint}
               />
-              <button 
-                className={`edit-button ${isEditMode ? 'edit-active' : ''}`}
-                onClick={handleEditToggle}
-              >
-                {isEditMode ? 'Exit Edit' : 'Edit'}
-              </button>
+              
+              {canEditTimetable && (
+                <button 
+                  className={`edit-button ${isEditMode ? 'edit-active' : ''}`}
+                  onClick={handleEditToggle}
+                >
+                  {isEditMode ? 'Exit Edit' : 'Edit'}
+                </button>
+              )}
             </div>
           </div>
 

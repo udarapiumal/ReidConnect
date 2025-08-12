@@ -16,7 +16,8 @@ const CourseManagement = () => {
     id: '',
     name: '',
     code: '',
-    credits: '',
+    lectureCredits: '',
+    practicalCredits: '',
     lecturerIds: [],
     lectureVenueId: '',
     practicalVenueId: '',
@@ -82,13 +83,14 @@ const CourseManagement = () => {
       id: '',
       name: '',
       code: '',
-      credits: '',
+      lectureCredits: '',
+      practicalCredits: '',
       lecturerIds: [],
       lectureVenueId: '',
-    practicalVenueId: '',
-    tutorialVenueId: '',
-    degree: '',
-    year: '',
+      practicalVenueId: '',
+      tutorialVenueId: '',
+      degree: '',
+      year: '',
     });
   };
 
@@ -146,7 +148,8 @@ const CourseManagement = () => {
     const data = {
       code: formData.code,
       name: formData.name,
-      credits: formData.credits,
+      lectureCredits: formData.lectureCredits,
+      practicalCredits: formData.practicalCredits,
       lecturerIds: formData.lecturerIds,
       lectureVenueId: formData.lectureVenueId,
       practicalVenueId: formData.practicalVenueId,
@@ -195,13 +198,6 @@ const CourseManagement = () => {
     value: l.id,
     label: `${l.name} (${l.code})`
   }));
-
-  const creditOptions = [
-    { value: 1, label: '1 Credit' },
-    { value: 2, label: '2 Credits' },
-    { value: 3, label: '3 Credits' },
-    { value: 4, label: '4 Credits' }
-  ];
 
   const customSelectStyles = {
     control: (provided, state) => ({
@@ -348,7 +344,8 @@ const CourseManagement = () => {
                       <th>Lecture Venue</th>
                       <th>Practical Venue</th>
                       <th>Tutorial Venue</th>
-                      <th>Credits</th>
+                      <th>Lecture Credits</th>
+                      <th>Practical Credits</th>
                       <th>Lecturers</th>
                       <th>Actions</th>
                     </tr>
@@ -370,7 +367,8 @@ const CourseManagement = () => {
                           <td>{course.practicalVenueName || '-'}</td>
                           <td>{course.tutorialVenueName || '-'}</td>
 
-                          <td>{course.credits}</td>
+                          <td>{course.lectureCredits}</td>
+                          <td>{course.practicalCredits}</td>
                           <td>{getLecturerNames(course)}</td>
                           <td>
                             <button onClick={() => handleEditCourse(course)} className="edit-btn" disabled={loading}>
@@ -416,15 +414,27 @@ const CourseManagement = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Credits</label>
+                    <label>Lecture Credits</label>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       max="4"
                       placeholder="Enter credits (1-4)"
                       required
-                      value={formData.credits}
-                      onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 1 })}
+                      value={formData.lectureCredits}
+                      onChange={(e) => setFormData({ ...formData, lectureCredits: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Practical Credits</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="8"
+                      placeholder="Enter credits (1-8)"
+                      required
+                      value={formData.practicalCredits}
+                      onChange={(e) => setFormData({ ...formData, practicalCredits: parseInt(e.target.value) || 1 })}
                     />
                   </div>
 

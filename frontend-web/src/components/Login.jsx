@@ -41,7 +41,7 @@ export default function Login() {
             const { token } = res.data;
             const decoded = jwtDecode(token);
 
-            if (decoded.role !== "union" && decoded.role !== "academic") {
+            if (!(decoded.role === "union" || decoded.role.startsWith("academic_"))) {
                 alert("Access denied: Unauthorized role");
                 return;
             }
@@ -51,7 +51,7 @@ export default function Login() {
 
             if (decoded.role === "union") {
                 navigate("/union/dashboard");
-            } else if (decoded.role === "academic") {
+            } else if (decoded.role.startsWith("academic_")) {
                 navigate("/academic/dashboard");
             }
         } catch (err) {

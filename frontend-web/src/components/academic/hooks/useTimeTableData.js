@@ -51,9 +51,11 @@ export function useTimeTableData(selectedYear, selectedDegree) {
             id: entry.id,
             code: entry.courseCode,
             name: entry.courseName,
-            credits: entry.credits,
+            lectureCredits: entry.lectureCredits,
+            practicalCredits: entry.practicalCredits,
             degree: entry.degree,
-            lecturerNames: entry.lecturerNames ? entry.lecturerNames.split(', ') : []
+            lecturerNames: entry.lecturerNames ? entry.lecturerNames.split(', ') : [],
+            lecturerCodes : entry.lecturerCodes ? entry.lecturerCodes.split(', ') : []
           });
         }
         return courses;
