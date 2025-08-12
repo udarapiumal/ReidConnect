@@ -254,6 +254,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(VenueClashException.class)
+    public ResponseEntity<ErrorResponse> handleVenueClashException(
+            VenueClashException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "Venue Clash",
+                ex.getMessage(),
+                HttpStatus.CONFLICT.value(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+
     /**
      * Handle all other exceptions
      */

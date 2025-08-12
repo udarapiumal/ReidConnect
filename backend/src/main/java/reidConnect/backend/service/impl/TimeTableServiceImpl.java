@@ -5,12 +5,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reidConnect.backend.dto.timetable.TimeTableRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableResponseDto;
+import reidConnect.backend.dto.venue.OccupiedVenueDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.Degree;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.exception.ResourceNotFoundException;
 import reidConnect.backend.mapper.TimeTableMapper;
 import reidConnect.backend.repository.*;
+import reidConnect.backend.service.OccupiedVenueService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,9 +25,12 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
 
     private final TimeTableRepository timeTableRepository;
     private final CourseRepository courseRepository;
+    private final OccupiedVenueRepository occupiedVenueRepository;
     private final SlotRepository slotRepository;
     private final TimeTableSlotRepository timeTableSlotRepository;
     private final TimeTableMapper timeTableMapper;
+    private final OccupiedVenueService occupiedVenueService;
+
 
     @Override
     @Transactional
@@ -52,8 +57,49 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
 
         tt.setSlots(timeTableSlots);
         timeTableRepository.save(tt);
+
+        // Save timetable first so it has an ID
+        timeTableRepository.save(tt);
+
+        // Determine venueId based on course type
+        Long venueId;
+        switch (dto.getCourseType()) {
+            case LECTURE:
+                venueId = course.getLectureVenue() != null ? course.getLectureVenue().getId() : null;
+                break;
+            case PRACTICAL:
+                venueId = course.getPracticalVenue() != null ? course.getPracticalVenue().getId() : null;
+                break;
+            case TUTORIAL:
+                venueId = course.getTutorialVenue() != null ? course.getTutorialVenue().getId() : null;
+                break;
+            default:
+                throw new RuntimeException("Invalid course type");
+        }
+
+        if (venueId == null) {
+            throw new RuntimeException("Venue not assigned for the course and course type");
+        }
+
+
+
+        // Now store occupied venue records for clash detection
+        List<OccupiedVenueDto> occupiedDtos = dto.getSlotIds().stream()
+                .map(slotId -> {
+                    OccupiedVenueDto ovDto = new OccupiedVenueDto();
+                    ovDto.setVenueId(venueId);
+                    ovDto.setDay(dto.getDay());
+                    ovDto.setSlotId(slotId);
+                    ovDto.setTimeTableId(tt.getId());
+                    return ovDto;
+                })
+                .collect(Collectors.toList());
+
+        occupiedVenueService.addOccupiedVenues(occupiedDtos);
+
         return timeTableMapper.toDto(tt);
     }
+
 
     @Override
     public TimeTableResponseDto getById(Long id) {
@@ -79,11 +125,13 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
+        // Update timetable fields
         tt.setDay(dto.getDay());
         tt.setCourse(course);
         tt.setCourseType(dto.getCourseType());
         tt.setGroup(dto.getGroup());
 
+        // Clear and update slots
         tt.getSlots().clear();
         for (Long slotId : dto.getSlotIds()) {
             Slot slot = slotRepository.findById(slotId)
@@ -95,15 +143,63 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
             tt.getSlots().add(ts);
         }
 
-        return timeTableMapper.toDto(timeTableRepository.save(tt));
+        // Save updated timetable first
+        TimeTable updatedTT = timeTableRepository.save(tt);
+
+        // Remove existing occupied venues for this timetable
+        occupiedVenueRepository.deleteByTimeTableId(id);
+
+        // Determine new venue based on updated course type
+        Long venueId;
+        switch (dto.getCourseType()) {
+            case LECTURE:
+                venueId = course.getLectureVenue() != null ? course.getLectureVenue().getId() : null;
+                break;
+            case PRACTICAL:
+                venueId = course.getPracticalVenue() != null ? course.getPracticalVenue().getId() : null;
+                break;
+            case TUTORIAL:
+                venueId = course.getTutorialVenue() != null ? course.getTutorialVenue().getId() : null;
+                break;
+            default:
+                throw new RuntimeException("Invalid course type");
+        }
+
+        if (venueId == null) {
+            throw new RuntimeException("Venue not assigned for the course and course type");
+        }
+
+        // Build occupied venue DTOs exactly like in create
+        List<OccupiedVenueDto> occupiedDtos = dto.getSlotIds().stream()
+                .map(slotId -> {
+                    OccupiedVenueDto ovDto = new OccupiedVenueDto();
+                    ovDto.setVenueId(venueId);
+                    ovDto.setDay(dto.getDay());
+                    ovDto.setSlotId(slotId);
+                    ovDto.setTimeTableId(updatedTT.getId());
+                    return ovDto;
+                })
+                .collect(Collectors.toList());
+
+        // Use the service method to add occupied venues — this includes clash detection & exception throwing
+        occupiedVenueService.addOccupiedVenues(occupiedDtos);
+
+        return timeTableMapper.toDto(updatedTT);
     }
 
+
     @Override
+    @Transactional
     public void delete(Long id) {
         TimeTable tt = timeTableRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Timetable not found"));
+
+        // Delete occupied venue rows first
+        occupiedVenueRepository.deleteByTimeTableId(id);
+
         timeTableRepository.delete(tt);
     }
+
 
     @Override
     public List<TimeTableResponseDto> getByYearAndDegree(Degree degree, Years year) {

@@ -1,0 +1,101 @@
+/* Overlay for centering */
+.styled-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+}
+
+/* Main alert container */
+.styled-alert {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 90%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Content area */
+.styled-alert-content {
+  padding: 20px 24px;
+  position: relative;
+}
+
+/* Header with icon */
+.styled-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #dc3545;
+}
+
+.styled-alert-icon {
+  font-size: 18px;
+}
+
+/* Message text */
+.styled-alert-message {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #495057;
+  margin-right: 20px;
+}
+
+/* Close button */
+.styled-alert-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.styled-alert-close:hover {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+/* Timeout progress bar */
+.styled-alert-timeout-bar {
+  height: 3px;
+  background-color: #e9ecef;
+  position: relative;
+  overflow: hidden;
+}
+
+.styled-alert-timeout-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #dc3545, #fd7e14);
+  transition: width 0.1s linear;
+  border-radius: 0 2px 2px 0;
+}

@@ -10,6 +10,7 @@ import { useTimeTableData } from './hooks/useTimeTableData';
 import { timeSlotConfig } from './utils/timeSlotConfig';
 import { PRIVILEGES } from '../../api/rolePrivileges';
 import { getCurrentUserRole } from '../../utils/auth';
+import StyledAlert from './components/StyledAlert'; 
 
 import './styles/TimeTable.css';
 
@@ -24,6 +25,7 @@ export default function TimeTable() {
   const role = getCurrentUserRole();
   const userPrivs = PRIVILEGES[role] || [];
   const canEditTimetable = userPrivs.includes("TIMETABLE_EDIT");
+  const [clashAlert, setClashAlert] = useState(null);
 
 
 
@@ -68,23 +70,41 @@ export default function TimeTable() {
     }
   };
 
-  const handleEntryUpdate = async (entryId, updateData) => {
-    try {
-      await axiosInstance.put(`/api/timetable/${entryId}`, updateData);
-      triggerRefresh();
-    } catch (error) {
-      console.error('Error updating entry:', error);
-      alert('Failed to update entry. Please try again.');
-    }
-  };
-
   const handleEntryCreate = async (createData) => {
     try {
       await axiosInstance.post('/api/timetable', createData);
       triggerRefresh();
     } catch (error) {
       console.error('Error creating entry:', error);
-      alert('Failed to create entry. Please try again.');
+      if (error.response && error.response.data && error.response.data.message) {
+        // Show the styled alert instead of plain alert
+        if (error.response.data.message.includes('Venue clash detected')) {
+          setClashAlert(error.response.data.message);
+        } else {
+          alert(error.response.data.message);  // fallback
+        }
+      } else {
+        alert('Failed to create entry. Please try again.');
+      }
+    }
+  };
+
+  // Similar for update if needed:
+  const handleEntryUpdate = async (entryId, updateData) => {
+    try {
+      await axiosInstance.put(`/api/timetable/${entryId}`, updateData);
+      triggerRefresh();
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        if (error.response.data.message.includes('Venue clash detected')) {
+          setClashAlert(error.response.data.message);
+        } else {
+          alert(error.response.data.message);
+        }
+      } else {
+        alert('Failed to update entry. Please try again.');
+      }
     }
   };
 
@@ -241,6 +261,13 @@ export default function TimeTable() {
       </div>
 
       <PrintLayout printData={printData} />
+
+      {clashAlert && (
+        <StyledAlert
+          message={clashAlert}
+          onClose={() => setClashAlert(null)}
+        />
+      )}
     </div>
   );
 }
