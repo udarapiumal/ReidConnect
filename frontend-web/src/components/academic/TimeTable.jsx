@@ -71,42 +71,45 @@ export default function TimeTable() {
   };
 
   const handleEntryCreate = async (createData) => {
-    try {
-      await axiosInstance.post('/api/timetable', createData);
-      triggerRefresh();
-    } catch (error) {
-      console.error('Error creating entry:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        // Show the styled alert instead of plain alert
-        if (error.response.data.message.includes('Venue clash detected')) {
-          setClashAlert(error.response.data.message);
-        } else {
-          alert(error.response.data.message);  // fallback
-        }
+  try {
+    await axiosInstance.post('/api/timetable', createData);
+    triggerRefresh();
+  } catch (error) {
+    console.error('Error creating entry:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+      const msg = error.response.data.message;
+      // Show styled alert for venue or staff clashes
+      if (msg.includes('Venue clash detected') || msg.includes('Staff clash detected')) {
+        setClashAlert(msg);
       } else {
-        alert('Failed to create entry. Please try again.');
+        alert(msg); // fallback for other errors
       }
+    } else {
+      alert('Failed to create entry. Please try again.');
     }
-  };
+  }
+};
 
-  // Similar for update if needed:
-  const handleEntryUpdate = async (entryId, updateData) => {
-    try {
-      await axiosInstance.put(`/api/timetable/${entryId}`, updateData);
-      triggerRefresh();
-    } catch (error) {
-      console.error('Error updating entry:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        if (error.response.data.message.includes('Venue clash detected')) {
-          setClashAlert(error.response.data.message);
-        } else {
-          alert(error.response.data.message);
-        }
+// Same in update
+const handleEntryUpdate = async (entryId, updateData) => {
+  try {
+    await axiosInstance.put(`/api/timetable/${entryId}`, updateData);
+    triggerRefresh();
+  } catch (error) {
+    console.error('Error updating entry:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+      const msg = error.response.data.message;
+      if (msg.includes('Venue clash detected') || msg.includes('Staff clash detected')) {
+        setClashAlert(msg);
       } else {
-        alert('Failed to update entry. Please try again.');
+        alert(msg);
       }
+    } else {
+      alert('Failed to update entry. Please try again.');
     }
-  };
+  }
+};
+
 
   const handlePrint = async () => {
     try {

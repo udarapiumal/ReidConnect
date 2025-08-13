@@ -20,5 +20,4 @@ public interface OccupiedVenueRepository extends JpaRepository<OccupiedVenue, Lo
 
     Optional<OccupiedVenue> findByVenueIdAndDayAndSlotId(Long venueId, String day, Long slotId);
 
-
 }

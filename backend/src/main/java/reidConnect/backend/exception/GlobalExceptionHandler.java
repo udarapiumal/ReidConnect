@@ -266,6 +266,18 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(StaffClashException.class)
+    public ResponseEntity<ErrorResponse> handleStaffClashException(
+            StaffClashException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "Staff Clash",
+                ex.getMessage(),
+                HttpStatus.CONFLICT.value(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
 
     /**
      * Handle all other exceptions
