@@ -6,7 +6,7 @@ import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
-import reidConnect.backend.dto.PostResponseDto;
+// import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.EventAttendanceStatus;
@@ -16,9 +16,10 @@ import reidConnect.backend.mapper.EventMapper;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.EventService;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+// import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -175,6 +176,35 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventResponseDto> getAllEvents() {
         return eventRepository.findAll().stream()
+                .map(event -> {
+                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
+                            .stream()
+                            .map(es -> es.getSlot().getId())
+                            .collect(Collectors.toList());
+                    return EventMapper.toResponseDto(event, slotIds);
+                })
+                .collect(Collectors.toList());
+    }
+
+    //get event by date
+    @Override
+    public List<EventResponseDto> getEventsByDate(LocalDate date) {
+        List<Event> events = eventRepository.findAllByDate(date);
+        return events.stream()
+                .map(event -> {
+                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
+                            .stream()
+                            .map(es -> es.getSlot().getId())
+                            .collect(Collectors.toList());
+                    return EventMapper.toResponseDto(event, slotIds);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EventResponseDto> getEventsByDateRange(LocalDate startDate, LocalDate endDate) {
+        List<Event> events = eventRepository.findAllByDateBetween(startDate, endDate);
+        return events.stream()
                 .map(event -> {
                     List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
                             .stream()

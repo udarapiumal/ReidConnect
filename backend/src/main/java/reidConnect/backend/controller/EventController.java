@@ -11,7 +11,7 @@ import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
 import reidConnect.backend.dto.EventResponseDto;
 import reidConnect.backend.dto.EventUpdateDto;
-import reidConnect.backend.dto.PostResponseDto;
+// import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.enums.EventAttendanceStatus;
 import reidConnect.backend.enums.Faculties;
@@ -196,6 +196,22 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventById(id));
     }
 
+    //get event by date
+    @GetMapping("/date/{date}")
+    public ResponseEntity<List<EventResponseDto>> getEventsByDate(@PathVariable LocalDate date) {
+        List<EventResponseDto> events = eventService.getEventsByDate(date);
+        return ResponseEntity.ok(events);
+    }
+
+    //get event by date range
+    @GetMapping("/date/range")
+    public ResponseEntity<List<EventResponseDto>> getEventsByDateRange(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        List<EventResponseDto> events = eventService.getEventsByDateRange(startDate, endDate);
+        return ResponseEntity.ok(events);
+    }
+
     // ✅ DELETE EVENT
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CLUB')")
@@ -205,15 +221,15 @@ public class EventController {
     }
 
     // ✅ Helper method for image upload
-    private String saveImage(MultipartFile image) throws Exception {
-        Path uploadDir = Paths.get("src/main/resources/static/uploads");
-        if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
+    // private String saveImage(MultipartFile image) throws Exception {
+    //     Path uploadDir = Paths.get("src/main/resources/static/uploads");
+    //     if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
 
-        String uniqueFileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-        Path filePath = uploadDir.resolve(uniqueFileName);
-        Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        return "uploads/" + uniqueFileName;
-    }
+    //     String uniqueFileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+    //     Path filePath = uploadDir.resolve(uniqueFileName);
+    //     Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+    //     return "uploads/" + uniqueFileName;
+    // }
 
     @GetMapping("/conflicts")
     public ResponseEntity<List<EventResponseDto>> getEventsByFacultyAndYear(

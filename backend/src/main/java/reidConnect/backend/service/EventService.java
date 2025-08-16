@@ -1,5 +1,7 @@
 package reidConnect.backend.service;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import reidConnect.backend.dto.EventAttendanceCountDto;
 import reidConnect.backend.dto.EventRequestDto;
@@ -19,7 +21,7 @@ public interface EventService {
     List<EventResponseDto> getAllEvents();
     boolean doAllSlotsExist(List<Long> slotIds);
     List<EventResponseDto> getEventsByFacultiesAndYears(List<Faculties> faculties, List<Years> years);
-
+    List<EventResponseDto> getEventsByDate(LocalDate date);
     void markAttendance(Long eventId, Long userId, EventAttendanceStatus status);
     void updateAttendanceStatus(Long eventId, Long userId, EventAttendanceStatus newStatus);
     void removeAttendance(Long eventId, Long userId);
@@ -40,5 +42,6 @@ public interface EventService {
     void unfeatureEvent(Long eventId);
     List<EventResponseDto> getFeaturedEventsWithinOneMonth();
 
+    List<EventResponseDto> getEventsByDateRange(LocalDate startDate, LocalDate endDate);
 
 }
