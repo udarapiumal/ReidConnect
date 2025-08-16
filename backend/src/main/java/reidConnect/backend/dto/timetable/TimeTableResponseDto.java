@@ -23,5 +23,6 @@ public class TimeTableResponseDto {
     private String venue; // Based on course type
     private Degree degree;
     private Years year;
-    private Integer credits;
+    private Integer lectureCredits;
+    private Integer practicalCredits;
 }

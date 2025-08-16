@@ -24,7 +24,8 @@ public class CourseMapper {
         dto.setId(course.getId());
         dto.setCode(course.getCode());
         dto.setName(course.getName());
-        dto.setCredits(course.getCredits());
+        dto.setLectureCredits(course.getLectureCredits());
+        dto.setPracticalCredits(course.getPracticalCredits());
 
         Set<String> lecturerNames = course.getLecturers()
                 .stream()
@@ -44,7 +45,8 @@ public class CourseMapper {
     public void updateCourseFromDto(Course course, CourseRequestDto dto, Set<Staff> lecturers) {
         course.setCode(dto.getCode());
         course.setName(dto.getName());
-        course.setCredits(dto.getCredits());
+        course.setLectureCredits(dto.getLectureCredits());
+        course.setPracticalCredits(dto.getPracticalCredits());
         course.setLecturers(lecturers);
         course.setDegree(dto.getDegree());
         course.setYear(dto.getYear());

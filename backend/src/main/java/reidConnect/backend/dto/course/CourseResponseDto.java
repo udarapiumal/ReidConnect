@@ -11,7 +11,8 @@ public class CourseResponseDto {
     private Long id;
     private String code;
     private String name;
-    private int credits;
+    private int lectureCredits;
+    private int practicalCredits;
     private Set<String> lecturerNames;
     private String lectureVenueName;
     private String practicalVenueName;
