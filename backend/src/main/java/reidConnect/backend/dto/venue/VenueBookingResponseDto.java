@@ -10,14 +10,12 @@ import java.util.List;
 @Getter
 @Setter
 public class VenueBookingResponseDto {
-    private Long id;
+    private Long clubId;
     private String clubName;
-    private String venueName;
-    private LocalDate requestedDate;
-    private String reason;
-    private String applicantName;
     private String registrationNumber;
     private String contactNumber;
-    private VenueBookingStatus status;
-    private List<String> slotTimes;
+    private Long venueId;
+    private List<Long> slotIds; // half-hour slots for that date
+    private LocalDate date;
+    private String reason;
 }

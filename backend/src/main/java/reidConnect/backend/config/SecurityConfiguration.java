@@ -52,6 +52,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/comments/**").authenticated()
                         .requestMatchers("/lost/**").authenticated()
                         .requestMatchers("/users/**").authenticated()
+                        .requestMatchers("/bookings/**").authenticated()
+                        .requestMatchers("/api/docusign/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated() // This should come after the specific /uploads/** rule

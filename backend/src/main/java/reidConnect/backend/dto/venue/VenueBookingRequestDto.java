@@ -1,20 +1,19 @@
 package reidConnect.backend.dto.venue;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 public class VenueBookingRequestDto {
     private Long clubId;
-    private Long venueId;
-    private LocalDate requestedDate;
-    private String reason;
-    private String applicantName;
+    private String clubName;
     private String registrationNumber;
     private String contactNumber;
+    private Long venueId;
     private List<Long> slotIds;
+    private LocalDate date;
+    private String reason;
+
 }
