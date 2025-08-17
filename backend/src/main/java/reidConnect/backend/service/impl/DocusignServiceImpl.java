@@ -51,7 +51,8 @@ public class DocusignServiceImpl implements DocusignService {
         SignHere clubSign = new SignHere()
                 .anchorString("##CLUB_SIGN##")
                 .anchorUnits("pixels")
-                .anchorYOffset("10")
+                .anchorYOffset("-20") // negative moves signature UP
+                .anchorXOffset("0")   // adjust left/right if needed
                 .tabLabel("CLUB_SIGN");
 
         Tabs clubTabs = new Tabs()
@@ -70,7 +71,8 @@ public class DocusignServiceImpl implements DocusignService {
         SignHere sarSign = new SignHere()
                 .anchorString("##SAR_SIGN##")
                 .anchorUnits("pixels")
-                .anchorYOffset("10")
+                .anchorYOffset("-20") // negative moves signature UP
+                .anchorXOffset("0")   // adjust left/right if needed
                 .tabLabel("SAR_SIGN");
 
         Tabs sarTabs = new Tabs()
@@ -88,7 +90,8 @@ public class DocusignServiceImpl implements DocusignService {
         SignHere unionSign = new SignHere()
                 .anchorString("##UNION_SIGN##")
                 .anchorUnits("pixels")
-                .anchorYOffset("10")
+                .anchorYOffset("-20") // negative moves signature UP
+                .anchorXOffset("0")   // adjust left/right if needed
                 .tabLabel("UNION_SIGN");
 
         Tabs unionTabs = new Tabs().signHereTabs(List.of(unionSign));
@@ -105,7 +108,8 @@ public class DocusignServiceImpl implements DocusignService {
         SignHere deputySign = new SignHere()
                 .anchorString("##DEPUTY_SIGN##")
                 .anchorUnits("pixels")
-                .anchorYOffset("10")
+                .anchorYOffset("-20") // negative moves signature UP
+                .anchorXOffset("0")   // adjust left/right if needed
                 .tabLabel("DEPUTY_SIGN");
 
         Tabs deputyTabs = new Tabs().signHereTabs(List.of(deputySign));

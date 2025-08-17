@@ -8,7 +8,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
+import reidConnect.backend.enums.BookingStatus;
 import reidConnect.backend.service.BookingService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/bookings")
@@ -62,5 +65,16 @@ public class BookingController {
     public byte[] download(@PathVariable Long id, HttpServletResponse resp) throws Exception {
         resp.setHeader("Content-Disposition", "attachment; filename=booking-" + id + ".pdf");
         return bookingService.downloadSignedPdf(id);
+    }
+
+    @GetMapping
+    public List<VenueBookingResponseDto> getAllBookings() {
+        return bookingService.getAllBookings();
+    }
+
+    // 🔹 Get bookings by status
+    @GetMapping("/status/{status}")
+    public List<VenueBookingResponseDto> getBookingsByStatus(@PathVariable BookingStatus status) {
+        return bookingService.getBookingsByStatus(status);
     }
 }

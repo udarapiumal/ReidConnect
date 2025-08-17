@@ -1,28 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
 import axios from '../../api/axiosInstance';
+import { PRIVILEGES } from '../../api/rolePrivileges';
+import { getCurrentUserRole } from '../../utils/auth';
 
 const HallBookings = () => {
   const [activeTab, setActiveTab] = useState('bookings');
   const [searchQuery, setSearchQuery] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-
   const [bookings, setBookings] = useState([]);
 
-useEffect(() => {
+  const role = getCurrentUserRole();
+  const userPrivs = PRIVILEGES[role] || [];
+
+  useEffect(() => {
     fetchBookings();
   }, []);
 
   const fetchBookings = async () => {
-    try {
-      const res = await axios.get('/api/venue-bookings/all');
-      console.log('Bookings:', res.data);
-      setBookings(res.data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    }
-  };
+  try {
+    const res = await axios.get('/bookings');
+    // Sort by descending ID by default
+    const sorted = res.data.sort((a, b) => b.id - a.id);
+    setBookings(sorted);
+    console.log('Bookings fetched:', sorted);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+  }
+};
+
+// Filtered bookings with search
+const filteredBookings = bookings.filter((b) =>
+  b.venueId.toString().includes(searchQuery) ||
+  b.clubName.toLowerCase().includes(searchQuery.toLowerCase())
+);
 
   const handleAction = (action, item) => {
     if (action === 'view') {
@@ -31,21 +43,69 @@ useEffect(() => {
     }
   };
 
- const renderBookingCard = (booking) => (
+  const sendSigningRequest = async (roleType, item) => {
+    try {
+      let url = 'http://localhost:8080';
+      switch (roleType) {
+        case 'club':
+          url = `/bookings/${item.id}/sign/club?name=${item.clubName}&email=${item.contactNumber}`;
+          break;
+        case 'sar':
+          url = `/bookings/${item.id}/sign/sar?name=EADS%20Udayanga&email=sam@ucsc.cmb.ac.lk`;
+          break;
+        case 'union':
+          url = `/bookings/${item.id}/sign/union?name=Shashika&email=Shashika@gmail.com`;
+          break;
+        case 'deputy':
+          url = `/bookings/${item.id}/sign/deputy?name=W.V%20Welgama&email=wvw@ucsc.cmb.ac.lk`;
+          break;
+        default:
+          return;
+      }
+      const res = await axios.get(url);
+      window.open(res.data, '_blank');
+    } catch (err) {
+      console.error(`Error sending signing request for ${roleType}:`, err);
+    }
+  };
+
+  const renderSigningButtons = (item) => {
+    return (
+      <>
+        {userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_SAR' && (
+          <button onClick={() => sendSigningRequest('sar', item)}>SAR Sign</button>
+        )}
+        {userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_DEPUTY_DIRECTOR' && (
+          <button onClick={() => sendSigningRequest('deputy', item)}>Deputy Sign</button>
+        )}
+        {userPrivs.includes('BOOKING_SIGN') && role === 'UNION' && (
+          <button onClick={() => sendSigningRequest('union', item)}>Union Sign</button>
+        )}
+        {userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_MA' && (
+          <button onClick={() => sendSigningRequest('club', item)}>Club Sign</button>
+        )}
+      </>
+    );
+  };
+
+  const renderBookingCard = (booking) => (
     <div key={booking.id} className="card">
       <div className="card-header">
-        <span className="hall-name">{booking.venueName}</span>
+        <span className="hall-name">{booking.id}</span>
         <span className={`status ${booking.status.toLowerCase()}`}>{booking.status}</span>
       </div>
       <div className="card-body">
-        <p><strong>Date:</strong> {booking.requestedDate}</p>
-        <p><strong>Time:</strong> {booking.slotTimes.join(', ')}</p>
-        <p><strong>Booked by:</strong> {booking.applicantName}</p>
+        <p><strong>Hall:</strong> {booking.venueId}</p>
+        <p><strong>Date:</strong> {booking.date}</p>
+        <p><strong>Slots:</strong> {booking.slotIds.join(', ')}</p>
+        <p><strong>Booked by:</strong> {booking.clubName}</p>
+        <p><strong>Contact:</strong> {booking.contactNumber}</p>
+        <p><strong>Reason:</strong> {booking.reason}</p>
+        <p><strong>Envelope ID:</strong> {booking.envelopeId}</p>
       </div>
       <div className="card-actions">
-        <button onClick={() => handleAction('view', booking)}>
-          <i className="fas fa-eye"></i> View
-        </button>
+        <button onClick={() => handleAction('view', booking)}>View</button>
+        {renderSigningButtons(booking)}
       </div>
     </div>
   );
@@ -61,7 +121,7 @@ useEffect(() => {
         </div>
       </header>
 
- <div className="body">
+      <div className="body">
         <AcademicSidebar activeItem="Hall Bookings" />
         <main className="main-content">
           <h1>Hall Bookings</h1>
@@ -71,7 +131,7 @@ useEffect(() => {
               <i className="fas fa-search"></i>
               <input
                 type="text"
-                placeholder={`Search bookings...`}
+                placeholder="Search bookings..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -79,31 +139,33 @@ useEffect(() => {
           </div>
 
           <div className="cards-container">
-            {activeTab === 'bookings'
-              ? bookings
-                  .filter((b) =>
-                    b.venueName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    b.applicantName.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .map(renderBookingCard)
-              : <p>No lecture requests available</p>}
+  {filteredBookings.map(renderBookingCard)}
+</div>
+
+          <div className="cards-container">
+            {bookings
+              .filter((b) =>
+                b.venueId.toString().includes(searchQuery) ||
+                b.clubName.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map(renderBookingCard)}
           </div>
         </main>
       </div>
 
-      {/* Modal */}
       {showPreview && selectedItem && (
         <div className="modal">
           <div className="modal-content">
             <button className="close-btn" onClick={() => setShowPreview(false)}>×</button>
             <h3>Booking Preview</h3>
-            <p><strong>Hall:</strong> {selectedItem.venueName}</p>
-            <p><strong>Date:</strong> {selectedItem.requestedDate}</p>
-            <p><strong>Time Slots:</strong> {selectedItem.slotTimes.join(', ')}</p>
-            <p><strong>Booked by:</strong> {selectedItem.applicantName}</p>
+            <p><strong>Hall:</strong> {selectedItem.venueId}</p>
+            <p><strong>Date:</strong> {selectedItem.date}</p>
+            <p><strong>Slots:</strong> {selectedItem.slotIds.join(', ')}</p>
+            <p><strong>Booked by:</strong> {selectedItem.clubName}</p>
             <p><strong>Contact:</strong> {selectedItem.contactNumber}</p>
             <p><strong>Reason:</strong> {selectedItem.reason}</p>
             <p><strong>Status:</strong> {selectedItem.status}</p>
+            <p><strong>Envelope ID:</strong> {selectedItem.envelopeId}</p>
           </div>
         </div>
       )}

@@ -3,6 +3,9 @@ package reidConnect.backend.service;
 
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
+import reidConnect.backend.enums.BookingStatus;
+
+import java.util.List;
 
 public interface BookingService {
 
@@ -22,5 +25,9 @@ public interface BookingService {
     byte[] downloadSignedPdf(Long bookingId) throws Exception;
 
     Long findBookingIdByEnvelopeId(String envelopeId);
+
+    List<VenueBookingResponseDto> getAllBookings();
+
+    List<VenueBookingResponseDto> getBookingsByStatus(BookingStatus status);
 
 }
