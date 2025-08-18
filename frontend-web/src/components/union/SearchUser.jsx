@@ -39,151 +39,200 @@ function SearchUser() {
 
   return (
     <div className="app-container">
-      {/* Main Content */}
       <main className="main-content">
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <h2 className="heading">Search Student</h2>
-
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="Enter student registration number"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-            />
-            <button onClick={handleSearch} className="button">
-              Search
-            </button>
+        <div className="form-container">
+          <div className="form-header">
+            <h1>Search Student</h1>
+            <p>Enter a registration number to find a student</p>
           </div>
 
-          {user && (
-            <div className="user-profile-card">
-              <div className="user-profile-header">User Found:</div>
-
-              <div className="profile-pic-container">
-                <img 
-                  src={
-                    user.profilePicUrl
-                      ? `http://localhost:8080${user.profilePicUrl}`
-                      : user.profile_picture_url
-                      ? `http://localhost:8080${user.profile_picture_url}`
-                      : user.profilePictureUrl
-                      ? `http://localhost:8080${user.profilePictureUrl}`
-                      : 'https://via.placeholder.com/100x100.png?text=No+Image'
-                  }
-                  alt="Profile"
-                  className="profile-pic"
-                  onLoad={(e) => {
-                    console.log('✓ Image loaded successfully:', e.target.src);
-                    e.target.style.border = '3px solid #22c55e'; // Green border on success
-                  }}
-                  onError={(e) => {
-                    console.log('✗ Failed to load profile picture:', e.target.src);
-                    e.target.style.border = '3px solid #dc2626'; // Red border on error
-                    e.target.alt = 'Image failed to load';
-                  }}
+          <div className="form-content">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="regNumber">Registration Number</label>
+                <input
+                  type="text"
+                  id="regNumber"
+                  placeholder="Enter student registration number"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="form-input"
                 />
               </div>
+            </div>
 
-              <div className="user-profile-detail">
-                <div className="user-profile-field">
-                  <span className="user-profile-label">ID:</span>
-                  <span className="user-profile-value">{user.id}</span>
+            <div className="form-actions">
+              <button onClick={handleSearch} className="btn-primary">
+                <i className="fa fa-search" />
+                Search Student
+              </button>
+            </div>
+
+            {error && <p className="error">{error}</p>}
+
+            {user && (
+              <div className="user-profile-card enhanced-border">
+                <div className="user-profile-header">User Found:</div>
+                <div className="profile-pic-container">
+                  <img 
+                    src={
+                      user.profilePicUrl
+                        ? `http://localhost:8080${user.profilePicUrl}`
+                        : user.profile_picture_url
+                        ? `http://localhost:8080${user.profile_picture_url}`
+                        : user.profilePictureUrl
+                        ? `http://localhost:8080${user.profilePictureUrl}`
+                        : 'https://via.placeholder.com/100x100.png?text=No+Image'
+                    }
+                    alt="Profile"
+                    className="profile-pic"
+                    onLoad={(e) => {
+                      e.target.style.border = '3px solid #22c55e';
+                    }}
+                    onError={(e) => {
+                      e.target.style.border = '3px solid #dc2626';
+                      e.target.alt = 'Image failed to load';
+                    }}
+                  />
                 </div>
-                
-                <div className="user-profile-field">
-                  <span className="user-profile-label">Username:</span>
-                  <span className="user-profile-value">{user.username}</span>
-                </div>
-                
-                <div className="user-profile-field">
-                  <span className="user-profile-label">Email:</span>
-                  <span className="user-profile-value">{user.email}</span>
-                </div>
-                
-                <div className="user-profile-field">
-                  <span className="user-profile-label">Role:</span>
-                  <span className="user-profile-value">{user.role}</span>
+                <div className="user-profile-detail">
+                  <div className="user-profile-field">
+                    <span className="user-profile-label">ID:</span>
+                    <span className="user-profile-value">{user.id}</span>
+                  </div>
+                  <div className="user-profile-field">
+                    <span className="user-profile-label">Username:</span>
+                    <span className="user-profile-value">{user.username}</span>
+                  </div>
+                  <div className="user-profile-field">
+                    <span className="user-profile-label">Email:</span>
+                    <span className="user-profile-value">{user.email}</span>
+                  </div>
+                  <div className="user-profile-field">
+                    <span className="user-profile-label">Role:</span>
+                    <span className="user-profile-value">{user.role}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {error && <p className="error">{error}</p>}
+            )}
+          </div>
         </div>
       </main>
-
       <style jsx>{`
-        /* Main content - Dark Theme */
         .main-content {
           margin-left: 200px;
           padding: 2rem;
           min-height: 100vh;
-          background-color: #1a1c1e;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-          color: #ffffff;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
+          background-color: #1a1a1a;
+          color: white;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        h2.heading {
-          font-size: 24px;
-          color: #ffffff;
-          margin-bottom: 1.5rem;
-          text-align: center;
-          border-bottom: 2px solid #ef4444;
-          padding-bottom: 0.5rem;
-        }
-
-        .input-group {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 2rem;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-
-        .input {
-          padding: 12px;
-          flex: 1;
-          min-width: 250px;
-          border-radius: 6px;
+        .form-container {
+          max-width: 800px;
+          margin: 0 auto;
+          background: #2a2a2a;
           border: 1px solid #333;
-          font-size: 16px;
-          background-color: #2a2a2a;
+          border-radius: 12px;
+          padding: 2rem;
+        }
+
+        .form-header h1 {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
           color: #ffffff;
         }
 
-        .button {
-          padding: 12px 20px;
-          background-color: #ef4444;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          font-weight: bold;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background 0.3s ease;
+        .form-header p {
+          font-size: 14px;
+          color: #d1d5db;
+          margin-bottom: 1.5rem;
         }
 
-        .button:hover {
+        .form-content {
+          background: #2a2a2a;
+          border-radius: 8px;
+        }
+
+        .form-group {
+          margin-bottom: 1.5rem;
+          width: 100%;
+        }
+
+        .form-group label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 0.5rem;
+          font-size: 14px;
+          color: #d1d5db;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #444;
+          background-color: #1f1f1f;
+          color: white;
+          border-radius: 8px;
+          font-size: 14px;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: #ef4444;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+        }
+
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 1rem;
+          margin-top: 1.5rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+          padding: 0.75rem 1.5rem;
+          background-color: #ef4444;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: background-color 0.3s ease;
+        }
+
+        .btn-primary:hover {
           background-color: #dc2626;
         }
 
-        /* User Profile Card - Dark Theme */
+        .error {
+          color: #ef4444;
+          margin-top: 1rem;
+          text-align: center;
+          font-weight: 500;
+        }
+
+        /* Keep existing user-profile-card styles */
         .user-profile-card {
           background-color: #151718;
-          border: 1px solid #333;
-          border-radius: 8px;
-          padding: 20px;
+          border: 2px solid #ef4444;
+          border-radius: 12px;
+          padding: 24px;
           color: white;
           width: 100%;
           margin-top: 20px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
         }
 
+        .enhanced-border {
+          border: 2px solid #ef4444;
+        }
         .user-profile-header {
           font-size: 18px;
           font-weight: 500;
@@ -192,13 +241,11 @@ function SearchUser() {
           border-bottom: 1px solid #333;
           padding-bottom: 8px;
         }
-
         .profile-pic-container {
           display: flex;
           justify-content: center;
           margin-bottom: 1.5rem;
         }
-
         .profile-pic {
           width: 100px;
           height: 100px;
@@ -209,49 +256,41 @@ function SearchUser() {
           transition: border-color 0.3s ease;
           background-color: #2a2a2a;
         }
-
         .user-profile-detail {
           display: flex;
           flex-direction: column;
           gap: 12px;
           margin-bottom: 16px;
         }
-
         .user-profile-field {
           display: flex;
           flex-direction: column;
         }
-
         .user-profile-label {
           font-size: 12px;
           color: #a1a1a1;
           margin-bottom: 4px;
         }
-
         .user-profile-value {
           font-size: 14px;
           color: #ffffff;
           font-weight: 400;
         }
-
-        .error {
-          color: #ef4444;
-          margin-top: 1rem;
-          text-align: center;
-        }
-
         @media (max-width: 768px) {
           .main-content {
             margin-left: 0;
             padding: 1rem;
           }
 
-          .input-group {
-            justify-content: stretch;
+          .form-container {
+            padding: 1rem;
+          }
+
+          .form-actions {
             flex-direction: column;
           }
 
-          .input, .button {
+          .btn-primary {
             width: 100%;
           }
         }
