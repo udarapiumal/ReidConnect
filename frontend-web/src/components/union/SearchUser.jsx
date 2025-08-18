@@ -111,7 +111,7 @@ function SearchUser() {
         /* Main content - Dark Theme */
         .main-content {
           margin-left: 200px;
-          padding: 2rem;
+          padding: 6rem;
           min-height: 100vh;
           background-color: #1a1c1e;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
@@ -143,7 +143,7 @@ function SearchUser() {
 
         .controls {
           display: flex;
-          gap: 1rem;
+          gap: 5rem;
           align-items: center;
         }
 
