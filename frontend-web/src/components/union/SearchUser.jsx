@@ -84,12 +84,14 @@ function SearchUser() {
                     : 'https://via.placeholder.com/100x100.png?text=No+Image'
                 }
                 alt="Profile"
-                className="gallery-image"
+                className="gallery-image round-image" // Add round-image or square-image class
                 loading="lazy"
               />
               <div className="gallery-info">
-                <h3>{user.username}</h3>
-                <p className="gallery-category">{user.role}</p>
+                <div className="info-header">
+                  <h3>{user.username}</h3>
+                  <span className="gallery-category">{user.role}</span>
+                </div>
                 
                 <div className="user-details">
                   <div className="detail-item">
@@ -199,60 +201,106 @@ function SearchUser() {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
           gap: 1.5rem;
+          padding: 1rem;
         }
 
         .gallery-card {
           background-color: #151718;
-          border-radius: 8px;
+          border-radius: 12px;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           border: 1px solid #333;
           overflow: hidden;
+          transition: all 0.3s ease;
+          padding: 1rem;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+
+        .gallery-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 12px rgba(239, 68, 68, 0.2);
         }
 
         .gallery-image {
-          width: 100%;
-          height: 200px;
+          width: 100px;
+          height: 100px;
           object-fit: cover;
+          margin: 2rem auto;
+          display: block;
+          border: 3px solid #333;
+          transition: all 0.3s ease;
+        }
+
+        /* Round Image Style */
+        .round-image {
+          border-radius: 50%;
+        }
+
+        /* Square Image Style */
+        .square-image {
+          border-radius: 15px;
+        }
+
+        .gallery-card:hover .gallery-image {
+          border-color: #ef4444;
+          transform: scale(1.05);
         }
 
         .gallery-info {
           padding: 1.5rem;
+          text-align: center;
         }
 
-        .gallery-info h3 {
+        .info-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .info-header h3 {
           color: #ffffff;
-          margin: 0 0 0.5rem;
+          margin: 0;
           font-size: 1.25rem;
+          font-weight: 600;
         }
 
         .gallery-category {
           background-color: #ef4444;
           color: white;
-          padding: 0.25rem 0.75rem;
+          padding: 0.35rem 1rem;
           border-radius: 20px;
-          font-size: 0.75rem;
-          display: inline-block;
-          margin-bottom: 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-transform: capitalize;
+          margin: 0;
         }
 
         .user-details {
-          margin-top: 1rem;
-          border-top: 1px solid #333;
+          margin-top: 1.5rem;
+          border-top: 1px solid #2a2a2a;
           padding-top: 1rem;
         }
 
         .detail-item {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 0.5rem;
+          align-items: center;
+          padding: 0.5rem 0;
+        }
+
+        .detail-item:not(:last-child) {
+          border-bottom: 1px solid #2a2a2a;
         }
 
         .detail-item strong {
           color: #a1a1a1;
+          font-weight: 500;
         }
 
         .detail-item span {
           color: #ffffff;
+          font-weight: 400;
         }
 
         .no-results {
@@ -288,6 +336,11 @@ function SearchUser() {
 
           .create-post-btn {
             width: 100%;
+          }
+
+          .gallery-image {
+            width: 150px;
+            height: 150px;
           }
         }
       `}</style>
