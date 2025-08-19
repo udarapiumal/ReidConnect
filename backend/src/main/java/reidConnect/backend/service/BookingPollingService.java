@@ -19,7 +19,7 @@ public class BookingPollingService {
     private final VenueBookingRepository bookingRepo;
     private final BookingServiceImpl bookingService;
 
-    @Scheduled(fixedDelay = 100000)
+    @Scheduled(fixedDelay = 1000000)
     public void checkPendingBookings() {
         List<VenueBooking> pendingBookings = bookingRepo.findByStatus(BookingStatus.PENDING);
 
