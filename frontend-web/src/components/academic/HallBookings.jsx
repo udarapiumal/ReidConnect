@@ -19,27 +19,46 @@ const HallBookings = () => {
   }, []);
 
   const fetchBookings = async () => {
-  try {
-    const res = await axios.get('/bookings');
-    // Sort by descending ID by default
-    const sorted = res.data.sort((a, b) => b.id - a.id);
-    setBookings(sorted);
-    console.log('Bookings fetched:', sorted);
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-  }
-};
+    try {
+      const res = await axios.get('/bookings');
+      // Sort by descending ID by default
+      const sorted = res.data.sort((a, b) => b.id - a.id);
+      setBookings(sorted);
+      console.log('Bookings fetched:', sorted);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
 
-// Filtered bookings with search
-const filteredBookings = bookings.filter((b) =>
-  b.venueId.toString().includes(searchQuery) ||
-  b.clubName.toLowerCase().includes(searchQuery.toLowerCase())
-);
+  // Filtered bookings with search
+  const filteredBookings = bookings.filter((b) =>
+    b.venueId.toString().includes(searchQuery) ||
+    b.clubName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleAction = (action, item) => {
     if (action === 'view') {
-      setSelectedItem(item);
-      setShowPreview(true);
+      // For approved documents, call signing API based on user role
+      const signingStatus = getSigningStatus(item);
+      if (signingStatus.isApproved) {
+        if (role === 'ACADEMIC_SAR') {
+          sendSigningRequest('sar', item);
+        } else if (role === 'ACADEMIC_DEPUTY_DIRECTOR') {
+          sendSigningRequest('deputy', item);
+        } else if (role === 'UNION') {
+          sendSigningRequest('union', item);
+        } else if (role === 'ACADEMIC_MA') {
+          sendSigningRequest('club', item);
+        } else {
+          // Fallback to modal for other roles
+          setSelectedItem(item);
+          setShowPreview(true);
+        }
+      } else {
+        // For non-approved documents, show modal
+        setSelectedItem(item);
+        setShowPreview(true);
+      }
     }
   };
 
@@ -53,8 +72,6 @@ const filteredBookings = bookings.filter((b) =>
         case 'sar':
           url = `/bookings/${item.id}/sign/sar?name=EADS%20Udayanga&email=sam@ucsc.cmb.ac.lk`;
           break;
-
-          
         case 'union':
           url = `/bookings/${item.id}/sign/union?name=Shashika&email=Shashika@gmail.com`;
           break;
@@ -66,34 +83,143 @@ const filteredBookings = bookings.filter((b) =>
       }
       const res = await axios.get(url);
       window.open(res.data, '_blank');
+      
+      // Refresh bookings after signing
+      setTimeout(() => {
+        fetchBookings();
+      }, 1000);
     } catch (err) {
       console.error(`Error sending signing request for ${roleType}:`, err);
     }
   };
 
+  const getSigningStatus = (booking) => {
+    // Assuming status values like: 'PENDING', 'SAR_SIGNED', 'UNION_SIGNED', 'DEPUTY_SIGNED', 'APPROVED'
+    // You may need to adjust these based on your actual status values
+    const status = booking.status.toLowerCase();
+    
+    return {
+      isPending: status === 'pending',
+      isSarSigned: status === 'sar_signed' || status === 'union_signed' || status === 'deputy_signed' || status === 'approved',
+      isUnionSigned: status === 'union_signed' || status === 'deputy_signed' || status === 'approved',
+      isDeputySigned: status === 'deputy_signed' || status === 'approved',
+      isApproved: status === 'approved'
+    };
+  };
+
   const renderSigningButtons = (item) => {
-    return (
-      <>
-        {userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_SAR' && (
-          <button onClick={() => sendSigningRequest('sar', item)}>SAR Sign</button>
-        )}
-        {userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_DEPUTY_DIRECTOR' && (
-          <button onClick={() => sendSigningRequest('deputy', item)}>Deputy Sign</button>
-        )}
-        {userPrivs.includes('BOOKING_SIGN') && role === 'UNION' && (
-          <button onClick={() => sendSigningRequest('union', item)}>Union Sign</button>
-        )}
-        {userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_MA' && (
-          <button onClick={() => sendSigningRequest('club', item)}>Club Sign</button>
-        )}
-      </>
-    );
+    const signingStatus = getSigningStatus(item);
+    const buttons = [];
+
+    // SAR can sign when status is PENDING, view document after signed
+    if (userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_SAR') {
+      if (signingStatus.isPending) {
+        buttons.push(
+          <button 
+            key="sar-sign"
+            onClick={() => sendSigningRequest('sar', item)}
+            className="sign-btn sar-btn"
+          >
+            SAR Sign
+          </button>
+        );
+      } else if (signingStatus.isSarSigned) {
+        buttons.push(
+          <button 
+            key="sar-view"
+            onClick={() => sendSigningRequest('sar', item)}
+            className="view-btn"
+          >
+            View
+          </button>
+        );
+      }
+    }
+
+    // Deputy Director can sign after Union has signed
+    if (userPrivs.includes('BOOKING_SIGN') && role === 'ACADEMIC_DEPUTY_DIRECTOR') {
+      if (signingStatus.isPending) {
+        buttons.push(
+          <span key="pending-sar" className="pending-indicator">
+            Pending SAR Signature
+          </span>
+        );
+      } else if (signingStatus.isSarSigned && !signingStatus.isUnionSigned) {
+        buttons.push(
+          <span key="pending-union" className="pending-indicator">
+            Pending Union Signature
+          </span>
+        );
+      } else if (signingStatus.isUnionSigned && !signingStatus.isDeputySigned) {
+        buttons.push(
+          <button 
+            key="deputy-sign"
+            onClick={() => sendSigningRequest('deputy', item)}
+            className="sign-btn deputy-btn"
+          >
+            Deputy Sign
+          </button>
+        );
+      } else if (signingStatus.isDeputySigned) {
+        buttons.push(
+          <button 
+            key="deputy-view"
+            onClick={() => sendSigningRequest('deputy', item)}
+            className="view-btn"
+          >
+            View
+          </button>
+        );
+      }
+    }
+
+    // Union signing - after SAR has signed
+    if (userPrivs.includes('BOOKING_SIGN') && role === 'UNION') {
+      if (signingStatus.isPending) {
+        buttons.push(
+          <span key="pending-sar-union" className="pending-indicator">
+            Pending SAR Signature
+          </span>
+        );
+      } else if (signingStatus.isSarSigned && !signingStatus.isUnionSigned) {
+        buttons.push(
+          <button 
+            key="union-sign"
+            onClick={() => sendSigningRequest('union', item)}
+            className="sign-btn union-btn"
+          >
+            Union Sign
+          </button>
+        );
+      } else if (signingStatus.isUnionSigned) {
+        buttons.push(
+          <button 
+            key="union-view"
+            onClick={() => sendSigningRequest('union', item)}
+            className="view-btn"
+          >
+            View
+          </button>
+        );
+      }
+    }
+
+    // MA can only view documents, no signing
+    if (role === 'ACADEMIC_MA') {
+      buttons.push(
+        <span key="ma-view" className="view-only-indicator">
+          View Only
+        </span>
+      );
+    }
+
+    return buttons;
   };
 
   const renderBookingCard = (booking) => (
     <div key={booking.id} className="card">
       <div className="card-header">
-        <span className="hall-name">{booking.id}</span>
+        <span className="hall-name">Booking #{booking.id}</span>
         <span className={`status ${booking.status.toLowerCase()}`}>{booking.status}</span>
       </div>
       <div className="card-body">
@@ -103,10 +229,14 @@ const filteredBookings = bookings.filter((b) =>
         <p><strong>Booked by:</strong> {booking.clubName}</p>
         <p><strong>Contact:</strong> {booking.contactNumber}</p>
         <p><strong>Reason:</strong> {booking.reason}</p>
-        <p><strong>Envelope ID:</strong> {booking.envelopeId}</p>
+        {booking.envelopeId && (
+          <p><strong>Envelope ID:</strong> {booking.envelopeId}</p>
+        )}
       </div>
       <div className="card-actions">
-        <button onClick={() => handleAction('view', booking)}>View</button>
+        <button onClick={() => handleAction('view', booking)} className="view-btn">
+          View Details
+        </button>
         {renderSigningButtons(booking)}
       </div>
     </div>
@@ -141,16 +271,7 @@ const filteredBookings = bookings.filter((b) =>
           </div>
 
           <div className="cards-container">
-  {filteredBookings.map(renderBookingCard)}
-</div>
-
-          <div className="cards-container">
-            {bookings
-              .filter((b) =>
-                b.venueId.toString().includes(searchQuery) ||
-                b.clubName.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-              .map(renderBookingCard)}
+            {filteredBookings.map(renderBookingCard)}
           </div>
         </main>
       </div>
@@ -159,15 +280,23 @@ const filteredBookings = bookings.filter((b) =>
         <div className="modal">
           <div className="modal-content">
             <button className="close-btn" onClick={() => setShowPreview(false)}>×</button>
-            <h3>Booking Preview</h3>
-            <p><strong>Hall:</strong> {selectedItem.venueId}</p>
-            <p><strong>Date:</strong> {selectedItem.date}</p>
-            <p><strong>Slots:</strong> {selectedItem.slotIds.join(', ')}</p>
-            <p><strong>Booked by:</strong> {selectedItem.clubName}</p>
-            <p><strong>Contact:</strong> {selectedItem.contactNumber}</p>
-            <p><strong>Reason:</strong> {selectedItem.reason}</p>
-            <p><strong>Status:</strong> {selectedItem.status}</p>
-            <p><strong>Envelope ID:</strong> {selectedItem.envelopeId}</p>
+            <h3>Booking Details</h3>
+            <div className="modal-body">
+              <p><strong>Booking ID:</strong> #{selectedItem.id}</p>
+              <p><strong>Hall:</strong> {selectedItem.venueId}</p>
+              <p><strong>Date:</strong> {selectedItem.date}</p>
+              <p><strong>Time Slots:</strong> {selectedItem.slotIds.join(', ')}</p>
+              <p><strong>Booked by:</strong> {selectedItem.clubName}</p>
+              <p><strong>Contact:</strong> {selectedItem.contactNumber}</p>
+              <p><strong>Reason:</strong> {selectedItem.reason}</p>
+              <p><strong>Status:</strong> <span className={`status ${selectedItem.status.toLowerCase()}`}>{selectedItem.status}</span></p>
+              {selectedItem.envelopeId && (
+                <p><strong>Envelope ID:</strong> {selectedItem.envelopeId}</p>
+              )}
+            </div>
+            <div className="modal-actions">
+              {renderSigningButtons(selectedItem)}
+            </div>
           </div>
         </div>
       )}
@@ -223,7 +352,7 @@ const filteredBookings = bookings.filter((b) =>
 
         .body {
           display: flex;
-          padding-top: 64px; /* height of header */
+          padding-top: 64px;
           flex: 1;
           min-height: calc(100vh - 64px);
         }
@@ -232,7 +361,7 @@ const filteredBookings = bookings.filter((b) =>
           flex: 1;
           padding: 32px;
           background-color: #1a1a1a;
-          margin-left: 200px; /* width of sidebar */
+          margin-left: 200px;
           overflow-y: auto;
           min-height: calc(100vh - 64px);
         }
@@ -241,38 +370,6 @@ const filteredBookings = bookings.filter((b) =>
           font-size: 28px;
           font-weight: bold;
           margin-bottom: 24px;
-          color: white;
-        }
-
-        .tabs {
-          display: flex;
-          gap: 20px;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-
-        .tabs button {
-          background: none;
-          border: none;
-          color: #9ca3af;
-          font-weight: 600;
-          font-size: 14px;
-          padding: 8px 16px;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: background-color 0.3s, color 0.3s;
-        }
-
-        .tabs button i {
-          font-size: 16px;
-        }
-
-        .tabs button.active,
-        .tabs button:hover {
-          background-color: #2563eb;
           color: white;
         }
 
@@ -309,29 +406,6 @@ const filteredBookings = bookings.filter((b) =>
           font-size: 14px;
           flex-grow: 1;
           min-width: 0;
-        }
-
-        .new-booking {
-          background-color: #ef4444;
-          border: none;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 14px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: background-color 0.3s;
-        }
-
-        .new-booking i {
-          font-size: 16px;
-        }
-
-        .new-booking:hover {
-          background-color: #dc2626;
         }
 
         .cards-container {
@@ -372,27 +446,45 @@ const filteredBookings = bookings.filter((b) =>
         }
 
         .status.confirmed {
-          background-color: #16a34a; /* green-600 */
+          background-color: #16a34a;
         }
 
         .status.pending {
-          background-color: #d97706; /* amber-600 */
+          background-color: #d97706;
+        }
+
+        .status.sar_signed {
+          background-color: #0ea5e9;
+        }
+
+        .status.union_signed {
+          background-color: #f59e0b;
+        }
+
+        .status.deputy_signed {
+          background-color: #8b5cf6;
+        }
+
+        .status.approved {
+          background-color: #16a34a;
         }
 
         .card-body p {
           margin: 4px 0;
           font-size: 14px;
           line-height: 1.3;
-          color: #d1d5db; /* gray-300 */
+          color: #d1d5db;
         }
 
         .card-actions {
           display: flex;
           gap: 12px;
+          flex-wrap: wrap;
+          align-items: center;
         }
 
-        .card-actions button {
-          background-color: #2563eb; /* blue-600 */
+        .view-btn {
+          background-color: #2563eb;
           border: none;
           color: white;
           padding: 8px 16px;
@@ -400,17 +492,75 @@ const filteredBookings = bookings.filter((b) =>
           font-weight: 600;
           cursor: pointer;
           font-size: 14px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
           transition: background-color 0.3s;
         }
 
-        .card-actions button:hover {
-          background-color: #1d4ed8; /* blue-700 */
+        .view-btn:hover {
+          background-color: #1d4ed8;
         }
 
-        /* Modal */
+        .sign-btn {
+          border: none;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background-color 0.3s;
+        }
+
+        .sar-btn {
+          background-color: #16a34a;
+        }
+
+        .sar-btn:hover {
+          background-color: #15803d;
+        }
+
+        .deputy-btn {
+          background-color: #8b5cf6;
+        }
+
+        .deputy-btn:hover {
+          background-color: #7c3aed;
+        }
+
+        .union-btn {
+          background-color: #f59e0b;
+        }
+
+        .union-btn:hover {
+          background-color: #d97706;
+        }
+
+        .signed-indicator {
+          background-color: #166534;
+          color: white;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .pending-indicator {
+          background-color: #7f1d1d;
+          color: #fca5a5;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .view-only-indicator {
+          background-color: #374151;
+          color: #9ca3af;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
         .modal {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
@@ -425,10 +575,13 @@ const filteredBookings = bookings.filter((b) =>
           background-color: #2a2a2a;
           padding: 24px;
           border-radius: 12px;
-          width: 320px;
+          width: 400px;
+          max-width: 90vw;
           color: white;
           position: relative;
           box-shadow: 0 0 10px rgba(0,0,0,0.8);
+          max-height: 80vh;
+          overflow-y: auto;
         }
 
         .modal-content h3 {
@@ -438,10 +591,18 @@ const filteredBookings = bookings.filter((b) =>
           font-weight: 700;
         }
 
-        .modal-content p {
-          margin: 6px 0;
+        .modal-body p {
+          margin: 8px 0;
           font-size: 14px;
           color: #d1d5db;
+        }
+
+        .modal-actions {
+          margin-top: 20px;
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          align-items: center;
         }
 
         .close-btn {

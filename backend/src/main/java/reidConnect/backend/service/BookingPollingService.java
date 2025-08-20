@@ -19,11 +19,12 @@ public class BookingPollingService {
     private final VenueBookingRepository bookingRepo;
     private final BookingServiceImpl bookingService;
 
-    @Scheduled(fixedDelay = 1000000)
-    public void checkPendingBookings() {
-        List<VenueBooking> pendingBookings = bookingRepo.findByStatus(BookingStatus.PENDING);
+    @Scheduled(fixedDelay = 10000)
+    public void checkAllBookings() {
+        // Fetch all bookings, regardless of status
+        List<VenueBooking> allBookings = bookingRepo.findAll();
 
-        for (VenueBooking booking : pendingBookings) {
+        for (VenueBooking booking : allBookings) {
             try {
                 bookingService.updateStatusFromEnvelope(booking.getId());
                 log.info("Updated booking {} from envelope", booking.getId());

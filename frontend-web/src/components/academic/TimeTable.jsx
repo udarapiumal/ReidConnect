@@ -33,7 +33,7 @@ export default function TimeTable() {
 
   const isMA = role === "ACADEMIC_MA";
   const isSAR = role === "ACADEMIC_SAR"; 
-  const isHODorDeputy = role === "ACADEMIC_HOD" || role === "ACADEMIC_DEPUTY_DIRECTOR";
+  const isHODorDeputy = role === "ACADEMIC_DEPUTY_DIRECTOR" || role === "ACADEMIC_HOD";
 
   // Get latest decisions by role - sort by timestamp/id to get most recent
   const getLatestDecisionByRole = (roleToFind) => {
@@ -46,7 +46,8 @@ export default function TimeTable() {
   };
 
   const latestSAR = getLatestDecisionByRole("ACADEMIC_SAR");
-  const latestHOD = getLatestDecisionByRole("ACADEMIC_HOD" || role === "ACADEMIC_DEPUTY_DIRECTOR");
+  const latestHOD = getLatestDecisionByRole("ACADEMIC_DEPUTY_DIRECTOR") || 
+                   getLatestDecisionByRole("ACADEMIC_HOD");
   const latestMA = getLatestDecisionByRole("ACADEMIC_MA");
 
   // Helper function to check if approval A came after approval B chronologically
@@ -75,7 +76,17 @@ export default function TimeTable() {
   // - No SAR action exists, OR
   // - SAR decision is NOT_RECOMMENDED, OR 
   // - HOD decision is REJECTED
-  const canSendForRecommendation = isMA && (
+  // BUT NOT if there's a current PENDING request or if SAR has RECOMMENDED (waiting for HOD)
+  const hasPendingRequest = latestMA && latestMA.decision === "PENDING" && (
+    !latestSAR || // No SAR response yet
+    isPendingAfterSARRejection || // New pending after SAR rejection
+    isPendingAfterHODRejection // New pending after HOD rejection
+  );
+  
+  const sarHasRecommended = isSARRecommendedAfterPending && 
+    (!latestHOD || isAfter(latestSAR, latestHOD)); // SAR recommended and HOD hasn't acted yet
+
+  const canSendForRecommendation = isMA && !hasPendingRequest && !sarHasRecommended && (
     !latestSAR || 
     latestSAR.decision === "NOT_RECOMMENDED" || 
     (latestHOD && latestHOD.decision === "REJECTED")
@@ -85,26 +96,31 @@ export default function TimeTable() {
   // - There's a PENDING request from MA AND SAR hasn't acted on this specific request, OR
   // - MA sent a new PENDING request after SAR's previous NOT_RECOMMENDED decision
   const hasPendingFromMA = latestMA && latestMA.decision === "PENDING";
-  const canRecommend = isSAR && hasPendingFromMA && (
-    !latestSAR || // SAR never acted
-    isPendingAfterSARRejection || // MA sent new request after SAR rejection
-    isPendingAfterHODRejection // MA sent new request after HOD rejection
-  );
+  // SAR: Can recommend/not recommend only once per MA's PENDING request
+const canRecommend = isSAR && hasPendingFromMA && (
+  (!latestSAR || isAfter(latestMA, latestSAR)) // SAR never acted on THIS pending
+);
+
 
   // HOD: Can approve/reject if:
-  // - SAR recommended after MA's latest PENDING request
-  const canApprove = isHODorDeputy && isSARRecommendedAfterPending;
+  // - SAR recommended and there's no HOD decision yet, OR
+  // - SAR recommended after the latest HOD decision
+  const canApprove = isHODorDeputy && latestSAR && latestSAR.decision === "RECOMMENDED" && (
+    !latestHOD || // No HOD decision yet
+    isAfter(latestSAR, latestHOD) // SAR recommended after last HOD decision
+  );
 
   // Visibility logic:
   // MA: Can always see (to edit and send for recommendation)
   // SAR: Can see if there's a PENDING request from MA that they can act on
-  // HOD: Can see if SAR RECOMMENDED after latest PENDING, or if HOD previously REJECTED
+  // HOD: Can see if they can approve, or if they previously acted
   const isVisible = 
+    latestHOD?.decision === "APPROVED" ||
     isMA || // MA can always see
     (isSAR && canRecommend) || // SAR sees when they can act on pending request
     (isHODorDeputy && (
-      isSARRecommendedAfterPending || // HOD can see when SAR recommended after pending
-      (latestHOD && latestHOD.decision === "REJECTED") // HOD can see after their own rejection
+      canApprove || // HOD can see when they can approve
+      (latestHOD && (latestHOD.decision === "APPROVED" || latestHOD.decision === "REJECTED")) // HOD can see their past decisions
     ));
 
   const {
@@ -406,11 +422,10 @@ export default function TimeTable() {
 
           {/* Approval Section */}
           <div className="approval-section">
-            <h3>Approval Workflow</h3>
+            <h3>Approval History</h3>
             
               {/* Display approval history with timestamps */}
               <div className="approval-history">
-                <h4>History:</h4>
                 {approvals.length === 0 ? (
                   <p>No approval actions yet.</p>
                 ) : (
@@ -419,7 +434,7 @@ export default function TimeTable() {
                       .sort((a, b) => new Date(a.createdAt || a.id) - new Date(b.createdAt || b.id)) // Sort chronologically (oldest first)
                       .map((approval) => (
                       <li key={approval.id}>
-                        <strong>{approval.reviewerRole}</strong>: {approval.decision}
+                        <strong>{approval.reviewerRole}</strong> : {approval.decision}
                         {approval.message && ` - "${approval.message}"`}
                         {approval.createdAt && ` (${new Date(approval.createdAt).toLocaleString()})`}
                       </li>
@@ -428,16 +443,7 @@ export default function TimeTable() {
                 )}
                 
                 {/* Debug info - remove in production */}
-                <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f0f0f0', fontSize: '12px' }}>
-                  <strong>Debug Info:</strong>
-                  <div>Current Role: {role || 'undefined'}</div>
-                  <div>Can Recommend: {String(canRecommend)}</div>
-                  <div>Can Approve: {String(canApprove)}</div>
-                  <div>Is Visible: {String(isVisible)}</div>
-                  <div>Pending After SAR Rejection: {String(isPendingAfterSARRejection)}</div>
-                  <div>Pending After HOD Rejection: {String(isPendingAfterHODRejection)}</div>
-                  <div>SAR Recommended After Pending: {String(isSARRecommendedAfterPending)}</div>
-                </div>
+                
               </div>
 
             {/* Action buttons based on role and current status */}
