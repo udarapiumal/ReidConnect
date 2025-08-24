@@ -22,6 +22,7 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate, isDarkMode = tr
     .map(f => ({ id: f.label, icon: f.icon, label: f.label, route: f.route }));
 
   const navigationItems = [...baseItems, ...privilegeItems];
+// console.log(navigationItems);
 
   const handleNavigation = (item) => {
     if (onNavigate) onNavigate(item.id);

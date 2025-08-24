@@ -168,14 +168,7 @@ const getAllEvents = async () => {
           let userStatus = 'none';
           if (userId && token) {
             try {
-              const userStatusResponse = await axiosInstance.get(
-                `/api/events/${event.id}/attendance/user/${userId}`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                  },
-                }
-              );
+              const userStatusResponse = await axiosInstance.get(`/api/events/${event.id}/attendance/user/${userId}`);
               const responseData = userStatusResponse.data;
               const rawStatus = responseData.status;
               userStatus = rawStatus ? rawStatus.toLowerCase() : 'none';
@@ -218,7 +211,7 @@ const getAllEvents = async () => {
 // API function to fetch posts
 const getPosts = async () => {
   try {
-    const response = await axiosInstance.get(`${BASE_URL}/api/posts`);
+    const response = await axiosInstance.get(`/api/posts`);
     console.log('Fetched posts for home page:', response.data);
 
     const formattedPosts: PostData[] = response.data.map((post: any) => {

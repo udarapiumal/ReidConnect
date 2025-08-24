@@ -14,6 +14,7 @@ import { ThemedText } from '@/components/ThemedText';
 import axiosInstance from '@/app/api/axiosInstance';
 import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/app/context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -221,11 +222,15 @@ const sampleLectures = [
 // const sampleEvents
 
 export default function CalendarScreen() {
+  // Auth (to get email)
+  const { user } = useAuth();
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'Week' | 'Month'>('Week');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarPermission, setCalendarPermission] = useState(false);
   const { eventsByDate, isLoading } = useCalendarEvents(viewMode, currentMonth, selectedDate);
+  const { lecturesByDay, loadingTimetable } = useTimetable(user?.sub);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -327,7 +332,7 @@ export default function CalendarScreen() {
   const hasEvents = (date: Date) => {
     const dateStr = dateKey(date);
     const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const hasLecture = sampleLectures.some((lecture) => lecture.day === dayName);
+    const hasLecture = (lecturesByDay[dayName]?.length ?? 0) > 0;
     const hasRemote = (eventsByDate[dateStr]?.length ?? 0) > 0;
     return hasLecture || hasRemote;
   };
@@ -336,17 +341,10 @@ export default function CalendarScreen() {
     const dateStr = dateKey(date);
     const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
 
-    const lectures = sampleLectures
-      .filter((lecture) => lecture.day === dayName)
-      .map((lecture) => ({
-        ...lecture,
-        type: 'lecture' as const,
-        title: lecture.courseName,
-        lecturer: lecture.lecturerNames,
-        module: lecture.courseCode,
-        startTime: lecture.startTime,
-        endTime: lecture.endTime,
-      }));
+    const lectures = (lecturesByDay[dayName] ?? []).map((lecture) => ({
+      ...lecture,
+      type: 'lecture' as const,
+    }));
 
     const remote = eventsByDate[dateStr] ?? [];
 
@@ -472,10 +470,10 @@ export default function CalendarScreen() {
 
   const renderSchedule = () => {
     const events = getEventsForDate(selectedDate);
-    if (isLoading) {
+  if (isLoading || loadingTimetable) {
       return (
         <View style={styles.scheduleContainer}>
-          <ThemedText style={styles.scheduleHeader}>Loading...</ThemedText>
+      <ThemedText style={styles.scheduleHeader}>Loading...</ThemedText>
         </View>
       );
     }
@@ -643,6 +641,148 @@ function toHHMM(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// --- Timetable helpers ---
+function parseDegreeFromEmail(email?: string | null): string | null {
+  if (!email) return null;
+  const m = email.match(/^\d{4}([a-zA-Z]{2})/);
+  if (!m) return null;
+  return m[1].toUpperCase();
+}
+
+function yearDigitToEnum(academicYear?: string | number | null): string | null {
+  if (academicYear === null || academicYear === undefined) return null;
+  const digit = String(academicYear).match(/\d/);
+  if (!digit) return null;
+  return `YEAR_${digit[0]}`;
+}
+
+function normalizeDayName(day: any): string | null {
+  if (day == null) return null;
+  if (typeof day === 'number') {
+    // Assuming 1=Monday ... 7=Sunday
+    const names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const idx = Math.min(Math.max(day, 1), 7) - 1;
+    return names[idx];
+  }
+  const s = String(day).toLowerCase();
+  const map: Record<string, string> = {
+    mon: 'Monday', monday: 'Monday',
+    tue: 'Tuesday', tues: 'Tuesday', tuesday: 'Tuesday',
+    wed: 'Wednesday', wednesday: 'Wednesday',
+    thu: 'Thursday', thurs: 'Thursday', thursday: 'Thursday',
+    fri: 'Friday', friday: 'Friday',
+    sat: 'Saturday', saturday: 'Saturday',
+    sun: 'Sunday', sunday: 'Sunday',
+  };
+  return map[s] || titleCase(s);
+}
+
+type LectureItem = {
+  day: string; // Monday, ...
+  startTime?: string;
+  endTime?: string;
+  courseName?: string;
+  courseCode?: string;
+  lecturerNames?: string;
+  venue?: string;
+  slotIds?: number[];
+  // Derived/display fields used by UI
+  title: string;
+  module?: string;
+  lecturer?: string;
+  type: 'lecture';
+};
+
+function mapTimetableItemToLecture(item: any): LectureItem | null {
+  // Prefer explicit times; else derive from slotIds
+  const times = timesFromSlotIds(item?.slotIds);
+  const startTime = item?.startTime || times.startTime;
+  const endTime = item?.endTime || times.endTime;
+  const day = normalizeDayName(item?.day);
+  if (!day) return null;
+  const title = item?.courseName || item?.courseCode || 'Lecture';
+  const venue = item?.venue || item?.venueName;
+  const lecturer = item?.lecturerNames || item?.lecturers || item?.lecturerCodes || '';
+  const module = item?.courseCode;
+  return {
+    day,
+    startTime,
+    endTime,
+    courseName: item?.courseName,
+    courseCode: item?.courseCode,
+    lecturerNames: item?.lecturerNames,
+    venue,
+    slotIds: Array.isArray(item?.slotIds) ? item.slotIds : undefined,
+    title,
+    module,
+    lecturer,
+    type: 'lecture',
+  };
+}
+
+function groupLecturesByDay(items: any[]): Record<string, LectureItem[]> {
+  const map: Record<string, LectureItem[]> = {};
+  items.forEach((raw) => {
+    const lec = mapTimetableItemToLecture(raw);
+    if (!lec) return;
+    if (!map[lec.day]) map[lec.day] = [];
+    map[lec.day].push(lec);
+  });
+  // sort each day by start time
+  Object.values(map).forEach(list => list.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')));
+  return map;
+}
+
+function useTimetable(emailFromToken?: string) {
+  const [lecturesByDay, setLecturesByDay] = useState<Record<string, LectureItem[]>>({});
+  const [loadingTimetable, setLoading] = useState(false);
+  const [errorTimetable, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Always read student profile to get academicYear; also email fallback
+        const meRes = await axiosInstance.get('/student/me');
+        const me = meRes.data || {};
+        const email: string | undefined = (emailFromToken as string) || me.email;
+        // console.log(email);
+        
+        const degree = parseDegreeFromEmail(email) || undefined;
+        const yearEnum = yearDigitToEnum(me.academicYear) || undefined;
+// console.log(degree, yearEnum);
+
+        if (!degree || !yearEnum) {
+          console.warn('Timetable fetch skipped due to missing degree/year', { degree, yearEnum });
+          setLecturesByDay({});
+          return;
+        }
+
+        const res = await axiosInstance.get('/api/timetable/byYearAndDegree', {
+          params: { degree, year: yearEnum },
+        });
+// console.log(res.data);
+
+        const items: any[] = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+        const grouped = groupLecturesByDay(items);
+        if (!cancelled) setLecturesByDay(grouped);
+      } catch (e: any) {
+        console.error('Failed to fetch timetable:', e?.message || e);
+        if (!cancelled) setError(e?.message || 'Failed to fetch timetable');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [emailFromToken]);
+
+  return { lecturesByDay, loadingTimetable, errorTimetable };
 }
 
 function timesFromSlotIds(slotIds?: number[]): { startTime?: string; endTime?: string } {

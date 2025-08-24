@@ -4,18 +4,23 @@ export const PRIVILEGES = {
     "TIMETABLE_VIEW",
     "BOOKING_SIGN",
     "BOOKING_REQUEST",
-    "EVENT_MANAGE"
+    "EVENT_MANAGE",
+    "ACADEMIC_CALENDAR_EDIT",
+    "ACADEMIC_CALENDAR_VIEW"
   ],
   ACADEMIC_SAR: [
     "TIMETABLE_EDIT",
     "TIMETABLE_VIEW",
     "BOOKING_SIGN",
     "BOOKING_REQUEST",
-    "EVENT_MANAGE"
+    "EVENT_MANAGE",
+    // "ACADEMIC_CALENDAR_EDIT",
+    "ACADEMIC_CALENDAR_VIEW"
   ],
   ACADEMIC_DEPUTY_DIRECTOR: [
     "TIMETABLE_VIEW",
-    "BOOKING_SIGN"
+    "BOOKING_SIGN",
+    "ACADEMIC_CALENDAR_VIEW"
   ],
   UNION: [
     "EVENT_MANAGE",
@@ -29,5 +34,6 @@ export const FEATURE_MAP = {
   BOOKING_SIGN: { route: "/academic/bookings", label: "Hall Bookings", icon: "fa-solid fa-building", element: "HallBookings" },
   BOOKING_REQUEST: null, // Need to implement this feature
   EVENT_MANAGE: { route: "/academic/events", label: "Events", icon: "fa-solid fa-calendar-days", element: "EventSchedule" },
-  PROFILE_MANAGE: { route: "/union/Profilemanagement", label: "Profile Management", icon: "fa-solid fa-id-badge", element: "SearchUser" }
+  PROFILE_MANAGE: { route: "/union/Profilemanagement", label: "Profile Management", icon: "fa-solid fa-id-badge", element: "SearchUser" },
+  ACADEMIC_CALENDAR_VIEW: { route: "/academic/calendar", label: "Academic Calendar", icon: "fa-solid fa-calendar", element: "AcademicCalendar" }
 };
