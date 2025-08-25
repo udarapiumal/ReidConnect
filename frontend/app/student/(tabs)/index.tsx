@@ -14,6 +14,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { BASE_URL } from '@/constants/config';
+import { useNotificationsContext } from '@/app/context/NotificationsContext';
 
 interface UserType {
   id: string;
@@ -274,6 +275,25 @@ export default function HomePage() {
   // State for posts
   const [communityPosts, setCommunityPosts] = useState<PostData[]>([]);
 
+  // User / notifications
+  const [userId, setUserId] = useState<string | null>(null);
+  const { notifications, unreadCount } = useNotificationsContext();
+
+  // Load user id once
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token) {
+          const decoded = jwtDecode<UserType>(token);
+          setUserId(decoded.id);
+        }
+      } catch (e) {
+        console.warn('Failed to decode token for notifications', e);
+      }
+    })();
+  }, []);
+
   // Fetch events when component mounts
   useEffect(() => {
     const fetchData = async () => {
@@ -493,13 +513,20 @@ export default function HomePage() {
                 <TouchableOpacity 
                   style={[styles.iconButton, styles.notificationButton]}
                   activeOpacity={0.7}
+                  onPress={() => router.push('/student/pages/Notification')}
                 >
                   <LinearGradient
                     colors={['rgba(0, 122, 255, 0.1)', 'rgba(0, 122, 255, 0.05)']}
                     style={styles.iconButtonGradient}
                   />
                   <Feather name="bell" size={24} color={iconColor} />
-                  <View style={styles.notificationDot} />
+                  {unreadCount > 0 && (
+                    <View style={[styles.notificationBadge, unreadCount > 9 && styles.notificationBadgeLarge]}>
+                      <ThemedText style={styles.notificationBadgeText}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </ThemedText>
+                    </View>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -856,6 +883,27 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#e63946',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    paddingHorizontal: 4,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#e63946',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationBadgeLarge: {
+    minWidth: 22,
+    paddingHorizontal: 6,
+  },
+  notificationBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
   },
   section: {
     marginTop: 24,
