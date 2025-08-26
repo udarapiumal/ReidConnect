@@ -54,6 +54,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/bookings/**").authenticated()
                         .requestMatchers("/api/docusign/**").authenticated()
+                        .requestMatchers("/api/bookings/**").authenticated()
                         .requestMatchers("/api/timetable-approvals/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()

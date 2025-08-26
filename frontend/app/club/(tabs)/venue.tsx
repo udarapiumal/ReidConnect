@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from '../../context/ClubContext';
+import SignatureScreen from 'react-native-signature-canvas';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,6 +68,10 @@ export default function VenueBookingRequest() {
 
   // Venue data
   const [allVenues, setAllVenues] = useState([]);
+
+  const [signatureModalVisible, setSignatureModalVisible] = useState(false);
+  const [clubSignatureImage, setClubSignatureImage] = useState(null);
+
 
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -142,85 +147,58 @@ export default function VenueBookingRequest() {
   };
 
   const handleSubmit = async () => {
-    if (!reason.trim()) {
-      Alert.alert('Error', 'Please enter the reason for booking');
-      return;
-    }
-    
-    if (!applicantName.trim()) {
-      Alert.alert('Error', 'Please enter applicant name');
-      return;
-    }
-    
-    if (!registrationNumber.trim()) {
-      Alert.alert('Error', 'Please enter registration number');
-      return;
-    }
-    
-    if (!contactNumber.trim()) {
-      Alert.alert('Error', 'Please enter contact number');
-      return;
-    }
-    
-    if (!selectedVenue) {
-      Alert.alert('Error', 'Please select a venue');
-      return;
-    }
-    
-    if (!selectedDate) {
-      Alert.alert('Error', 'Please select a date');
-      return;
-    }
-    
-    if (selectedTimeSlots.length === 0) {
-      Alert.alert('Error', 'Please select at least one time slot');
-      return;
-    }
+  if (!reason.trim() || !applicantName.trim() || !registrationNumber.trim() || !contactNumber.trim() || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0) {
+    Alert.alert('Error', 'Please fill in all required fields');
+    return;
+  }
 
-    setLoading(true);
-    
-    try {
-      const bookingData = {
-        clubId: clubDetails.id,
-        venueId: selectedVenue.id,
-        requestedDate: formatDateForAPI(selectedDate),
-        reason: reason.trim(),
-        applicantName: applicantName.trim(),
-        registrationNumber: registrationNumber.trim(),
-        contactNumber: contactNumber.trim(),
-        slotIds: selectedTimeSlots
-      };
+  setLoading(true);
 
-      console.log('Sending booking data:', bookingData);
+  try {
+    const bookingData = {
+      venueId: selectedVenue.id,
+      slotIds: selectedTimeSlots,
+      clubName: applicantName.trim(),   // maps to dto.clubName
+      registrationNumber: registrationNumber.trim(),
+      contactNumber: contactNumber.trim(),
+      date: formatDateForAPI(selectedDate),
+      reason: reason.trim(),
+      clubSignatureImage: clubSignatureImage, 
+    };
 
-      await axios.post(`${BASE_URL}/api/venue-bookings/create`, bookingData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
+    console.log('Sending booking data:', bookingData);
+    console.log('User ID:', clubDetails?.userId);
 
-      Alert.alert('Success', 'Venue booking request submitted successfully!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-      
-      // Reset form
-      setReason('');
-      setApplicantName('');
-      setRegistrationNumber('');
-      setContactNumber('');
-      setSelectedVenue(null);
-      setSelectedDate(null);
-      setSelectedTimeSlots([]);
-      
-    } catch (error) {
-      console.error('Error submitting booking request:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking request. Please try again.';
-      Alert.alert('Error', errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+    await axios.post(`${BASE_URL}/api/bookings/create/${clubDetails.userId}`, bookingData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    Alert.alert('Success', 'Venue booking request submitted successfully!', [
+      { text: 'OK', onPress: () => router.back() }
+    ]);
+
+    // Reset form
+    setReason('');
+    setApplicantName('');
+    setRegistrationNumber('');
+    setContactNumber('');
+    setSelectedVenue(null);
+    setSelectedDate(null);
+    setSelectedTimeSlots([]);
+    setClubSignatureImage(null);
+
+  } catch (error) {
+    console.error('Error submitting booking request:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking request. Please try again.';
+    Alert.alert('Error', errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentMonth, currentYear);
@@ -457,14 +435,55 @@ export default function VenueBookingRequest() {
             </View>
           )}
 
+          {/* Club Signature */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Club Signature *</Text>
+            {clubSignatureImage ? (
+              <TouchableOpacity onPress={() => setSignatureModalVisible(true)}>
+                <Text style={{ color: '#4CAF50' }}>✔ Signature Captured (Tap to redo)</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={() => setSignatureModalVisible(true)}>
+                <Text style={{ color: '#FF5722' }}>✍ Tap to Sign</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Signature Modal */}
+          <Modal visible={signatureModalVisible} animationType="slide">
+            <View style={{ flex: 1 }}>
+              <SignatureScreen
+                onOK={(sig) => {
+                  const base64Data = sig.replace(/^data:image\/\w+;base64,/, "");
+                  setClubSignatureImage(base64Data);
+                  setSignatureModalVisible(false);
+                }}
+                onEmpty={() => Alert.alert('Error', 'Please provide a signature')}
+                onClear={() => {}}
+                onEnd={() => {}}
+                descriptionText="Sign above"
+                clearText="Clear"
+                confirmText="Save"
+                webStyle={`.m-signature-pad {box-shadow: none; border: none;}`}
+              />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setSignatureModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
+
+
           {/* Submit Button */}
           <TouchableOpacity
             style={[
               styles.submitButton,
-              (!reason || !applicantName || !registrationNumber || !contactNumber || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0) && styles.disabledButton
+              (!reason || !applicantName || !registrationNumber || !contactNumber || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage) && styles.disabledButton
             ]}
             onPress={handleSubmit}
-            disabled={!reason || !applicantName || !registrationNumber || !contactNumber || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0 || loading}
+            disabled={!reason || !applicantName || !registrationNumber || !contactNumber || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage || loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
@@ -800,4 +819,14 @@ const styles = StyleSheet.create({
   selectedTimeSlotText: {
     color: '#fff',
   },
+  closeButton: {
+  padding: 15,
+  backgroundColor: '#333',
+  alignItems: 'center',
+},
+closeButtonText: {
+  color: '#fff',
+  fontSize: 16,
+},
+
 });
