@@ -1,5 +1,6 @@
 package reidConnect.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -37,7 +38,7 @@ public class EventController {
 
     // CREATE EVENT
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('CLUB')")
+    //@PreAuthorize("hasRole('CLUB') ")
     public ResponseEntity<?> createEvent(
             @RequestParam("clubId") Long clubId,
             @RequestParam("name") String name,
@@ -352,6 +353,107 @@ public class EventController {
         List<EventResponseDto> featuredEvents = eventService.getFeaturedEventsWithinOneMonth();
         return ResponseEntity.ok(featuredEvents);
     }
+    // ✅ CREATE EVENT via Web
+    @PostMapping(value = "/web", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createEventWeb(
+            @RequestParam("clubId") Long clubId,
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "venueId", required = false) Long venueId,
+            @RequestParam(value = "venueName", required = false) String venueName,
+            @RequestParam("date") String date,
+            @RequestParam("slotIds") String slotIdsJson,
+            @RequestParam("targetYears") String targetYearsJson,
+            @RequestParam("targetFaculties") String targetFacultiesJson,
+            @RequestParam("image") MultipartFile imageFile,
+            @RequestParam("category") EventCategory category
+    ) {
+        try {
+            // Parse JSON arrays
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<Long> slotIds = objectMapper.readValue(slotIdsJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Long.class));
+            List<Years> targetYears = objectMapper.readValue(targetYearsJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Years.class));
+            List<Faculties> targetFaculties = objectMapper.readValue(targetFacultiesJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Faculties.class));
 
+            if (!eventService.doAllSlotsExist(slotIds)) {
+                return ResponseEntity.badRequest().body("One or more slot IDs are invalid.");
+            }
+
+            if (imageFile == null || imageFile.isEmpty()) {
+                return ResponseEntity.badRequest().body("Image is required.");
+            }
+
+            String savedFilePath = saveImage(imageFile);
+
+            EventRequestDto dto = new EventRequestDto(
+                    clubId, name, description, venueId, venueName,
+                    LocalDate.parse(date), savedFilePath,
+                    slotIds, targetYears, targetFaculties, category
+            );
+
+            EventResponseDto createdEvent = eventService.createEvent(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating event: " + e.getMessage());
+        }
+    }
+
+
+    // UPDATE EVENT via Web
+    @PutMapping(value = "/web/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateEventWeb(
+            @PathVariable Long id,
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "venueId", required = false) Long venueId,
+            @RequestParam(value = "venueName", required = false) String venueName,
+            @RequestParam("date") String date,
+            @RequestParam("slotIds") String slotIdsJson,
+            @RequestParam("targetYears") String targetYearsJson,
+            @RequestParam("targetFaculties") String targetFacultiesJson,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam("category") EventCategory category
+    ) {
+        try {
+            // Parse JSON arrays
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<Long> slotIds = objectMapper.readValue(slotIdsJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Long.class));
+            List<Years> targetYears = objectMapper.readValue(targetYearsJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Years.class));
+            List<Faculties> targetFaculties = objectMapper.readValue(targetFacultiesJson,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Faculties.class));
+
+            if (!eventService.doAllSlotsExist(slotIds)) {
+                return ResponseEntity.badRequest().body("One or more slot IDs are invalid.");
+            }
+
+            String savedFilePath = null;
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+                savedFilePath = saveImage(imageFile);
+            }
+
+            EventUpdateDto dto = new EventUpdateDto(
+                    name, description, venueId, venueName,
+                    LocalDate.parse(date), savedFilePath,
+                    slotIds, targetYears, targetFaculties, category
+            );
+
+            EventResponseDto updatedEvent = eventService.updateEvent(id, dto);
+            return ResponseEntity.ok(updatedEvent);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating event: " + e.getMessage());
+        }
+    }
 
 }

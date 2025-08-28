@@ -6,6 +6,15 @@ import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import java.util.List;
 
 public interface VenueBookingService {
-    void createVenueBooking(VenueBookingRequestDto dto);
+
+    VenueBookingResponseDto createBooking(Long clubUserId, VenueBookingRequestDto dto);
+
+    VenueBookingResponseDto approveBooking(Long sarId, Long bookingId, String sarSign);
+
+    VenueBookingResponseDto getBookingById(Long bookingId);
+
     List<VenueBookingResponseDto> getAllBookings();
+
+    VenueBookingResponseDto finalApproveBooking(Long finalSignerId, Long bookingId, String finalSignatureImg);
+
 }

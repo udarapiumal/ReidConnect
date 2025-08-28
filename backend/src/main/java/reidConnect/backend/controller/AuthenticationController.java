@@ -7,14 +7,18 @@ import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.*;
 import reidConnect.backend.entity.Club;
+import reidConnect.backend.entity.KeyStoreEntity;
 import reidConnect.backend.entity.User;
+import reidConnect.backend.repository.KeyStoreRepository;
 import reidConnect.backend.responses.LoginResponse;
 import reidConnect.backend.service.AuthenticationService;
 import reidConnect.backend.service.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.util.KeyUtil;
 
 import java.io.IOException;
+import java.security.KeyPair;
 import java.util.Collection;
 
 @RestController
@@ -22,10 +26,12 @@ import java.util.Collection;
 public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
+    private final KeyStoreRepository keyStoreRepository;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
+    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, KeyStoreRepository keyStoreRepository) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
+        this.keyStoreRepository = keyStoreRepository;
     }
 
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -155,6 +161,29 @@ public class AuthenticationController {
         user.setVerificationCode(null);
         user.setVerificationExpiration(null);
         User savedUser = authenticationService.saveUser(user);
+
+        // ---- Generate keys and save to keystore ----
+        try {
+            KeyPair pair = KeyUtil.generateKeyPair();
+            String pubKey = KeyUtil.publicKeyToBase64(pair.getPublic());
+            String privKeyEnc = KeyUtil.encryptPrivateKey(pair.getPrivate());
+            System.out.println("Public key: " + pubKey.substring(0, 50) + "...");
+            System.out.println("Encrypted private key: " + privKeyEnc.substring(0, 50) + "...");
+
+            KeyStoreEntity keyStoreEntity = new KeyStoreEntity();
+            keyStoreEntity.setUser(savedUser);
+            keyStoreEntity.setPublicKey(pubKey);
+            keyStoreEntity.setPrivateKey(privKeyEnc);
+
+            keyStoreRepository.save(keyStoreEntity);
+            System.out.println("Encrypted private key: " + privKeyEnc.substring(0, 50) + "...");
+            KeyStoreEntity test = keyStoreRepository.findByUserId(savedUser.getId());
+            System.out.println("DB private key = " + test.getPrivateKey().substring(0, 50) + "...");
+
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating keypair: " + e.getMessage(), e);
+        }
 
         // Create and save Club
         Club club = new Club();

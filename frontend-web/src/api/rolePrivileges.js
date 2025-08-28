@@ -22,6 +22,10 @@ export const PRIVILEGES = {
     "BOOKING_SIGN",
     "ACADEMIC_CALENDAR_VIEW"
   ],
+  ACADEMIC_HOD: [
+    "TIMETABLE_VIEW",
+    "BOOKING_SIGN"
+  ],
   UNION: [
     "EVENT_MANAGE",
     "PROFILE_MANAGE"

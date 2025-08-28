@@ -1,23 +1,25 @@
 package reidConnect.backend.dto.venue;
 
-import lombok.Getter;
-import lombok.Setter;
-import reidConnect.backend.enums.VenueBookingStatus;
+import lombok.Data;
+import reidConnect.backend.entity.Slot;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 public class VenueBookingResponseDto {
-    private Long id;
+    private Long bookingId;
     private String clubName;
-    private String venueName;
-    private LocalDate requestedDate;
-    private String reason;
-    private String applicantName;
     private String registrationNumber;
     private String contactNumber;
-    private VenueBookingStatus status;
-    private List<String> slotTimes;
+    private LocalDate date;
+    private String reason;
+    private String status;
+    private Long venueId;
+    private String venueName;
+    private List<Slot> slotIds;
+
+    private String clubSignatureImage;
+    private String sarSignatureImage;
+    private String finalSignatureImage;
 }

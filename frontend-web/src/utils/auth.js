@@ -10,3 +10,14 @@ export function getCurrentUserRole() {
     return null;
   }
 }
+
+  export function getCurrentUserId() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    return jwtDecode(token).id || null; // assumes JWT has "userId" claim
+  } catch {
+    return null;
+  }
+}
+

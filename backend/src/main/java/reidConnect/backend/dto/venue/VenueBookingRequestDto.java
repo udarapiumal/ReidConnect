@@ -1,20 +1,21 @@
 package reidConnect.backend.dto.venue;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 public class VenueBookingRequestDto {
-    private Long clubId;
     private Long venueId;
-    private LocalDate requestedDate;
-    private String reason;
-    private String applicantName;
+    private List<Long> slotIds;
+    private String clubName;
     private String registrationNumber;
     private String contactNumber;
-    private List<Long> slotIds;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate date;
+    private String reason;
+    private String bookingData;
+    private String clubSignatureImage;
 }
