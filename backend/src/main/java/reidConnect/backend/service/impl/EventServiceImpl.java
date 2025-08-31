@@ -10,13 +10,14 @@ import reidConnect.backend.dto.EventUpdateDto;
 import reidConnect.backend.dto.UserEventAttendanceDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.EventAttendanceStatus;
+import reidConnect.backend.enums.EventCategory;
 import reidConnect.backend.enums.Faculties;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.mapper.EventMapper;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.EventService;
 
-import java.sql.Date;
+// import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 // import java.util.ArrayList;
@@ -156,10 +157,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        List<Long> slotIds = eventSlotRepository.findByEventId(id)
-                .stream()
-                .map(es -> es.getSlot().getId())
-                .collect(Collectors.toList());
+        List<Long> slotIds = getSlotIdsForEvent(id);
 
         return EventMapper.toResponseDto(event, slotIds);
     }
@@ -177,10 +175,7 @@ public class EventServiceImpl implements EventService {
     public List<EventResponseDto> getAllEvents() {
         return eventRepository.findAll().stream()
                 .map(event -> {
-                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
-                            .stream()
-                            .map(es -> es.getSlot().getId())
-                            .collect(Collectors.toList());
+                    List<Long> slotIds = getSlotIdsForEvent(event.getId());
                     return EventMapper.toResponseDto(event, slotIds);
                 })
                 .collect(Collectors.toList());
@@ -192,10 +187,7 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findAllByDate(date);
         return events.stream()
                 .map(event -> {
-                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
-                            .stream()
-                            .map(es -> es.getSlot().getId())
-                            .collect(Collectors.toList());
+                    List<Long> slotIds = getSlotIdsForEvent(event.getId());
                     return EventMapper.toResponseDto(event, slotIds);
                 })
                 .collect(Collectors.toList());
@@ -206,10 +198,7 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findAllByDateBetween(startDate, endDate);
         return events.stream()
                 .map(event -> {
-                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
-                            .stream()
-                            .map(es -> es.getSlot().getId())
-                            .collect(Collectors.toList());
+                    List<Long> slotIds = getSlotIdsForEvent(event.getId());
                     return EventMapper.toResponseDto(event, slotIds);
                 })
                 .collect(Collectors.toList());
@@ -235,6 +224,19 @@ public class EventServiceImpl implements EventService {
                             .stream()
                             .map(es -> es.getSlot().getId())
                             .collect(Collectors.toList());
+                    return EventMapper.toResponseDto(event, slotIds);
+                })
+                .collect(Collectors.toList());
+    }
+
+    // getEventsByCategory
+    @Override
+    public List<EventResponseDto> getEventsByCategory(String category) {
+        EventCategory eventCategory = EventCategory.valueOf(category.toUpperCase());
+        List<Event> events = eventRepository.findAllByCategory(eventCategory);
+        return events.stream()
+                .map(event -> {
+                    List<Long> slotIds = getSlotIdsForEvent(event.getId());
                     return EventMapper.toResponseDto(event, slotIds);
                 })
                 .collect(Collectors.toList());
@@ -384,6 +386,13 @@ public class EventServiceImpl implements EventService {
         featuredEventRepository.deleteByEvent_Id(eventId);
     }
 
+    private List<Long> getSlotIdsForEvent(Long eventId) {
+        return eventSlotRepository.findByEventId(eventId)
+                .stream()
+                .map(es -> es.getSlot().getId())
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<EventResponseDto> getFeaturedEventsWithinOneMonth() {
         LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
@@ -392,10 +401,7 @@ public class EventServiceImpl implements EventService {
         return featuredEvents.stream()
                 .map(fe -> {
                     Event event = fe.getEvent();
-                    List<Long> slotIds = eventSlotRepository.findByEventId(event.getId())
-                            .stream()
-                            .map(es -> es.getSlot().getId())
-                            .toList();
+                    List<Long> slotIds = getSlotIdsForEvent(event.getId());
                     return EventMapper.toResponseDto(event, slotIds);
                 })
                 .toList();

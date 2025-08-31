@@ -15,6 +15,7 @@ import reidConnect.backend.mapper.TimeTableMapper;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.OccupiedStaffService;
 import reidConnect.backend.service.OccupiedVenueService;
+import reidConnect.backend.service.TimeTableApprovalService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +35,7 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
     private final OccupiedVenueService occupiedVenueService;
     private final OccupiedStaffService occupiedStaffService;
     private final OccupiedStaffRepository occupiedStaffRepository;
-
+    private final TimeTableApprovalService timeTableApprovalService;
 
     @Override
     @Transactional
@@ -243,6 +244,20 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         // Use optimized query with fetch joins to avoid N+1 problems
         List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
 
+        return timeTables.stream()
+                .map(timeTableMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year) {
+        // Use optimized query with fetch joins to avoid N+1 problems
+        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
+        //check 
+        if (timeTableApprovalService.hasApprovedDecision() == false) {
+            return List.of(); // return empty list if no approved decision
+            
+        }
         return timeTables.stream()
                 .map(timeTableMapper::toDto)
                 .collect(Collectors.toList());

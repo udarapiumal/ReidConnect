@@ -763,10 +763,10 @@ function useTimetable(emailFromToken?: string) {
           return;
         }
 
-        const res = await axiosInstance.get('/api/timetable/byYearAndDegree', {
+        const res = await axiosInstance.get('/api/timetable/byYearAndDegreeApproved', {
           params: { degree, year: yearEnum },
         });
-// console.log(res.data);
+console.log(res.data);
 
         const items: any[] = Array.isArray(res.data) ? res.data : (res.data?.items || []);
         const grouped = groupLecturesByDay(items);

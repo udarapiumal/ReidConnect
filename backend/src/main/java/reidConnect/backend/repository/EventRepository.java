@@ -5,6 +5,7 @@ import reidConnect.backend.entity.Event;
 // import reidConnect.backend.entity.Post;
 // import reidConnect.backend.enums.Faculties;
 // import reidConnect.backend.enums.Years;
+import reidConnect.backend.enums.EventCategory;
 
 import java.time.LocalDate;
 // import java.time.LocalDate;
@@ -23,4 +24,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findAllByDate(LocalDate date);
     List<Event> findAllByDateBetween(LocalDate startDate, LocalDate endDate);
+
+    List<Event> findAllByCategory(EventCategory eventCategory);
 }

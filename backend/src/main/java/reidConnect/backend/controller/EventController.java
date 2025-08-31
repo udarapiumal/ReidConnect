@@ -213,6 +213,13 @@ public class EventController {
         return ResponseEntity.ok(events);
     }
 
+    //get event by category
+    @GetMapping("/category")
+    public ResponseEntity<List<EventResponseDto>> getEventsByCategory(@RequestParam String category) {
+        List<EventResponseDto> events = eventService.getEventsByCategory(category);
+        return ResponseEntity.ok(events);
+    }
+
     // ✅ DELETE EVENT
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CLUB')")

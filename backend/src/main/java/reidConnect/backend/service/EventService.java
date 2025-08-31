@@ -43,5 +43,6 @@ public interface EventService {
     List<EventResponseDto> getFeaturedEventsWithinOneMonth();
 
     List<EventResponseDto> getEventsByDateRange(LocalDate startDate, LocalDate endDate);
+    List<EventResponseDto> getEventsByCategory(String category);
 
 }
