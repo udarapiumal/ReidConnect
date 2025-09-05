@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import AcademicSidebar from './AcademicSidebar';
+import Header from './components/Header';
+import UserProfile from './UserProfile';
 import axios from '../../api/axiosInstance';
 import { PRIVILEGES } from '../../api/rolePrivileges';
 import { getCurrentUserRole, getCurrentUserId } from '../../utils/auth';
@@ -11,6 +13,9 @@ const HallBookings = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [isSigning, setIsSigning] = useState(false);
+  const [activeNavItem, setActiveNavItem] = useState("Hall Bookings");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const sigCanvas = useRef(null);
   const printRef = useRef();
@@ -428,16 +433,26 @@ const HallBookings = () => {
         </body>
       </html>
     `);
-    
-    printWindow.document.close();
-    
-    // Wait for content to load before printing
-    printWindow.onload = function() {
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    };
+    printWindow.document.close();};
+
+  const handleNavigation = (itemId) => {
+    setActiveNavItem(itemId);
+  };
+
+  const handleNotificationToggle = () => {
+    setShowNotifications(!showNotifications);
+  };
+
+  const handleNotificationClose = () => {
+    setShowNotifications(false);
+  };
+
+  const handleProfileToggle = () => {
+    setShowProfile(!showProfile);
+  };
+
+  const handleProfileClose = () => {
+    setShowProfile(false);
   };
 
   const filteredBookings = bookings.filter(
@@ -445,6 +460,25 @@ const HallBookings = () => {
       b.venueId?.toString().includes(searchQuery) ||
       b.clubName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const notifications = [
+    { 
+      id: 1, 
+      title: "New Hall Booking Request", 
+      message: "Engineering Hall requested for AI Conference on July 25th", 
+      time: "2 min ago", 
+      type: "booking",
+      unread: true 
+    },
+    { 
+      id: 2, 
+      title: "Booking Approved", 
+      message: "Your booking for Room 101 has been approved", 
+      time: "15 min ago", 
+      type: "approval",
+      unread: true 
+    }
+  ];
 
   const renderBookingCard = (booking) => (
     <div key={booking.id} className="card">
@@ -502,20 +536,63 @@ const HallBookings = () => {
   );
 
   return (
-    <div className="hall-bookings">
-      <header className="header">
-        <div className="logo">ReidConnect <span>AcademicAdmin</span></div>
-        <div className="admin-info">
-          <i className="fas fa-bell"></i>
-          <i className="fas fa-user"></i>
-          <span>Admin</span>
-        </div>
-      </header>
+    <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''} ${showProfile ? 'blur-background' : ''}`}>
+      <Header 
+        onNotificationToggle={handleNotificationToggle}
+        onProfileToggle={handleProfileToggle}
+      />
 
-      <div className="body">
-        <AcademicSidebar activeItem="Hall Bookings" />
-        <main className="main-content">
-          <h1>Hall Bookings</h1>
+      {showNotifications && (
+        <>
+          <div className="notification-overlay" onClick={handleNotificationClose}></div>
+          <div className="notification-popup">
+            <div className="notification-header">
+              <h3>Notifications</h3>
+              <button className="close-btn" onClick={handleNotificationClose}>
+                <i className="fa fa-times"></i>
+              </button>
+            </div>
+            <div className="notification-list">
+              {notifications.map((notification) => (
+                <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
+                  <div className="notification-icon">
+                    <i className={`fa ${
+                      notification.type === 'booking' ? 'fa-calendar' :
+                      notification.type === 'registration' ? 'fa-user-plus' :
+                      notification.type === 'approval' ? 'fa-check-circle' :
+                      'fa-cog'
+                    }`}></i>
+                  </div>
+                  <div className="notification-content">
+                    <h4>{notification.title}</h4>
+                    <p>{notification.message}</p>
+                    <span className="notification-time">{notification.time}</span>
+                  </div>
+                  {notification.unread && <div className="unread-dot"></div>}
+                </div>
+              ))}
+            </div>
+            <div className="notification-footer">
+              <button className="mark-all-read">Mark all as read</button>
+              <button className="view-all">View all notifications</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showProfile && (
+        <UserProfile onClose={handleProfileClose} />
+      )}
+
+      <div className="dashboard-content">
+        <AcademicSidebar 
+          activeItem={activeNavItem} 
+          onNavigate={handleNavigation} 
+          isDarkMode={true}
+        />
+
+        <main className="dashboard-main">
+          <h2 className="page-title">Hall Bookings</h2>
 
           <div className="controls">
             <div className="search-bar">
@@ -630,75 +707,236 @@ const HallBookings = () => {
       )}
 
       <style>{`
-        .hall-bookings {
-          background-color: #1a1a1a;
+        .dashboard-container {
           min-height: 100vh;
-          color: white;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           flex-direction: column;
+          letter-spacing: -0.01em;
+          transition: all 0.3s ease;
+          background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+          color: white;
         }
 
-        .header {
+        .dashboard-container.blur-background .dashboard-content {
+          filter: blur(8px);
+          pointer-events: none;
+        }
+
+        .dashboard-container.blur-background .header {
+          filter: blur(8px);
+        }
+
+        .notification-overlay {
           position: fixed;
-          top: 0; left: 0; right: 0;
-          height: 64px;
-          background-color: #2a2a2a;
-          border-bottom: 1px solid #333;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 9998;
+          backdrop-filter: blur(4px);
+        }
+
+        .notification-popup {
+          position: fixed;
+          top: 80px;
+          right: 24px;
+          width: 380px;
+          max-height: 500px;
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          z-index: 9999;
+          overflow: hidden;
+          backdrop-filter: blur(20px);
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .notification-header {
+          padding: 20px 20px 16px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0 16px;
-          z-index: 1001;
         }
 
-        .logo {
-          font-weight: bold;
-          font-size: 20px;
-          color: white;
+        .notification-header h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 700;
+          color: #ffffff;
+          letter-spacing: -0.02em;
         }
 
-        .logo span {
-          color: #ef4444;
+        .close-btn {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 16px;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 6px;
+          transition: all 0.2s ease;
         }
 
-        .admin-info {
+        .close-btn:hover {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notification-list {
+          max-height: 320px;
+          overflow-y: auto;
+          padding: 8px 0;
+        }
+
+        .notification-item {
+          padding: 16px 20px;
           display: flex;
-          align-items: center;
-          gap: 16px;
-          color: white;
-        }
-
-        .admin-info i {
-          font-size: 20px;
+          align-items: flex-start;
+          gap: 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          position: relative;
+          transition: all 0.2s ease;
           cursor: pointer;
         }
 
-        .admin-info span {
+        .notification-item:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .notification-item.unread {
+          background: rgba(59, 130, 246, 0.05);
+          border-left: 3px solid #3b82f6;
+        }
+
+        .notification-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(59, 130, 246, 0.2);
+          flex-shrink: 0;
+        }
+
+        .notification-icon i {
+          color: #60a5fa;
           font-size: 14px;
         }
 
-        .body {
-          display: flex;
-          padding-top: 64px;
+        .notification-content {
           flex: 1;
-          min-height: calc(100vh - 64px);
         }
 
-        main.main-content {
+        .notification-content h4 {
+          margin: 0 0 4px 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #ffffff;
+          line-height: 1.3;
+        }
+
+        .notification-content p {
+          margin: 0 0 6px 0;
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.4;
+        }
+
+        .notification-time {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.5);
+          font-weight: 500;
+        }
+
+        .unread-dot {
+          width: 8px;
+          height: 8px;
+          background: #3b82f6;
+          border-radius: 50%;
+          flex-shrink: 0;
+          margin-top: 4px;
+        }
+
+        .notification-footer {
+          padding: 16px 20px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          gap: 12px;
+        }
+
+        .notification-footer button {
           flex: 1;
-          padding: 32px;
-          background-color: #1a1a1a;
+          padding: 8px 16px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.05);
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .notification-footer button.mark-all-read {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          color: white;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .notification-footer button.mark-all-read:hover {
+          background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+          border-color: rgba(248, 113, 113, 0.5);
+        }
+
+        .notification-footer button:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-content {
+          display: flex;
+          padding-top: 70px;
+          flex: 1;
+          min-height: calc(100vh - 70px);
+        }
+
+        main.dashboard-main {
+          flex: 1;
+          padding: 40px;
+          background: transparent;
           margin-left: 200px;
           overflow-y: auto;
-          min-height: calc(100vh - 64px);
+          min-height: calc(100vh - 70px);
         }
 
-        main.main-content h1 {
-          font-size: 28px;
-          font-weight: bold;
-          margin-bottom: 24px;
+        .page-title {
+          font-size: 32px;
+          font-weight: 800;
+          margin-bottom: 32px;
+          letter-spacing: -0.03em;
+          transition: all 0.3s ease;
           color: white;
+          background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .controls {
@@ -846,47 +1084,22 @@ const HallBookings = () => {
           background-color: #15803d;
         }
 
-        .deputy-btn {
+        .final-btn {
           background-color: #8b5cf6;
         }
 
-        .deputy-btn:hover {
+        .final-btn:hover {
           background-color: #7c3aed;
         }
 
-        .union-btn {
-          background-color: #f59e0b;
-        }
-
-        .union-btn:hover {
-          background-color: #d97706;
-        }
-
-        .signed-indicator {
-          background-color: #166534;
-          color: white;
-          padding: 6px 12px;
-          border-radius: 6px;
+        .awaiting-text {
+          color: #fbbf24;
           font-size: 12px;
           font-weight: 600;
-        }
-
-        .pending-indicator {
-          background-color: #7f1d1d;
-          color: #fca5a5;
           padding: 6px 12px;
+          background-color: #451a03;
           border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-
-        .view-only-indicator {
-          background-color: #374151;
-          color: #9ca3af;
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
+          border: 1px solid #92400e;
         }
 
         .modal {
@@ -903,26 +1116,180 @@ const HallBookings = () => {
           background-color: #2a2a2a;
           padding: 24px;
           border-radius: 12px;
-          width: 400px;
-          max-width: 90vw;
+          width: 90vw;
+          max-width: 800px;
+          max-height: 90vh;
           color: white;
           position: relative;
-          box-shadow: 0 0 10px rgba(0,0,0,0.8);
-          max-height: 80vh;
+          box-shadow: 0 0 20px rgba(0,0,0,0.8);
           overflow-y: auto;
         }
 
-        .modal-content h3 {
+        .modal-content h2 {
           margin-top: 0;
-          margin-bottom: 16px;
-          font-size: 22px;
+          margin-bottom: 20px;
+          font-size: 24px;
           font-weight: 700;
+          text-align: center;
+          color: #e5e7eb;
+          border-bottom: 2px solid #444;
+          padding-bottom: 12px;
         }
 
-        .modal-body p {
-          margin: 8px 0;
-          font-size: 14px;
+        .modal-body {
+          margin-top: 20px;
+        }
+
+        .details {
+          background-color: #333;
+          padding: 20px;
+          border-radius: 8px;
+          margin-bottom: 24px;
+          border: 1px solid #444;
+        }
+
+        .details p {
+          margin: 12px 0;
+          font-size: 15px;
           color: #d1d5db;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+          border-bottom: 1px solid #444;
+        }
+
+        .details p:last-child {
+          border-bottom: none;
+        }
+
+        .details strong {
+          color: #e5e7eb;
+          min-width: 120px;
+          text-align: left;
+        }
+
+        .signatures {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 24px;
+          margin-top: 24px;
+          padding: 20px;
+          background-color: #333;
+          border-radius: 12px;
+          border: 1px solid #444;
+        }
+
+        .signature-block {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 16px;
+          background-color: #2a2a2a;
+          border-radius: 8px;
+          border: 1px solid #555;
+          min-height: 160px;
+          justify-content: center;
+        }
+
+        .signature-block p {
+          margin: 0 0 12px 0;
+          font-weight: 600;
+          font-size: 14px;
+          color: #e5e7eb;
+          text-align: center;
+        }
+
+        .signature-block img {
+          max-width: 180px;
+          max-height: 80px;
+          min-width: 120px;
+          min-height: 60px;
+          border: 2px solid #666;
+          border-radius: 6px;
+          background-color: #fff;
+          padding: 4px;
+          object-fit: contain;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .signature-block:empty::after,
+        .signature-block img[src=""]:parent::after {
+          content: "Not signed";
+          color: #9ca3af;
+          font-style: italic;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 80px;
+          border: 2px dashed #666;
+          border-radius: 6px;
+          background-color: #1f2937;
+          width: 180px;
+        }
+
+        .signature-container {
+          background-color: #333;
+          padding: 20px;
+          border-radius: 12px;
+          margin-top: 20px;
+          border: 1px solid #444;
+        }
+
+        .sigCanvas {
+          border: 2px solid #666;
+          border-radius: 8px;
+          background-color: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          cursor: crosshair;
+        }
+
+        .signature-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 16px;
+          justify-content: center;
+        }
+
+        .clear-btn {
+          background-color: #ef4444;
+          border: none;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background-color 0.3s;
+        }
+
+        .clear-btn:hover {
+          background-color: #dc2626;
+        }
+
+        .print-btn {
+          background-color: #059669;
+          border: none;
+          color: white;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background-color 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .print-btn:hover {
+          background-color: #047857;
+        }
+
+        .print-btn::before {
+          content: "🖨️";
+          font-size: 16px;
         }
 
         .modal-actions {
@@ -931,6 +1298,7 @@ const HallBookings = () => {
           gap: 12px;
           flex-wrap: wrap;
           align-items: center;
+          justify-content: center;
         }
 
         .close-btn {
@@ -949,279 +1317,38 @@ const HallBookings = () => {
         .close-btn:hover {
           color: #dc2626;
         }
-          /* Enhanced Signature Display Styles */
-.signatures {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
-  padding: 20px;
-  background-color: #333;
-  border-radius: 12px;
-  border: 1px solid #444;
-}
 
-.signature-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  background-color: #2a2a2a;
-  border-radius: 8px;
-  border: 1px solid #555;
-  min-height: 160px;
-  justify-content: center;
-}
-
-.signature-block p {
-  margin: 0 0 12px 0;
-  font-weight: 600;
-  font-size: 14px;
-  color: #e5e7eb;
-  text-align: center;
-}
-
-.signature-block img {
-  max-width: 180px;
-  max-height: 80px;
-  min-width: 120px;
-  min-height: 60px;
-  border: 2px solid #666;
-  border-radius: 6px;
-  background-color: #fff;
-  padding: 4px;
-  object-fit: contain;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.signature-block:empty::after,
-.signature-block img[src=""]:parent::after {
-  content: "Not signed";
-  color: #9ca3af;
-  font-style: italic;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 80px;
-  border: 2px dashed #666;
-  border-radius: 6px;
-  background-color: #1f2937;
-  width: 180px;
-}
-
-/* Signature Canvas Styling */
-.signature-container {
-  background-color: #333;
-  padding: 20px;
-  border-radius: 12px;
-  margin-top: 20px;
-  border: 1px solid #444;
-}
-
-.sigCanvas {
-  border: 2px solid #666;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  cursor: crosshair;
-}
-
-.signature-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-  justify-content: center;
-}
-
-.clear-btn {
-  background-color: #ef4444;
-  border: none;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-}
-
-.clear-btn:hover {
-  background-color: #dc2626;
-}
-
-.final-btn {
-  background-color: #8b5cf6;
-}
-
-.final-btn:hover {
-  background-color: #7c3aed;
-}
-
-/* Modal Content Enhancements */
-.modal-content {
-  background-color: #2a2a2a;
-  padding: 24px;
-  border-radius: 12px;
-  width: 90vw;
-  max-width: 800px;
-  max-height: 90vh;
-  color: white;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0,0,0,0.8);
-  overflow-y: auto;
-}
-
-.modal-content h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: 700;
-  text-align: center;
-  color: #e5e7eb;
-  border-bottom: 2px solid #444;
-  padding-bottom: 12px;
-}
-
-.details {
-  background-color: #333;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  border: 1px solid #444;
-}
-
-.details p {
-  margin: 12px 0;
-  font-size: 15px;
-  color: #d1d5db;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #444;
-}
-
-.details p:last-child {
-  border-bottom: none;
-}
-
-.details strong {
-  color: #e5e7eb;
-  min-width: 120px;
-  text-align: left;
-}
-
-/* Print Button Styling */
-.print-btn {
-  background-color: #059669;
-  border: none;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.print-btn:hover {
-  background-color: #047857;
-}
-
-.print-btn::before {
-  content: "🖨️";
-  font-size: 16px;
-}
-
-/* Awaiting Text Styling */
-.awaiting-text {
-  color: #fbbf24;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  background-color: #451a03;
-  border-radius: 6px;
-  border: 1px solid #92400e;
-}
-
-/* Print-specific styles - these will be injected into the print window */
-@media print {
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    color: #000;
-    background: white;
-  }
-  
-  h2 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 24px;
-    border-bottom: 2px solid #333;
-    padding-bottom: 10px;
-  }
-  
-  .details {
-    margin-bottom: 30px;
-    border: 1px solid #ccc;
-    padding: 20px;
-    border-radius: 8px;
-  }
-  
-  .details p {
-    margin: 10px 0;
-    font-size: 14px;
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid #eee;
-    padding: 8px 0;
-  }
-  
-  .signatures {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 40px;
-    gap: 20px;
-    page-break-inside: avoid;
-  }
-  
-  .signature-block {
-    text-align: center;
-    flex: 1;
-    border: 1px solid #ccc;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-  }
-  
-  .signature-block p {
-    font-weight: bold;
-    margin-bottom: 15px;
-    font-size: 14px;
-  }
-  
-  .signature-block img {
-    max-width: 180px;
-    max-height: 80px;
-    border: 1px solid #999;
-    background-color: white;
-    padding: 5px;
-    border-radius: 4px;
-  }
-  
-  .status {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    background-color: #f0f0f0;
-    color: #333;
-  }
-}
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          main.dashboard-main {
+            margin-left: 0;
+            padding: 20px 12px;
+            max-width: 100vw;
+          }
+          
+          .page-title {
+            font-size: 24px;
+            margin-bottom: 24px;
+          }
+          
+          .cards-container {
+            gap: 12px;
+          }
+          
+          .card {
+            padding: 12px;
+          }
+          
+          .modal-content {
+            width: 95vw;
+            padding: 16px;
+          }
+          
+          .signatures {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+        }
       `}</style>
     </div>
   );

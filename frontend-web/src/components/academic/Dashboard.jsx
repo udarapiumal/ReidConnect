@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import AcademicSidebar from './AcademicSidebar';
 import UserProfile from './UserProfile';
+import Header from './components/Header';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -147,19 +148,9 @@ export default function Dashboard() {
 
     return (
         <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''} ${showProfile ? 'blur-background' : ''}`}>
-            <header className="header">
-                <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
-                <div className="admin-info">
-                    <div className="notification-wrapper">
-                        <i className="fa fa-bell" onClick={handleNotificationToggle} />
-                        {notifications.filter(n => n.unread).length > 0 && (
-                            <span className="notification-badge"></span>
-                        )}
-                    </div>
-                    <i className="fa fa-user" onClick={handleProfileToggle} />
-                    <span>Admin</span>
-                </div>
-            </header>
+
+                <Header />
+
 
             {showNotifications && (
                 <>

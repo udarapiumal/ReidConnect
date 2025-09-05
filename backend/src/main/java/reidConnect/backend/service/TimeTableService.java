@@ -15,6 +15,7 @@ public interface TimeTableService {
     TimeTableResponseDto update(Long id, TimeTableRequestDto dto);
     void delete(Long id);
     List<TimeTableResponseDto> getByYearAndDegree(Degree degree, Years year);
+    List<TimeTableResponseDto> getByDay(String day);
 
 
 }

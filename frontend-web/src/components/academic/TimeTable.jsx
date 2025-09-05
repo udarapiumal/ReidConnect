@@ -12,13 +12,16 @@ import { PRIVILEGES } from '../../api/rolePrivileges';
 import { getCurrentUserRole } from '../../utils/auth';
 import { getCurrentUserId } from '../../utils/auth'; 
 import StyledAlert from './components/StyledAlert'; 
+import AcademicSidebar from './AcademicSidebar';
 
 import './styles/TimeTable.css';
+import './styles/PrintTimeTable.css'; // For shared styles
 
 export default function TimeTable() {
   const [selectedYear, setSelectedYear] = useState("YEAR_1");
   const [selectedDegree, setSelectedDegree] = useState("CS");
   const [printData, setPrintData] = useState({});
+  const [activeNavItem, setActiveNavItem] = useState("Time Table");
   const [isLoadingPrint, setIsLoadingPrint] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -148,6 +151,10 @@ const canRecommend = isSAR && hasPendingFromMA && (
 
   const handleEditToggle = () => {
     setIsEditMode(!isEditMode);
+  };
+  
+  const handleNavigation = (itemId) => {
+    setActiveNavItem(itemId);
   };
 
   const triggerRefresh = () => {
@@ -363,8 +370,14 @@ const canRecommend = isSAR && hasPendingFromMA && (
     <div className="timetable-container">
       <Header />
 
-      <div className="content">
-        <main className="main-content">
+      <div className="dashboard-content">
+        <AcademicSidebar 
+          activeItem={activeNavItem} 
+          onNavigate={handleNavigation} 
+          isDarkMode={true}
+        />
+
+        <main className="dashboard-main">
           <div className="page-header">
             <h2 className="page-title">Academic Timetable</h2>
             <div className="header-controls">
@@ -441,9 +454,6 @@ const canRecommend = isSAR && hasPendingFromMA && (
                     ))}
                   </ul>
                 )}
-                
-                {/* Debug info - remove in production */}
-                
               </div>
 
             {/* Action buttons based on role and current status */}

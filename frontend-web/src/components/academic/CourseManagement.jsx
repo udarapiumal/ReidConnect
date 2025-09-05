@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
+import Header from './components/Header';
 import axios from '../../api/axiosInstance';
 import Select from 'react-select';
 
@@ -29,12 +30,11 @@ const CourseManagement = () => {
   const [lecturers, setLecturers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [venues, setVenues] = useState([]);
-  const [venueId, setVenueId] = useState(null);
 
   useEffect(() => {
     fetchCourses();
     fetchLecturers();
-     fetchVenues();
+    fetchVenues();
   }, []);
 
   const fetchCourses = async () => {
@@ -61,16 +61,17 @@ const CourseManagement = () => {
       setLecturers([]);
     }
   };
+
   const fetchVenues = async () => {
-  try {
-    const res = await axios.get(VENUES_API_URL);
-    const data = Array.isArray(res.data) ? res.data : res.data.data || [];
-    setVenues(data);
-  } catch (error) {
-    console.error("Failed to fetch venues", error);
-    setVenues([]);
-  }
-};
+    try {
+      const res = await axios.get(VENUES_API_URL);
+      const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+      setVenues(data);
+    } catch (error) {
+      console.error("Failed to fetch venues", error);
+      setVenues([]);
+    }
+  };
 
   const handleNavigation = (itemId) => {
     setActiveNavItem(itemId);
@@ -100,8 +101,8 @@ const CourseManagement = () => {
       ...course,
       lecturerIds: course.lecturerIds || [],
       lectureVenueId: course.lectureVenueId || '',
-    practicalVenueId: course.practicalVenueId || '',
-    tutorialVenueId: course.tutorialVenueId || ''
+      practicalVenueId: course.practicalVenueId || '',
+      tutorialVenueId: course.tutorialVenueId || ''
     });
     setShowAddForm(true);
   };
@@ -119,63 +120,62 @@ const CourseManagement = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    setLoading(true);
+    e.preventDefault();
+    try {
+      setLoading(true);
 
-    const code = formData.code?.toUpperCase() || "";
-    let degree = null;
-    let year = null;
+      const code = formData.code?.toUpperCase() || "";
+      let degree = null;
+      let year = null;
 
-    if (code.startsWith("SCS")) {
-      degree = "CS";
-    } else if (code.startsWith("IS")) {
-      degree = "IS";
-    }
-
-    // Extract year digit after prefix: For SCS, the prefix length is 3, for IS prefix length is 2
-    let prefixLength = 0;
-    if (code.startsWith("SCS")) prefixLength = 3;
-    else if (code.startsWith("IS")) prefixLength = 2;
-
-    if (prefixLength > 0 && code.length > prefixLength) {
-      const yearChar = code.charAt(prefixLength);
-      if (["1", "2", "3", "4"].includes(yearChar)) {
-        year = `YEAR_${yearChar}`;
+      if (code.startsWith("SCS")) {
+        degree = "CS";
+      } else if (code.startsWith("IS")) {
+        degree = "IS";
       }
+
+      // Extract year digit after prefix
+      let prefixLength = 0;
+      if (code.startsWith("SCS")) prefixLength = 3;
+      else if (code.startsWith("IS")) prefixLength = 2;
+
+      if (prefixLength > 0 && code.length > prefixLength) {
+        const yearChar = code.charAt(prefixLength);
+        if (["1", "2", "3", "4"].includes(yearChar)) {
+          year = `YEAR_${yearChar}`;
+        }
+      }
+
+      const data = {
+        code: formData.code,
+        name: formData.name,
+        lectureCredits: formData.lectureCredits,
+        practicalCredits: formData.practicalCredits,
+        lecturerIds: formData.lecturerIds,
+        lectureVenueId: formData.lectureVenueId,
+        practicalVenueId: formData.practicalVenueId,
+        tutorialVenueId: formData.tutorialVenueId,
+        degree,
+        year
+      };
+
+      if (editingCourse) {
+        await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
+      } else {
+        await axios.post(COURSES_API_URL, data);
+      }
+
+      fetchCourses();
+      setShowAddForm(false);
+      setEditingCourse(null);
+
+    } catch (error) {
+      console.error("Failed to save course", error);
+      alert("Failed to save course. Please check all fields and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const data = {
-      code: formData.code,
-      name: formData.name,
-      lectureCredits: formData.lectureCredits,
-      practicalCredits: formData.practicalCredits,
-      lecturerIds: formData.lecturerIds,
-      lectureVenueId: formData.lectureVenueId,
-      practicalVenueId: formData.practicalVenueId,
-      tutorialVenueId: formData.tutorialVenueId,
-      degree,
-      year
-    };
-
-    if (editingCourse) {
-      await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
-    } else {
-      await axios.post(COURSES_API_URL, data);
-    }
-
-    fetchCourses();
-    setShowAddForm(false);
-    setEditingCourse(null);
-
-  } catch (error) {
-    console.error("Failed to save course", error);
-    alert("Failed to save course. Please check all fields and try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleCancel = () => {
     setShowAddForm(false);
@@ -303,31 +303,29 @@ const CourseManagement = () => {
   };
 
   return (
-    <div className="course-management">
-      <header className="header">
-        <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
-        <div className="admin-info">
-          <i className="fa fa-bell" />
-          <i className="fa fa-user" />
-          <span>Admin</span>
-        </div>
-      </header>
+    <div className={`dashboard-container ${showAddForm ? 'blur-background' : ''}`}>
+      <Header />
 
-      <div className="layout">
-        <AcademicSidebar activeItem={activeNavItem} onNavigate={handleNavigation} />
-        <main className="main-content">
-          <h1>Course Management</h1>
+      <div className="dashboard-content">
+        <AcademicSidebar 
+          activeItem={activeNavItem} 
+          onNavigate={handleNavigation}
+        />
+
+        <main className="dashboard-main">
+          <h2 className="page-title">Course Management</h2>
 
           {!showAddForm ? (
             <>
               <div className="controls">
                 <input
                   type="text"
+                  className="search-input"
                   placeholder="Search by course name or code..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button onClick={handleAddCourse} disabled={loading}>
+                <button onClick={handleAddCourse} disabled={loading} className="add-btn">
                   <i className="fa fa-plus" /> Add New Course
                 </button>
               </div>
@@ -335,274 +333,235 @@ const CourseManagement = () => {
               {loading ? (
                 <div className="loading">Loading courses...</div>
               ) : (
-                <table className="course-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Course Name</th>
-                      <th>Code</th>
-                      <th>Lecture Venue</th>
-                      <th>Practical Venue</th>
-                      <th>Tutorial Venue</th>
-                      <th>Lecture Credits</th>
-                      <th>Practical Credits</th>
-                      <th>Lecturers</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCourses.length === 0 ? (
+                <div className="table-container">
+                  <table className="course-table">
+                    <thead>
                       <tr>
-                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
-                          No courses found
-                        </td>
+                        <th>ID</th>
+                        <th>Course Name</th>
+                        <th>Code</th>
+                        <th>Lecture Venue</th>
+                        <th>Practical Venue</th>
+                        <th>Tutorial Venue</th>
+                        <th>Lecture Credits</th>
+                        <th>Practical Credits</th>
+                        <th>Lecturers</th>
+                        <th>Actions</th>
                       </tr>
-                    ) : (
-                      filteredCourses.map((course) => (
-                        <tr key={course.id}>
-                          <td>{course.id}</td>
-                          <td>{course.name}</td>
-                          <td>{course.code}</td>
-                          <td>{course.lectureVenueName || '-'}</td>
-                          <td>{course.practicalVenueName || '-'}</td>
-                          <td>{course.tutorialVenueName || '-'}</td>
-
-                          <td>{course.lectureCredits}</td>
-                          <td>{course.practicalCredits}</td>
-                          <td>{getLecturerNames(course)}</td>
-                          <td>
-                            <button onClick={() => handleEditCourse(course)} className="edit-btn" disabled={loading}>
-                              <i className="fa fa-edit" />
-                            </button>
-                            <button onClick={() => handleDeleteCourse(course.id)} className="delete-btn" disabled={loading}>
-                              <i className="fa fa-trash" />
-                            </button>
+                    </thead>
+                    <tbody>
+                      {filteredCourses.length === 0 ? (
+                        <tr>
+                          <td colSpan="10" style={{ textAlign: 'center', padding: '40px' }}>
+                            No courses found
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        filteredCourses.map((course) => (
+                          <tr key={course.id}>
+                            <td>{course.id}</td>
+                            <td>{course.name}</td>
+                            <td>{course.code}</td>
+                            <td>{course.lectureVenueName || '-'}</td>
+                            <td>{course.practicalVenueName || '-'}</td>
+                            <td>{course.tutorialVenueName || '-'}</td>
+                            <td>{course.lectureCredits}</td>
+                            <td>{course.practicalCredits}</td>
+                            <td>{getLecturerNames(course)}</td>
+                            <td>
+                              <button onClick={() => handleEditCourse(course)} className="edit-btn" disabled={loading}>
+                                <i className="fa fa-edit" />
+                              </button>
+                              <button onClick={() => handleDeleteCourse(course.id)} className="delete-btn" disabled={loading}>
+                                <i className="fa fa-trash" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </>
-          ) : (
-            <div className="form-overlay">
-              <div className="form-section">
-                <h2>{editingCourse ? "Edit Course" : "Add New Course"}</h2>
-              <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                  <label>Course Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="Course Name" 
-                    required 
-                    value={formData.name} 
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Course Code</label>
-                  <input 
-                    type="text" 
-                    placeholder="Course Code (e.g., SCS 101)" 
-                    required 
-                    value={formData.code} 
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Lecture Credits</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="4"
-                      placeholder="Enter credits (1-4)"
-                      required
-                      value={formData.lectureCredits}
-                      onChange={(e) => setFormData({ ...formData, lectureCredits: parseInt(e.target.value) || 1 })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Practical Credits</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="8"
-                      placeholder="Enter credits (1-8)"
-                      required
-                      value={formData.practicalCredits}
-                      onChange={(e) => setFormData({ ...formData, practicalCredits: parseInt(e.target.value) || 1 })}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Lecturers (Search & Select Multiple)</label>
-                    <Select
-                      isMulti
-                      options={lecturerOptions}
-                      value={lecturerOptions.filter(opt => formData.lecturerIds.includes(opt.value))}
-                      onChange={handleLecturerSelectChange}
-                      placeholder="Search lecturers..."
-                      styles={customSelectStyles}
-                      isSearchable={true}
-                      isClearable={true}
-                      theme={(theme) => ({
-                        ...theme,
-                        colors: {
-                          ...theme.colors,
-                          primary: '#FF453A',
-                          primary75: 'rgba(249, 115, 22, 0.75)',
-                          primary50: 'rgba(249, 115, 22, 0.5)',
-                          primary25: 'rgba(249, 115, 22, 0.25)',
-                        },
-                      })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Lecture Venue</label>
-                    <select
-                      value={formData.lectureVenueId}
-                      onChange={(e) => setFormData({ ...formData, lectureVenueId: e.target.value })}
-
-                    >
-                      <option value="">Select Lecture Venue</option>
-                      {venues.map((venue) => (
-                        <option key={venue.id} value={venue.id}>
-                          {venue.name} ({venue.faculty})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Practical Venue</label>
-                    <select
-                      value={formData.practicalVenueId}
-                      onChange={(e) => setFormData({ ...formData, practicalVenueId: e.target.value })}
-
-                    >
-                      <option value="">Select Practical Venue</option>
-                      {venues.map((venue) => (
-                        <option key={venue.id} value={venue.id}>
-                          {venue.name} ({venue.faculty})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Tutorial Venue</label>
-                    <select
-                      value={formData.tutorialVenueId}
-                      onChange={(e) => setFormData({ ...formData, tutorialVenueId: e.target.value })}
-
-                    >
-                      <option value="">Select Tutorial Venue</option>
-                      {venues.map((venue) => (
-                        <option key={venue.id} value={venue.id}>
-                          {venue.name} ({venue.faculty})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                </div>
-
-                <div className="form-buttons">
-                  <button type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={loading}>
-                    {loading ? 'Saving...' : (editingCourse ? 'Update' : 'Add Course')}
-                  </button>
-                </div>
-              </form>
-            </div>
-            </div>
-          )}
+          ) : null}
         </main>
       </div>
 
+      {showAddForm && (
+        <>
+          <div className="form-overlay" onClick={handleCancel}></div>
+          <div className="form-popup">
+            <div className="form-header">
+              <h3>{editingCourse ? "Edit Course" : "Add New Course"}</h3>
+              <button className="close-btn" onClick={handleCancel}>
+                <i className="fa fa-times"></i>
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Course Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Course Name" 
+                  required 
+                  value={formData.name} 
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                />
+              </div>
 
+              <div className="form-group">
+                <label>Course Code</label>
+                <input 
+                  type="text" 
+                  placeholder="Course Code (e.g., SCS 101)" 
+                  required 
+                  value={formData.code} 
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Lecture Credits</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    placeholder="Enter credits (1-4)"
+                    required
+                    value={formData.lectureCredits}
+                    onChange={(e) => setFormData({ ...formData, lectureCredits: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Practical Credits</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="8"
+                    placeholder="Enter credits (1-8)"
+                    required
+                    value={formData.practicalCredits}
+                    onChange={(e) => setFormData({ ...formData, practicalCredits: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Lecturers (Search & Select Multiple)</label>
+                <Select
+                  isMulti
+                  options={lecturerOptions}
+                  value={lecturerOptions.filter(opt => formData.lecturerIds.includes(opt.value))}
+                  onChange={handleLecturerSelectChange}
+                  placeholder="Search lecturers..."
+                  styles={customSelectStyles}
+                  isSearchable={true}
+                  isClearable={true}
+                  theme={(theme) => ({
+                    ...theme,
+                    colors: {
+                      ...theme.colors,
+                      primary: '#FF453A',
+                      primary75: 'rgba(249, 115, 22, 0.75)',
+                      primary50: 'rgba(249, 115, 22, 0.5)',
+                      primary25: 'rgba(249, 115, 22, 0.25)',
+                    },
+                  })}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Lecture Venue</label>
+                  <select
+                    value={formData.lectureVenueId}
+                    onChange={(e) => setFormData({ ...formData, lectureVenueId: e.target.value })}
+                  >
+                    <option value="">Select Lecture Venue</option>
+                    {venues.map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name} ({venue.faculty})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Practical Venue</label>
+                  <select
+                    value={formData.practicalVenueId}
+                    onChange={(e) => setFormData({ ...formData, practicalVenueId: e.target.value })}
+                  >
+                    <option value="">Select Practical Venue</option>
+                    {venues.map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name} ({venue.faculty})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Tutorial Venue</label>
+                <select
+                  value={formData.tutorialVenueId}
+                  onChange={(e) => setFormData({ ...formData, tutorialVenueId: e.target.value })}
+                >
+                  <option value="">Select Tutorial Venue</option>
+                  {venues.map((venue) => (
+                    <option key={venue.id} value={venue.id}>
+                      {venue.name} ({venue.faculty})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-buttons">
+                <button type="button" onClick={handleCancel} disabled={loading}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={loading}>
+                  {loading ? 'Saving...' : (editingCourse ? 'Update' : 'Add Course')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
+      )}
+
+      {/* Embedded CSS */}
       <style>{`
-        .course-management {
-          background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+        .dashboard-container {
           min-height: 100vh;
-          color: white;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           flex-direction: column;
           letter-spacing: -0.01em;
-        }
-
-        .header {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 70px;
-          background: rgba(20, 20, 20, 0.95);
-          backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0 24px;
-          z-index: 1001;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .title {
-          font-weight: 700;
-          font-size: 22px;
-          color: white;
-          letter-spacing: -0.02em;
-        }
-
-        .title .highlight {
-          color: #FF453A;
-          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .admin-info {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          color: rgba(255, 255, 255, 0.8);
-        }
-
-        .admin-info i {
-          font-size: 18px;
-          cursor: pointer;
           transition: all 0.3s ease;
-          padding: 8px;
-          border-radius: 8px;
+          background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+          color: white;
         }
 
-        .admin-info i:hover {
-          color: #FF453A;
-          background: rgba(249, 115, 22, 0.1);
+        .dashboard-container.blur-background .dashboard-content {
+          filter: blur(8px);
+          pointer-events: none;
         }
 
-        .admin-info span {
-          font-size: 15px;
-          font-weight: 500;
+        .dashboard-container.blur-background .header {
+          filter: blur(8px);
         }
 
-        .layout {
+        .dashboard-content {
           display: flex;
           padding-top: 70px;
           flex: 1;
           min-height: calc(100vh - 70px);
         }
 
-        main.main-content {
+        .dashboard-main {
           flex: 1;
           padding: 40px;
           background: transparent;
@@ -611,12 +570,13 @@ const CourseManagement = () => {
           min-height: calc(100vh - 70px);
         }
 
-        main.main-content h1 {
+        .page-title {
           font-size: 32px;
           font-weight: 800;
           margin-bottom: 32px;
-          color: white;
           letter-spacing: -0.03em;
+          transition: all 0.3s ease;
+          color: white;
           background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -631,7 +591,7 @@ const CourseManagement = () => {
           align-items: center;
         }
 
-        .controls input[type="text"] {
+        .search-input {
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 12px;
@@ -646,18 +606,18 @@ const CourseManagement = () => {
           backdrop-filter: blur(10px);
         }
 
-        .controls input[type="text"]::placeholder {
+        .search-input::placeholder {
           color: rgba(255, 255, 255, 0.4);
           font-weight: 400;
         }
 
-        .controls input[type="text"]:focus {
+        .search-input:focus {
           background: rgba(255, 255, 255, 0.05);
           border-color: rgba(249, 115, 22, 0.3);
           box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
         }
 
-        .controls button {
+        .add-btn {
           background: linear-gradient(135deg, #FF453A 0%, #FF453A 100%);
           border: none;
           border-radius: 12px;
@@ -673,21 +633,21 @@ const CourseManagement = () => {
           box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
         }
 
-        .controls button:disabled {
+        .add-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
 
-        .controls button i {
+        .add-btn i {
           font-size: 16px;
         }
 
-        .controls button:hover:not(:disabled) {
+        .add-btn:hover:not(:disabled) {
           transform: translateY(-2px);
           box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
         }
 
-        .controls button:active:not(:disabled) {
+        .add-btn:active:not(:disabled) {
           transform: translateY(0);
         }
 
@@ -698,15 +658,18 @@ const CourseManagement = () => {
           font-size: 16px;
         }
 
-        .course-table {
-          width: 100%;
-          border-collapse: collapse;
+        .table-container {
           background: rgba(255, 255, 255, 0.02);
           border-radius: 16px;
           overflow: hidden;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
           border: 1px solid rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(20px);
+        }
+
+        .course-table {
+          width: 100%;
+          border-collapse: collapse;
         }
 
         .course-table thead {
@@ -798,82 +761,76 @@ const CourseManagement = () => {
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(10px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1002;
-          padding: 20px;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 9998;
+          backdrop-filter: blur(4px);
         }
 
-        .form-section {
-          background: rgba(255, 255, 255, 0.02);
-          padding: 32px;
-          border-radius: 20px;
+        .form-popup {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 90%;
           max-width: 600px;
-          width: 100%;
-          box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          max-height: 90vh;
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          z-index: 9999;
+          overflow-y: auto;
           backdrop-filter: blur(20px);
-          position: relative;
+          animation: slideIn 0.3s ease-out;
         }
 
-        .form-section h2 {
-          margin-top: 0;
-          margin-bottom: 28px;
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+
+        .form-header {
+          padding: 20px 20px 16px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .form-header h3 {
+          margin: 0;
+          font-size: 18px;
           font-weight: 700;
-          font-size: 26px;
+          color: #ffffff;
           letter-spacing: -0.02em;
-          color: white;
         }
 
-        .form-section form {
+        .close-btn {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 16px;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .form-popup form {
+          padding: 20px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-section input,
-        .form-section select,
-        .form-section textarea {
-          padding: 16px 20px;
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          font-size: 15px;
-          outline: none;
-          background: rgba(255, 255, 255, 0.03);
-          color: white;
-          transition: all 0.3s ease;
-          font-weight: 400;
-          backdrop-filter: blur(10px);
-          font-family: inherit;
-          resize: vertical;
-        }
-
-        .form-section input::placeholder,
-        .form-section textarea::placeholder {
-          color: rgba(255, 255, 255, 0.4);
-          font-weight: 400;
-        }
-
-        .form-section input:focus,
-        .form-section select:focus,
-        .form-section textarea:focus {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(249, 115, 22, 0.3);
-          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
-        }
-
-        .form-section select option {
-          background: #1a1a1a;
-          color: white;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
           gap: 20px;
         }
 
@@ -891,40 +848,42 @@ const CourseManagement = () => {
           letter-spacing: 0.05em;
         }
 
-        .lecturer-checkboxes {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+        .form-popup input,
+        .form-popup select {
+          padding: 16px 20px;
           border-radius: 12px;
-          padding: 16px;
-          max-height: 200px;
-          overflow-y: auto;
-          backdrop-filter: blur(10px);
-        }
-
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 8px 0;
-          cursor: pointer;
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.9);
-          text-transform: none;
-          letter-spacing: normal;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          font-size: 15px;
+          outline: none;
+          background: rgba(255, 255, 255, 0.03);
+          color: white;
+          transition: all 0.3s ease;
           font-weight: 400;
-          transition: color 0.3s ease;
+          backdrop-filter: blur(10px);
+          font-family: inherit;
         }
 
-        .checkbox-label:hover {
+        .form-popup input::placeholder {
+          color: rgba(255, 255, 255, 0.4);
+          font-weight: 400;
+        }
+
+        .form-popup input:focus,
+        .form-popup select:focus {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(249, 115, 22, 0.3);
+          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .form-popup select option {
+          background: #1a1a1a;
           color: white;
         }
 
-        .checkbox-label input[type="checkbox"] {
-          width: 16px;
-          height: 16px;
-          padding: 0;
-          margin: 0;
-          accent-color: #FF453A;
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
         }
 
         .form-buttons {
@@ -979,50 +938,73 @@ const CourseManagement = () => {
           transform: translateY(0);
         }
 
-        .lecturer-checkboxes::-webkit-scrollbar {
+        /* Scrollbar styling */
+        .form-popup::-webkit-scrollbar {
           width: 6px;
         }
 
-        .lecturer-checkboxes::-webkit-scrollbar-track {
+        .form-popup::-webkit-scrollbar-track {
           background: transparent;
         }
 
-        .lecturer-checkboxes::-webkit-scrollbar-thumb {
+        .form-popup::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.1);
           border-radius: 10px;
           border: none;
         }
 
-        .lecturer-checkboxes::-webkit-scrollbar-thumb:hover {
+        .form-popup::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.2);
         }
 
-        main.main-content::-webkit-scrollbar {
+        .dashboard-main::-webkit-scrollbar {
           width: 6px;
         }
 
-        main.main-content::-webkit-scrollbar-track {
+        .dashboard-main::-webkit-scrollbar-track {
           background: transparent;
         }
 
-        main.main-content::-webkit-scrollbar-thumb {
+        .dashboard-main::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.1);
           border-radius: 10px;
           border: none;
         }
 
-        main.main-content::-webkit-scrollbar-thumb:hover {
+        .dashboard-main::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Responsive adjustments */
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+          .dashboard-main {
+            margin-left: 0;
+            padding: 20px;
+          }
+          
+          .dashboard-content {
+            flex-direction: column;
+          }
+        }
+        
         @media (max-width: 768px) {
+          .dashboard-main {
+            margin-left: 0;
+            padding: 20px 12px;
+            max-width: 100vw;
+          }
+          
+          .page-title {
+            font-size: 24px;
+            margin-bottom: 24px;
+          }
+          
           .controls {
             flex-direction: column;
             align-items: stretch;
           }
           
-          .controls input[type="text"] {
+          .search-input {
             min-width: unset;
             width: 100%;
           }
@@ -1038,6 +1020,18 @@ const CourseManagement = () => {
 
           .form-row {
             grid-template-columns: 1fr;
+          }
+
+          .form-popup {
+            width: 95%;
+            max-height: 95vh;
+            margin: 0 auto;
+          }
+
+          .form-header,
+          .form-popup form {
+            padding-left: 16px;
+            padding-right: 16px;
           }
         }
       `}</style>

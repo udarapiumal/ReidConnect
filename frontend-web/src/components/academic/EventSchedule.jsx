@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AcademicSidebar from './AcademicSidebar';
+import Header from './components/Header';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance'; 
 import { getCurrentUserRole, getCurrentUserId } from '../../utils/auth';
@@ -23,6 +24,7 @@ const EventSchedule = () => {
   const [targetYears, setTargetYears] = useState([]);
   const [targetFaculties, setTargetFaculties] = useState([]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
+  const [activeNavItem, setActiveNavItem] = useState("Events");
   
   // New state for enhanced date/time selection and clash detection
   const [showDateTimeModal, setShowDateTimeModal] = useState(false);
@@ -187,6 +189,9 @@ const EventSchedule = () => {
         return [...prev, timeSlot];
       }
     });
+  };
+  const handleNavigation = (itemId) => {
+    setActiveNavItem(itemId);
   };
 
   // Handle conflict override
@@ -818,17 +823,13 @@ const EventSchedule = () => {
 
   return (
     <div className="course-management">
-      <header className="header">
-        <div className="title">ReidConnect <span className="highlight">AcademicAdmin</span></div>
-        <div className="admin-info">
-          <i className="fa fa-bell" />
-          <i className="fa fa-user" />
-          <span>Admin</span>
-        </div>
-      </header>
+      <Header />
 
       <div className="layout">
-        <AcademicSidebar activeItem="Event Schedule" />
+        <AcademicSidebar 
+          activeItem={activeNavItem} 
+          onNavigate={handleNavigation}
+        />
         <main className="main-content">
           <h1>Calendar</h1>
 

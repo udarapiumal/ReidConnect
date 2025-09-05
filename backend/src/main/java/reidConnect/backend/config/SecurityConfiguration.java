@@ -39,7 +39,8 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test", "/uploads/**").permitAll()
-                        .requestMatchers("/api/posts/uploads/**").permitAll() // Allow direct access to uploaded images
+                        .requestMatchers("/api/timetable/byDay/**").permitAll()
+                        .requestMatchers("/api/posts/uploads/**").permitAll()// Allow direct access to uploaded images
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
@@ -81,6 +82,7 @@ public class SecurityConfiguration {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:4200",
                 "http://localhost:3000",
+                "http://localhost:3001",
                 "http://localhost:8080",
                 "http://localhost:8081",
                 "http://localhost:8082",

@@ -247,4 +247,13 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
                 .map(timeTableMapper::toDto)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<TimeTableResponseDto> getByDay(String day) {
+        List<TimeTable> timeTables = timeTableRepository.findByDayIgnoreCase(day);
+        return timeTables.stream()
+                .map(timeTableMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
 }
