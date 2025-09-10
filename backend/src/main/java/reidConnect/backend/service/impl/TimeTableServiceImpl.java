@@ -16,6 +16,7 @@ import reidConnect.backend.repository.*;
 import reidConnect.backend.service.OccupiedStaffService;
 import reidConnect.backend.service.OccupiedVenueService;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -254,6 +255,12 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         return timeTables.stream()
                 .map(timeTableMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countSessionsToday() {
+        String today = LocalDate.now().getDayOfWeek().name(); // e.g. "MONDAY"
+        return timeTableRepository.countByDay(today);
     }
 
 }

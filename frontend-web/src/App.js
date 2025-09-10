@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Login from './components/Login';
 import Home from './components/Home';
 import Sidebar from './components/union/Sidebar';
-import AcademicSidebar from './components/academic/AcademicSidebar';
 import { PRIVILEGES, FEATURE_MAP } from './api/rolePrivileges';
 import { getCurrentUserRole } from './utils/auth';
 
@@ -12,7 +11,6 @@ import { getCurrentUserRole } from './utils/auth';
 import AcademicDashboard from './components/academic/Dashboard';
 import LecturerManagement from './components/academic/LecturerManagement';
 import CourseManagement from './components/academic/CourseManagement';
-import Reports from './components/academic/Reports';
 import TimeTable from './components/academic/TimeTable';
 import EventSchedule from './components/academic/EventSchedule';
 import HallBookings from './components/academic/HallBookings';
@@ -57,7 +55,6 @@ function AppWrapper() {
             <Route path="/academic/dashboard" element={<AcademicDashboard />} />
             <Route path="/academic/lecturers" element={<LecturerManagement />} />
             <Route path="/academic/courses" element={<CourseManagement />} />
-            <Route path="/academic/reports" element={<Reports />} />
           </>
         )}
 

@@ -25,4 +25,6 @@ public interface TimeTableRepository extends JpaRepository<TimeTable, Long> {
 
     List<TimeTable> findByDayIgnoreCase(String day);
 
+    long countByDay(String day);
+
 }

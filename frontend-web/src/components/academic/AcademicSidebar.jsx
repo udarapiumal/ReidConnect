@@ -13,7 +13,6 @@ const AcademicSidebar = ({ activeItem = 'Dashboard', onNavigate, isDarkMode = tr
     { id: 'Dashboard', icon: 'fa-solid fa-gauge', label: 'Dashboard', route: '/academic/dashboard' },
     { id: 'Academic Staff', icon: 'fa-solid fa-users', label: 'Academic Staff', route: '/academic/lecturers' },
     { id: 'Courses', icon: 'fa-solid fa-book', label: 'Courses', route: '/academic/courses' },
-    { id: 'Reports', icon: 'fa-solid fa-chart-bar', label: 'Reports', route: '/academic/reports' }
   ];
 
   const privilegeItems = userPrivs

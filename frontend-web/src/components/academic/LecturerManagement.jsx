@@ -388,6 +388,23 @@ const LecturerManagement = () => {
           background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
           color: white;
         }
+          .header {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 70px;
+                    backdrop-filter: blur(20px);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0 24px;
+                    z-index: 1001;
+                    transition: all 0.3s ease;
+                    background: rgba(20, 20, 20, 0.95);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                }
 
         .dashboard-container.blur-background .dashboard-content {
           filter: blur(8px);

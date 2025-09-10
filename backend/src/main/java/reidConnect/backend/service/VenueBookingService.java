@@ -17,4 +17,5 @@ public interface VenueBookingService {
 
     VenueBookingResponseDto finalApproveBooking(Long finalSignerId, Long bookingId, String finalSignatureImg);
 
+    long countPendingBookings();
 }

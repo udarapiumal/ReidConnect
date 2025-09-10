@@ -16,6 +16,6 @@ public interface TimeTableService {
     void delete(Long id);
     List<TimeTableResponseDto> getByYearAndDegree(Degree degree, Years year);
     List<TimeTableResponseDto> getByDay(String day);
-
+    long countSessionsToday();
 
 }

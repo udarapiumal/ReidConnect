@@ -58,4 +58,9 @@ public class VenueBookingController {
         List<VenueBookingResponseDto> responses = bookingService.getAllBookings();
         return ResponseEntity.ok(responses);
     }
+
+    @GetMapping("/count/pending")
+    public  ResponseEntity<Long> countPendingBookings() {
+        return ResponseEntity.ok(bookingService.countPendingBookings());
+    }
 }

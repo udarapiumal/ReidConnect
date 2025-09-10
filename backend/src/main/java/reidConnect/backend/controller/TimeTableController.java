@@ -60,7 +60,10 @@ public class TimeTableController {
         return ResponseEntity.ok(timeTableService.getByDay(day));
     }
 
-
+    @GetMapping("/count/today")
+    public ResponseEntity<Long> countSessionsToday() {
+        return ResponseEntity.ok(timeTableService.countSessionsToday());
+    }
 
 
 }

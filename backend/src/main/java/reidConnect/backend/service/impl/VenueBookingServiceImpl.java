@@ -238,5 +238,10 @@ public class VenueBookingServiceImpl implements VenueBookingService {
         }
     }
 
+    @Override
+    public long countPendingBookings() {
+        return bookingRepository.countByStatus(BookingStatus.PENDING);
+    }
+
 
 }
