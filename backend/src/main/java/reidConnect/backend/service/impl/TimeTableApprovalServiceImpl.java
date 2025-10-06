@@ -54,4 +54,12 @@ public class TimeTableApprovalServiceImpl implements TimeTableApprovalService {
                 .orElse(null);
     }
 
+    //return if there is APPROVED in the decision column
+    @Override
+    public boolean hasApprovedDecision() {
+        return approvalRepository.findByType(TimeTableType.ACADEMIC_TIME_TABLE).stream()
+                .anyMatch(a -> a.getDecision() == TimeTableApprovalDecision.APPROVED);
+    }
+
+
 }

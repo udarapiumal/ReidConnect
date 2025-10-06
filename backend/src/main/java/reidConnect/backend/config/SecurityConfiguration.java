@@ -40,7 +40,11 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test", "/uploads/**").permitAll()
                         .requestMatchers("/api/timetable/byDay/**").permitAll()
-                        .requestMatchers("/api/posts/uploads/**").permitAll()// Allow direct access to uploaded images
+                        // Allow WebSocket handshake + SockJS info/endpoints
+                        .requestMatchers("/ws-notifications/**").permitAll()
+                        // Allow CORS preflight requests globally
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/posts/uploads/**").permitAll() // Allow direct access to uploaded images
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()

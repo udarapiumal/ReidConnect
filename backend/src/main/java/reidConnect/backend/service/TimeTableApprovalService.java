@@ -9,4 +9,5 @@ public interface TimeTableApprovalService {
     TimeTableApprovalResponseDto approveTimeTable(TimeTableApprovalRequestDto requestDto);
     List<TimeTableApprovalResponseDto> getApprovalsByType(String type);
     TimeTableApprovalResponseDto getLatestDecision(String type, String role);
+    boolean hasApprovedDecision();
 }

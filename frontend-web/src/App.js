@@ -21,12 +21,14 @@ import UnionDashboard from './components/union/Dashboard';
 import ClubGallery from './components/union/ClubGallery';
 import ClubDetail from './components/union/ClubDetail';
 import EventsPage from './components/union/EventsPage';
+import AcademicCalendar from './components/academic/AcademicCalendar';
 
 const ELEMENTS = {
   TimeTable,
   EventSchedule,
   HallBookings,
-  SearchUser
+  SearchUser,
+  AcademicCalendar,
 };
 
 function AppWrapper() {
@@ -77,6 +79,7 @@ function AppWrapper() {
           const Component = ELEMENTS[feature.element];
           return <Route key={feature.route} path={feature.route} element={<Component />} />;
         })}
+
       </Routes>
     </>
   );

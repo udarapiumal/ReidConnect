@@ -197,6 +197,29 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventById(id));
     }
 
+    //get event by date
+    @GetMapping("/date/{date}")
+    public ResponseEntity<List<EventResponseDto>> getEventsByDate(@PathVariable LocalDate date) {
+        List<EventResponseDto> events = eventService.getEventsByDate(date);
+        return ResponseEntity.ok(events);
+    }
+
+    //get event by date range
+    @GetMapping("/date/range")
+    public ResponseEntity<List<EventResponseDto>> getEventsByDateRange(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        List<EventResponseDto> events = eventService.getEventsByDateRange(startDate, endDate);
+        return ResponseEntity.ok(events);
+    }
+
+    //get event by category
+    @GetMapping("/category")
+    public ResponseEntity<List<EventResponseDto>> getEventsByCategory(@RequestParam String category) {
+        List<EventResponseDto> events = eventService.getEventsByCategory(category);
+        return ResponseEntity.ok(events);
+    }
+
     // ✅ DELETE EVENT
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CLUB')")
