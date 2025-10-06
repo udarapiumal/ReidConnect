@@ -16,6 +16,7 @@ const HallBookings = () => {
   const [activeNavItem, setActiveNavItem] = useState("Hall Bookings");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  
 
   const sigCanvas = useRef(null);
   const printRef = useRef();
@@ -461,25 +462,6 @@ const HallBookings = () => {
       b.clubName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const notifications = [
-    { 
-      id: 1, 
-      title: "New Hall Booking Request", 
-      message: "Engineering Hall requested for AI Conference on July 25th", 
-      time: "2 min ago", 
-      type: "booking",
-      unread: true 
-    },
-    { 
-      id: 2, 
-      title: "Booking Approved", 
-      message: "Your booking for Room 101 has been approved", 
-      time: "15 min ago", 
-      type: "approval",
-      unread: true 
-    }
-  ];
-
   const renderBookingCard = (booking) => (
     <div key={booking.id} className="card">
       <div className="card-header">
@@ -536,61 +518,17 @@ const HallBookings = () => {
   );
 
   return (
-    <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''} ${showProfile ? 'blur-background' : ''}`}>
+    <div className={`dashboard-container`}>
       <Header 
         onNotificationToggle={handleNotificationToggle}
         onProfileToggle={handleProfileToggle}
       />
-
-      {showNotifications && (
-        <>
-          <div className="notification-overlay" onClick={handleNotificationClose}></div>
-          <div className="notification-popup">
-            <div className="notification-header">
-              <h3>Notifications</h3>
-              <button className="close-btn" onClick={handleNotificationClose}>
-                <i className="fa fa-times"></i>
-              </button>
-            </div>
-            <div className="notification-list">
-              {notifications.map((notification) => (
-                <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
-                  <div className="notification-icon">
-                    <i className={`fa ${
-                      notification.type === 'booking' ? 'fa-calendar' :
-                      notification.type === 'registration' ? 'fa-user-plus' :
-                      notification.type === 'approval' ? 'fa-check-circle' :
-                      'fa-cog'
-                    }`}></i>
-                  </div>
-                  <div className="notification-content">
-                    <h4>{notification.title}</h4>
-                    <p>{notification.message}</p>
-                    <span className="notification-time">{notification.time}</span>
-                  </div>
-                  {notification.unread && <div className="unread-dot"></div>}
-                </div>
-              ))}
-            </div>
-            <div className="notification-footer">
-              <button className="mark-all-read">Mark all as read</button>
-              <button className="view-all">View all notifications</button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {showProfile && (
-        <UserProfile onClose={handleProfileClose} />
-      )}
-
       <div className="dashboard-content">
         <AcademicSidebar 
           activeItem={activeNavItem} 
           onNavigate={handleNavigation} 
           isDarkMode={true}
         />
-
         <main className="dashboard-main">
           <h2 className="page-title">Hall Bookings</h2>
 
@@ -627,7 +565,11 @@ const HallBookings = () => {
                 <p><strong>Booking ID:</strong> #{selectedItem.bookingId}</p>
                 <p><strong>Hall:</strong> {selectedItem.venueId}</p>
                 <p><strong>Date:</strong> {selectedItem.date}</p>
-                <p><strong>Time Slots:</strong> {selectedItem.slotIds?.join(', ')}</p>
+                <p><strong>Time: </strong> 
+                  {selectedItem.slotIds && selectedItem.slotIds.length > 0 && 
+                    `${selectedItem.slotIds[0].startTime.slice(0,5)} - ${selectedItem.slotIds[selectedItem.slotIds.length - 1].endTime.slice(0,5)}`
+                  }
+                </p>
                 <p><strong>Booked by:</strong> {selectedItem.clubName}</p>
                 <p><strong>Contact:</strong> {selectedItem.contactNumber}</p>
                 <p><strong>Reason:</strong> {selectedItem.reason}</p>
