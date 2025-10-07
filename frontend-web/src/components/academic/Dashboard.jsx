@@ -9,6 +9,8 @@ import Home from '../TimeTableDay';
 const TIMETABLE_COUNT_URL = 'http://localhost:8080/api/timetable/count/today';
 const BOOKING_COUNT_URL = 'http://localhost:8080/api/bookings/count/pending';
 const EVENT_COUNT_URL = 'http://localhost:8080/api/events/count/recent';
+const CURRENT_PERIOD_URL = 'http://localhost:8080/api/academic-calendar/current';
+
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -17,28 +19,31 @@ export default function Dashboard() {
     const [activeNavItem, setActiveNavItem] = useState("Dashboard");
     const [showProfile, setShowProfile] = useState(false);
     
+    const [currentPeriod, setCurrentPeriod] = useState(null);
     const [lectureCount, setLectureCount] = useState(0);
     const [bookingCount, setBookingCount] = useState(0);
     const [eventCount, setEventCount] = useState(0);
 
-    const fetchCounts = async () => {
+    const fetchCountsAndPeriod = async () => {
         try {
-        const [timetableRes, bookingRes, eventRes] = await Promise.all([
+        const [timetableRes, bookingRes, eventRes, periodRes] = await Promise.all([
             axios.get(TIMETABLE_COUNT_URL),
             axios.get(BOOKING_COUNT_URL),
             axios.get(EVENT_COUNT_URL),
+            axios.get(CURRENT_PERIOD_URL),
         ]);
 
         setLectureCount(timetableRes.data || 0);
         setBookingCount(bookingRes.data || 0);
         setEventCount(eventRes.data || 0);
+        setCurrentPeriod(periodRes.data);
         } catch (error) {
         console.error("Failed to fetch counts:", error);
         }
     };
 
     useEffect(() => {
-        fetchCounts();
+        fetchCountsAndPeriod();
     }, []);
 
     const handleNavigation = (itemId) => {
@@ -79,7 +84,18 @@ export default function Dashboard() {
 
                     {/* Timetable Section */}
                     <div className="day-timetable-section">
-                        <Home />
+                        {currentPeriod ? (
+                            currentPeriod.periodType === "SEMESTER" ? (
+                                <Home />
+                            ) : (
+                                <div className="period-message-card">
+                                    <h2>{currentPeriod.title}</h2>
+                                    <p>{currentPeriod.periodType.replace("_", " ")}</p>
+                                </div>
+                            )
+                        ) : (
+                            <p>Loading academic period...</p>
+                        )}
                     </div>
                 </main>
             </div>
@@ -235,6 +251,40 @@ export default function Dashboard() {
                     width: 100%;
                     overflow: visible;
                 }
+
+                .period-message-card {
+                    margin-top: 40px;
+                    text-align: center;
+                    padding: 60px 20px;
+                    border-radius: 16px;
+                    backdrop-filter: blur(12px);
+                    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+                    color: white;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    animation: fadeIn 0.5s ease;
+                }
+
+                .period-message-card h2 {
+                    font-size: 32px;
+                    font-weight: 800;
+                    margin-bottom: 10px;
+                    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+
+                .period-message-card p {
+                    font-size: 18px;
+                    opacity: 0.8;
+                    letter-spacing: 0.5px;
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
 
                 /* Responsive Design */
                 @media (max-width: 1200px) {

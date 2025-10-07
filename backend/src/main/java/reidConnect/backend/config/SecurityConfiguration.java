@@ -48,6 +48,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/academic-calendar/**").permitAll()
                         .requestMatchers("/api/timetable/**").authenticated()
                         .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated() // Other event operations still require auth

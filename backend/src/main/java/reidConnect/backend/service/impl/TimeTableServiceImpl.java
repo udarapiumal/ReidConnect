@@ -257,20 +257,26 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
                 .map(timeTableMapper::toDto)
                 .collect(Collectors.toList());
     }
+    @Override
     public List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year) {
         // Use optimized query with fetch joins to avoid N+1 problems
         List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
-        //check 
-        if (timeTableApprovalService.hasApprovedDecision() == false) {
+
+        // Check if timetable approval is done
+        if (!timeTableApprovalService.hasApprovedDecision()) {
             return List.of(); // return empty list if no approved decision
-            
         }
-        
+
+        return timeTables.stream()
+                .map(timeTableMapper::toDto)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public long countSessionsToday() {
         String today = LocalDate.now().getDayOfWeek().name(); // e.g. "MONDAY"
         return timeTableRepository.countByDay(today);
     }
+
 
 }
