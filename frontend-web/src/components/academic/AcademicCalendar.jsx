@@ -89,6 +89,52 @@ export default function AcademicCalendar() {
       fetchPeriods();
     }
   };
+  // Calendar logic
+const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+
+const monthList = (() => {
+  if (periods.length === 0) return [];
+  const start = new Date(Math.min(...periods.map(p => new Date(p.startDate).getTime())));
+  const end = new Date(Math.max(...periods.map(p => new Date(p.endDate).getTime())));
+  const months = [];
+  const temp = new Date(start);
+  temp.setDate(1);
+  while (temp <= end) {
+    months.push(new Date(temp));
+    temp.setMonth(temp.getMonth() + 1);
+  }
+  return months;
+})();
+
+const getColor = (date) => {
+  for (const p of periods) {
+    const s = new Date(p.startDate);
+    const e = new Date(p.endDate);
+    if (date >= s && date <= e) {
+      if (p.periodType === "EXAMINATION") return "#ef4444";
+      if (p.periodType === "VACATION") return "#22c55e";
+      if (p.periodType === "SEMESTER") return "#3b82f6";
+      if (p.periodType === "STUDY_LEAVE") return "#f59e0b";
+      if (p.periodType === "ORIENTATION") return "#8b5cf6";
+    }
+  }
+  return "transparent";
+};
+
+const calendarDates = (() => {
+  if (monthList.length === 0) return [];
+  const monthDate = monthList[currentMonthIndex];
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const days = [];
+  const startDay = firstDay.getDay();
+  for (let i = 0; i < startDay; i++) days.push(null);
+  for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
+  return days;
+})();
+
 
   return (
     <div className="dashboard-container">
@@ -161,6 +207,50 @@ export default function AcademicCalendar() {
               </tbody>
             </table>
           </div>
+          {/* Full Calendar View with Navigation */}
+<div className="full-calendar-section">
+  <h3>Academic Calendar Overview</h3>
+
+  {/* Color Legend */}
+  <div className="calendar-legend">
+    <span><span className="legend-color" style={{background:'#3b82f6'}}></span> Semester</span>
+    <span><span className="legend-color" style={{background:'#ef4444'}}></span> Examination</span>
+    <span><span className="legend-color" style={{background:'#22c55e'}}></span> Vacation</span>
+    <span><span className="legend-color" style={{background:'#f59e0b'}}></span> Study Leave</span>
+    <span><span className="legend-color" style={{background:'#8b5cf6'}}></span> Orientation</span>
+  </div>
+
+  {/* Month Navigation */}
+  <div className="calendar-nav">
+    <button onClick={() => setCurrentMonthIndex((i) => Math.max(0, i - 1))}>← Previous</button>
+    <h4>{monthList[currentMonthIndex]?.toLocaleString("default", { month: "long", year: "numeric" })}</h4>
+    <button onClick={() => setCurrentMonthIndex((i) => Math.min(monthList.length - 1, i + 1))}>Next →</button>
+  </div>
+
+  {/* Month Grid */}
+  <div className="month-calendar">
+    <div className="calendar-grid">
+      {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+        <div key={d} className="calendar-header">{d}</div>
+      ))}
+      {calendarDates.map((date, idx) =>
+        date ? (
+          <div
+            key={idx}
+            className="calendar-cell"
+            style={{ backgroundColor: getColor(date) }}
+            title={date.toDateString()}
+          >
+            {date.getDate()}
+          </div>
+        ) : (
+          <div key={idx} className="calendar-cell empty"></div>
+        )
+      )}
+    </div>
+  </div>
+</div>
+
 
           {/* Modal Form */}
           {showForm && (
@@ -384,6 +474,102 @@ export default function AcademicCalendar() {
         .cancel-btn:hover {
           background: rgba(255,255,255,0.1);
         }
+          /* Full Calendar View */
+.full-calendar-section {
+  margin-top: 40px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.full-calendar-section h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+/* Legend */
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #ddd;
+}
+.legend-color {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  border-radius: 3px;
+  margin-right: 6px;
+}
+
+/* Navigation */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.calendar-nav h4 {
+  margin: 0;
+  font-weight: 600;
+  color: white;
+}
+.calendar-nav button {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.calendar-nav button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Grid */
+.month-calendar {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-header {
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.calendar-cell {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  color: white;
+  transition: transform 0.2s ease;
+}
+.calendar-cell:hover {
+  transform: scale(1.05);
+  cursor: pointer;
+}
+.calendar-cell.empty {
+  background: transparent;
+}
+
       `}</style>
     </div>
   );

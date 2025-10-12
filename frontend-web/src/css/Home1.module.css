@@ -304,9 +304,10 @@ html, body {
 }
 
 .degree-title.cs {
-  background: linear-gradient(135deg, #2a2a2a 0%, #404040 50%, #2a2a2a 100%);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(135deg, #FF0033 0%, #FF4466 50%, #FF0033 100%);
+  text-shadow: 0 2px 8px rgba(0, 51, 102, 0.5);
 }
+
 
 .degree-subtitle {
   font-size: 14px;
@@ -704,7 +705,8 @@ html, body {
 
 .period-message-card {
   margin: 80px auto;
-  max-width: 600px;
+  height: 80%;
+  width: 80%;
   text-align: center;
   padding: 60px 20px;
   border-radius: 18px;
@@ -717,7 +719,7 @@ html, body {
 }
 
 .period-message-card h2 {
-  font-size: 34px;
+  font-size: 48px;
   font-weight: 800;
   margin-bottom: 10px;
   background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
@@ -726,7 +728,7 @@ html, body {
 }
 
 .period-message-card p {
-  font-size: 18px;
+  font-size: 34px;
   opacity: 0.85;
   letter-spacing: 0.5px;
 }

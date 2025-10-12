@@ -404,7 +404,7 @@ export default function TimetableView() {
         }
 
         .time-table-day-degree-header.time-table-day-is {
-          background: linear-gradient(135deg, #2a2a2a 0%, #404040 50%, #2a2a2a 100%);
+          background: linear-gradient(135deg, #003366 0%, #1a4b8c 50%, #003366 100%);
         }
 
         /* Table Body */
