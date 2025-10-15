@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
+import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
 import reidConnect.backend.service.VenueBookingService;
 
 import java.util.List;
@@ -24,6 +25,29 @@ public class VenueBookingController {
         VenueBookingResponseDto response = bookingService.createBooking(clubUserId, dto);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<VenueBookingResponseDto>> getBookingsByClubId(
+            @PathVariable Long clubId
+    ) {
+        List<VenueBookingResponseDto> responses = bookingService.getBookingsByClubId(clubId);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<List<VenueBookingSummaryDto>> getAllBookingsSummary() {
+        List<VenueBookingSummaryDto> responses = bookingService.getAllBookingsSummary();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/summary/club/{clubId}")
+    public ResponseEntity<List<VenueBookingSummaryDto>> getBookingsSummaryByClubId(
+            @PathVariable Long clubId
+    ) {
+        List<VenueBookingSummaryDto> responses = bookingService.getBookingsSummaryByClubId(clubId);
+        return ResponseEntity.ok(responses);
+    }
+
 
     @PostMapping("/approve/{sarId}/{bookingId}")
     public ResponseEntity<VenueBookingResponseDto> approveBooking(
@@ -63,4 +87,13 @@ public class VenueBookingController {
     public  ResponseEntity<Long> countPendingBookings() {
         return ResponseEntity.ok(bookingService.countPendingBookings());
     }
+
+    @GetMapping("/summary/venue/{venueId}")
+    public ResponseEntity<List<VenueBookingSummaryDto>> getBookingsSummaryByVenueId(
+            @PathVariable Long venueId
+    ) {
+        List<VenueBookingSummaryDto> responses = bookingService.getBookingsSummaryByVenueId(venueId);
+        return ResponseEntity.ok(responses);
+    }
+
 }

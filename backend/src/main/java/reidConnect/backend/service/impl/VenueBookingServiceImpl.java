@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
+import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.BookingStatus;
 import reidConnect.backend.mapper.VenueBookingMapper;
@@ -241,6 +242,62 @@ public class VenueBookingServiceImpl implements VenueBookingService {
     @Override
     public long countPendingBookings() {
         return bookingRepository.countByStatus(BookingStatus.PENDING);
+    }
+
+    @Override
+    public List<VenueBookingResponseDto> getBookingsByClubId(Long clubId) {
+        List<VenueBooking> bookings = bookingRepository.findByClubId(clubId);
+        return bookings.stream()
+                .map(bookingMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getAllBookingsSummary() {
+        return bookingRepository.findAll()
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getBookingsSummaryByClubId(Long clubId) {
+        return bookingRepository.findByClubId(clubId)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
+
+    // Helper method to convert to summary DTO
+    private VenueBookingSummaryDto toSummaryDto(VenueBooking booking) {
+        VenueBookingSummaryDto dto = new VenueBookingSummaryDto();
+        dto.setBookingId(booking.getId());
+        dto.setClubName(booking.getClubName());
+        dto.setRegistrationNumber(booking.getRegistrationNumber());
+        dto.setContactNumber(booking.getContactNumber());
+        dto.setDate(booking.getDate());
+        dto.setReason(booking.getReason());
+        dto.setStatus(booking.getStatus().name());
+        dto.setVenueId(booking.getVenue().getId());
+        dto.setVenueName(booking.getVenue().getName());
+
+        dto.setSlotIds(booking.getSlots().stream().map(slot -> {
+            VenueBookingSummaryDto.SlotDto s = new VenueBookingSummaryDto.SlotDto();
+            s.setId(slot.getId());
+            s.setStartTime(slot.getStartTime().toString());
+            s.setEndTime(slot.getEndTime().toString());
+            return s;
+        }).toList());
+
+        return dto;
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getBookingsSummaryByVenueId(Long venueId) {
+        return bookingRepository.findByVenueId(venueId)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
     }
 
 
