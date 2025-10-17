@@ -1,5 +1,7 @@
 package reidConnect.backend.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import reidConnect.backend.entity.VenueBooking;
 import reidConnect.backend.enums.BookingStatus;
@@ -11,5 +13,7 @@ public interface VenueBookingRepository extends JpaRepository<VenueBooking, Long
     List<VenueBooking> findByClubId(Long clubId);
 
     List<VenueBooking> findByVenueId(Long venueId);
+
+    Page<VenueBooking> findByStatus(BookingStatus status, Pageable pageable);
 
 }

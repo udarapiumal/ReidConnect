@@ -1,11 +1,13 @@
 package reidConnect.backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
+import reidConnect.backend.enums.BookingStatus;
 import reidConnect.backend.service.VenueBookingService;
 
 import java.util.List;
@@ -95,5 +97,25 @@ public class VenueBookingController {
         List<VenueBookingSummaryDto> responses = bookingService.getBookingsSummaryByVenueId(venueId);
         return ResponseEntity.ok(responses);
     }
+
+    @GetMapping("/paged")
+    public ResponseEntity<Page<VenueBookingResponseDto>> getAllBookingsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<VenueBookingResponseDto> responses = bookingService.getAllBookingsPaged(page, size);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/paged/filter")
+    public ResponseEntity<Page<VenueBookingResponseDto>> getBookingsByStatus(
+            @RequestParam BookingStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<VenueBookingResponseDto> responses = bookingService.getBookingsByStatus(status, page, size);
+        return ResponseEntity.ok(responses);
+    }
+
 
 }

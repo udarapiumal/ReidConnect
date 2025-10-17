@@ -3,6 +3,10 @@ package reidConnect.backend.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
@@ -298,6 +302,22 @@ public class VenueBookingServiceImpl implements VenueBookingService {
                 .stream()
                 .map(this::toSummaryDto)
                 .toList();
+    }
+
+
+    @Override
+    public Page<VenueBookingResponseDto> getAllBookingsPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<VenueBooking> bookingPage = bookingRepository.findAll(pageable);
+
+        return bookingPage.map(bookingMapper::toDto);
+    }
+
+    @Override
+    public Page<VenueBookingResponseDto> getBookingsByStatus(BookingStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<VenueBooking> bookingPage = bookingRepository.findByStatus(status, pageable);
+        return bookingPage.map(bookingMapper::toDto);
     }
 
 

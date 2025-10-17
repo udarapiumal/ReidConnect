@@ -11,12 +11,20 @@ const HallBookings = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [bookings, setBookings] = useState([]);
   const [isSigning, setIsSigning] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState("Hall Bookings");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  
+
+  //pagination states
+  const [bookings, setBookings] = useState([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 5; // can be tuned for performance
+
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+
 
   const sigCanvas = useRef(null);
   const printRef = useRef();
@@ -29,16 +37,37 @@ const HallBookings = () => {
     fetchBookings();
   }, []);
 
-  const fetchBookings = async () => {
-    try {
-      const res = await axios.get('/api/bookings');
-      console.log('Fetched bookings:', res.data);
-      const sorted = res.data.sort((a, b) => b.id - a.id);
-      setBookings(sorted);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
+  useEffect(() => {
+  setPage(0);
+  fetchBookings(0, false);
+}, [statusFilter]);
+
+
+
+  const fetchBookings = async (pageNum = 0, append = false) => {
+  try {
+    let url = `/api/bookings/paged?page=${pageNum}&size=${pageSize}`;
+    if (statusFilter !== 'ALL') {
+      url = `/api/bookings/paged/filter?status=${statusFilter}&page=${pageNum}&size=${pageSize}`;
     }
-  };
+
+    const res = await axios.get(url);
+    const { content, last } = res.data;
+
+    if (append) {
+      setBookings((prev) => [...prev, ...content]);
+    } else {
+      setBookings(content);
+    }
+
+    setHasMore(!last);
+    setPage(pageNum);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+  }
+};
+
+
 
   const handleApproveSar = async () => {
     if (!sigCanvas.current) return;
@@ -465,7 +494,7 @@ const HallBookings = () => {
   const renderBookingCard = (booking) => (
     <div key={booking.id} className="card">
       <div className="card-header">
-        <span className="hall-name">Booking #{booking.id}</span>
+        <span className="hall-name">Booking #{booking.bookingId}</span>
         <span className={`status ${booking.status?.toLowerCase()}`}>{booking.status}</span>
       </div>
       <div className="card-body">
@@ -533,20 +562,59 @@ const HallBookings = () => {
           <h2 className="page-title">Hall Bookings</h2>
 
           <div className="controls">
-            <div className="search-bar">
-              <i className="fas fa-search"></i>
-              <input
-                type="text"
-                placeholder="Search bookings..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+  <div className="search-bar">
+    <i className="fas fa-search"></i>
+    <input
+      type="text"
+      placeholder="Search bookings..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+  </div>
+
+  <div className="filter-dropdown">
+    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+      <option value="ALL">All</option>
+      <option value="PENDING">Pending</option>
+      <option value="SAR_SIGNED">SAR Signed</option>
+      <option value="APPROVED">Approved</option>
+      <option value="REJECTED">Rejected</option>
+    </select>
+  </div>
+</div>
+
 
           <div className="cards-container">
-            {filteredBookings.map(renderBookingCard)}
-          </div>
+          {filteredBookings.map(renderBookingCard)}
+
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            </div>
+          )}
+        </div>
+        <div className="pagination-controls">
+  <button
+    disabled={page === 0}
+    onClick={() => fetchBookings(page - 1, false)}
+    className={`pagination-btn ${page === 0 ? 'disabled' : ''}`}
+  >
+    ← Previous
+  </button>
+
+  <span className="page-indicator">Page {page + 1}</span>
+
+  <button
+    disabled={!hasMore}
+    onClick={() => fetchBookings(page + 1, false)}
+    className={`pagination-btn ${!hasMore ? 'disabled' : ''}`}
+  >
+    Next →
+  </button>
+</div>
+
+
+
+
         </main>
       </div>
 
@@ -1276,6 +1344,98 @@ const HallBookings = () => {
         .close-btn:hover {
           color: #dc2626;
         }
+          .load-more-btn,
+.pagination-controls button {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.load-more-btn:hover,
+.pagination-controls button:hover {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.pagination-controls span {
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.filter-dropdown select {
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.filter-dropdown select:hover {
+  background-color: #444;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.pagination-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+}
+
+.pagination-btn.disabled,
+.pagination-btn:disabled {
+  background: #444;
+  color: #aaa;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.page-indicator {
+  font-size: 15px;
+  color: #d1d5db;
+  font-weight: 500;
+}
+
 
         /* Responsive Design */
         @media (max-width: 768px) {

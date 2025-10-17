@@ -1,8 +1,10 @@
 package reidConnect.backend.service;
 
+import org.springframework.data.domain.Page;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
+import reidConnect.backend.enums.BookingStatus;
 
 import java.util.List;
 
@@ -27,5 +29,9 @@ public interface VenueBookingService {
     List<VenueBookingSummaryDto> getBookingsSummaryByClubId(Long clubId);
 
     List<VenueBookingSummaryDto> getBookingsSummaryByVenueId(Long venueId);
+
+    Page<VenueBookingResponseDto> getAllBookingsPaged(int page, int size);
+
+    Page<VenueBookingResponseDto> getBookingsByStatus(BookingStatus status, int page, int size);
 
 }
