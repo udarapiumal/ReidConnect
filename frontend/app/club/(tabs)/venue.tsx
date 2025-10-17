@@ -80,6 +80,11 @@ export default function VenueBookingRequest() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
+  // Booked slots state
+  const [bookedSlots, setBookedSlots] = useState([]); // APPROVED slots
+  const [pendingSlots, setPendingSlots] = useState([]); // PENDING slots
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   // Fetch all venues on mount
   useEffect(() => {
     fetchVenues();
@@ -96,6 +101,43 @@ export default function VenueBookingRequest() {
     } catch (error) {
       console.error('Failed to load venues:', error);
       Alert.alert('Error', 'Failed to load venues');
+    }
+  };
+
+  const fetchBookedSlots = async (venueId, date) => {
+    if (!venueId || !date) return;
+
+    setLoadingSlots(true);
+    try {
+      const response = await axios.get(`${BASE_URL}/api/bookings/summary/venue/${venueId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Filter bookings for the selected date
+      const formattedDate = formatDateForAPI(date);
+      const bookingsForDate = response.data.filter(
+        booking => booking.date === formattedDate
+      );
+
+      // Separate APPROVED and PENDING bookings
+      const approvedSlotIds = bookingsForDate
+        .filter(booking => booking.status === 'APPROVED')
+        .flatMap(booking => booking.slotIds.map(slot => slot.id));
+
+      const pendingSlotIds = bookingsForDate
+        .filter(booking => booking.status === 'PENDING')
+        .flatMap(booking => booking.slotIds.map(slot => slot.id));
+
+      setBookedSlots(approvedSlotIds);
+      setPendingSlots(pendingSlotIds);
+    } catch (error) {
+      console.error('Failed to load booked slots:', error);
+      setBookedSlots([]);
+      setPendingSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -123,7 +165,7 @@ export default function VenueBookingRequest() {
     return new Date(year, month, 1).getDay();
   };
 
-  const handleDateSelect = (day) => {
+  const handleDateSelect = async (day) => {
     const selected = new Date(currentYear, currentMonth, day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -134,9 +176,49 @@ export default function VenueBookingRequest() {
     }
     
     setSelectedDate(selected);
+    setSelectedTimeSlots([]);
+    
+    // Fetch booked slots for this date
+    if (selectedVenue) {
+      await fetchBookedSlots(selectedVenue.id, selected);
+    }
   };
 
   const toggleTimeSlot = (slotId) => {
+    // Check if slot is already approved/booked
+    if (bookedSlots.includes(slotId)) {
+      Alert.alert('Already Booked', 'This time slot has been approved and is already booked.');
+      return;
+    }
+
+    // Check if slot has pending request
+    if (pendingSlots.includes(slotId)) {
+      Alert.alert(
+        'Pending Request',
+        'Another club has already requested this time slot. Do you wish to proceed?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Proceed',
+            onPress: () => {
+              setSelectedTimeSlots(prev => {
+                if (prev.includes(slotId)) {
+                  return prev.filter(id => id !== slotId);
+                } else {
+                  return [...prev, slotId];
+                }
+              });
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    // Free slot - toggle normally
     setSelectedTimeSlots(prev => {
       if (prev.includes(slotId)) {
         return prev.filter(id => id !== slotId);
@@ -186,6 +268,8 @@ export default function VenueBookingRequest() {
       setSelectedDate(null);
       setSelectedTimeSlots([]);
       setClubSignatureImage(null);
+      setBookedSlots([]);
+      setPendingSlots([]);
       setStep(1);
 
     } catch (error) {
@@ -443,62 +527,118 @@ export default function VenueBookingRequest() {
             </View>
           </View>
 
-          {/* Time Slots */}
+          {/* Time Slots - Only shown after date selection */}
           {selectedDate && (
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Select Time Slots *</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Select Time Slots *</Text>
+                {loadingSlots && (
+                  <ActivityIndicator size="small" color="#007aff" />
+                )}
+              </View>
+              
               <View style={styles.timeSlotsGrid}>
-                {TIME_SLOTS.map(slot => (
-                  <TouchableOpacity
-                    key={slot.id}
-                    style={[
-                      styles.timeSlot,
-                      selectedTimeSlots.includes(slot.id) && styles.selectedTimeSlot
-                    ]}
-                    onPress={() => toggleTimeSlot(slot.id)}
-                  >
-                    <Text style={[
-                      styles.timeSlotText,
-                      selectedTimeSlots.includes(slot.id) && styles.selectedTimeSlotText
-                    ]}>
-                      {slot.label}
-                    </Text>
-                    {selectedTimeSlots.includes(slot.id) && (
-                      <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                    )}
-                  </TouchableOpacity>
-                ))}
+                {TIME_SLOTS.map(slot => {
+                  const isBooked = bookedSlots.includes(slot.id);
+                  const isPending = pendingSlots.includes(slot.id);
+                  const isSelected = selectedTimeSlots.includes(slot.id);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={slot.id}
+                      style={[
+                        styles.timeSlot,
+                        isBooked && styles.bookedTimeSlot,
+                        isPending && styles.pendingTimeSlot,
+                        isSelected && styles.selectedTimeSlot
+                      ]}
+                      onPress={() => toggleTimeSlot(slot.id)}
+                      disabled={isBooked}
+                    >
+                      <Text style={[
+                        styles.timeSlotText,
+                        isBooked && styles.bookedTimeSlotText,
+                        isPending && styles.pendingTimeSlotText,
+                        isSelected && styles.selectedTimeSlotText
+                      ]}>
+                        {slot.label}
+                      </Text>
+                      {isBooked && (
+                        <View style={styles.statusBadge}>
+                          <Ionicons name="lock-closed" size={14} color="#ff4444" />
+                        </View>
+                      )}
+                      {isPending && !isSelected && (
+                        <View style={styles.statusBadge}>
+                          <Ionicons name="time" size={14} color="#ffa500" />
+                        </View>
+                      )}
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
               
               {selectedTimeSlots.length > 0 && (
-                <Text style={styles.slotCount}>
-                  {selectedTimeSlots.length} slot(s) selected
-                </Text>
+                <View style={styles.slotCountContainer}>
+                  <Text style={styles.slotCount}>
+                    {selectedTimeSlots.length} slot(s) selected
+                  </Text>
+                </View>
+              )}
+              
+              {(bookedSlots.length > 0 || pendingSlots.length > 0) && (
+                <View style={styles.legendContainer}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendBox, styles.freeLegend]} />
+                    <Text style={styles.legendText}>Free</Text>
+                  </View>
+                  {pendingSlots.length > 0 && (
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendBox, styles.pendingLegend]} />
+                      <Text style={styles.legendText}>Requested</Text>
+                    </View>
+                  )}
+                  {bookedSlots.length > 0 && (
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendBox, styles.occupiedLegend]} />
+                      <Text style={styles.legendText}>Booked</Text>
+                    </View>
+                  )}
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendBox, styles.selectedLegend]} />
+                    <Text style={styles.legendText}>Selected</Text>
+                  </View>
+                </View>
               )}
             </View>
           )}
 
           {/* Signature */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Club Signature *</Text>
-            <TouchableOpacity 
-              style={styles.signatureButton}
-              onPress={() => setSignatureModalVisible(true)}
-            >
-              {clubSignatureImage ? (
-                <>
-                  <Ionicons name="checkmark-circle" size={24} color="#28a745" />
-                  <Text style={styles.signatureButtonTextSuccess}>Signature Captured</Text>
-                  <Text style={styles.signatureButtonSubtext}>Tap to redo</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="create-outline" size={24} color="#007aff" />
-                  <Text style={styles.signatureButtonText}>Tap to Sign</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+          {selectedDate && selectedTimeSlots.length > 0 && (
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Club Signature *</Text>
+              <TouchableOpacity 
+                style={styles.signatureButton}
+                onPress={() => setSignatureModalVisible(true)}
+              >
+                {clubSignatureImage ? (
+                  <>
+                    <Ionicons name="checkmark-circle" size={24} color="#28a745" />
+                    <Text style={styles.signatureButtonTextSuccess}>Signature Captured</Text>
+                    <Text style={styles.signatureButtonSubtext}>Tap to redo</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="create-outline" size={24} color="#007aff" />
+                    <Text style={styles.signatureButtonText}>Tap to Sign</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
@@ -606,6 +746,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 12,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   input: {
@@ -796,6 +942,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#007aff',
     borderColor: '#007aff',
   },
+  bookedTimeSlot: {
+    backgroundColor: '#2a1a1a',
+    borderColor: '#ff4444',
+    opacity: 0.6,
+  },
+  pendingTimeSlot: {
+    backgroundColor: '#2a2a1a',
+    borderColor: '#ffa500',
+  },
   timeSlotText: {
     color: '#fff',
     fontSize: 13,
@@ -805,12 +960,67 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  bookedTimeSlotText: {
+    color: '#ff4444',
+    fontWeight: '500',
+  },
+  pendingTimeSlotText: {
+    color: '#ffa500',
+    fontWeight: '500',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  slotCountContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
   slotCount: {
     color: '#007aff',
     fontSize: 14,
     fontWeight: '500',
-    marginTop: 12,
-    textAlign: 'center',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendBox: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  freeLegend: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  occupiedLegend: {
+    backgroundColor: '#2a1a1a',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+  },
+  pendingLegend: {
+    backgroundColor: '#2a2a1a',
+    borderWidth: 1,
+    borderColor: '#ffa500',
+  },
+  selectedLegend: {
+    backgroundColor: '#007aff',
+  },
+  legendText: {
+    color: '#ccc',
+    fontSize: 12,
   },
   signatureButton: {
     backgroundColor: '#1a1a1a',
@@ -878,11 +1088,5 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#fff',
     fontSize: 16,
-  },
-  charCount: {
-    color: '#666',
-    fontSize: 12,
-    textAlign: 'right',
-    marginTop: 4,
   },
 });
