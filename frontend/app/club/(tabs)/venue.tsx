@@ -167,7 +167,7 @@ export default function VenueBookingsListScreen() {
           <View style={styles.headerActions}>
             <TouchableOpacity 
               style={styles.addButton} 
-              onPress={() => router.push('/club/venue/book')}
+              onPress={() => router.push('/club/venue/create')}
             >
               <Ionicons name="add-outline" size={24} color="#fff" />
             </TouchableOpacity>
