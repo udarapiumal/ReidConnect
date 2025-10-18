@@ -39,6 +39,10 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test", "/uploads/**").permitAll()
+                        // Allow WebSocket handshake + SockJS info/endpoints
+                        .requestMatchers("/ws-notifications/**").permitAll()
+                        // Allow CORS preflight requests globally
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/posts/uploads/**").permitAll() // Allow direct access to uploaded images
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
@@ -52,9 +56,16 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/comments/**").authenticated()
                         .requestMatchers("/lost/**").authenticated()
                         .requestMatchers("/users/**").authenticated()
+                        .requestMatchers("/bookings/**").authenticated()
+                        .requestMatchers("/api/docusign/**").authenticated()
+                        .requestMatchers("/api/bookings/**").authenticated()
+                        .requestMatchers("/api/timetable-approvals/**").authenticated()
                         .requestMatchers("/api/posts/club/**").authenticated()
                         .requestMatchers("/api/club-coordinators/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated() // This should come after the specific /uploads/** rule
+                        // In your SecurityConfig
+                        .requestMatchers(HttpMethod.POST, "/student/me/profile-picture").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/student/me/profile-picture").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

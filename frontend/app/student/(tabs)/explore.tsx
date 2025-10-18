@@ -10,6 +10,11 @@ import { EventCard, EventData } from '@/components/EventCard';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Mock data
+  // SPORTS,
+  //   MUSIC,
+  //   WELLNESS,
+  //   OTHER,
+  //   COMPETITION,
 const categories: CategoryData[] = [
   {
     id: '1',
@@ -37,20 +42,20 @@ const categories: CategoryData[] = [
   },
   {
     id: '5',
-    name: 'Arts',
-    icon: 'image',
+    name: 'Competition',
+    icon: 'award',
     colors: ['#8e2de2', '#4a00e0'],
   },
   {
     id: '6',
-    name: 'Technology',
-    icon: 'cpu',
+    name: 'Workshops',
+    icon: 'layers',
     colors: ['#2193b0', '#6dd5ed'],
   },
   {
     id: '7',
-    name: 'Education',
-    icon: 'book',
+    name: 'Sessions',
+    icon: 'clock',
     colors: ['#373b44', '#4286f4'],
   },
   {
@@ -61,27 +66,9 @@ const categories: CategoryData[] = [
   },
   {
     id: '9',
-    name: 'Business',
-    icon: 'briefcase',
+    name: 'Other',
+    icon: 'menu',
     colors: ['#ffecd2', '#fcb69f'],
-  },
-  {
-    id: '10',
-    name: 'Gaming',
-    icon: 'monitor',
-    colors: ['#a8edea', '#fed6e3'],
-  },
-  {
-    id: '11',
-    name: 'Travel',
-    icon: 'map-pin',
-    colors: ['#fad0c4', '#ffd1ff'],
-  },
-  {
-    id: '12',
-    name: 'Environment',
-    icon: 'globe',
-    colors: ['#89f7fe', '#66a6ff'],
   },
 ];
 
@@ -97,8 +84,8 @@ export default function ExplorePage() {
     if (category.name === 'Clubs') {
       router.push('/student/pages/ClubsPage');
     } else {
-      // Handle other categories
-      console.log('Navigate to category:', category.name);
+      
+      router.push(`/student/pages/CategoryEventPage?category=${category.name}`);
     }
   };
 

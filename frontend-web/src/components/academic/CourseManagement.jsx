@@ -16,11 +16,14 @@ const CourseManagement = () => {
     id: '',
     name: '',
     code: '',
-    credits: 1,
+    lectureCredits: '',
+    practicalCredits: '',
     lecturerIds: [],
-     lectureVenueId: '',
+    lectureVenueId: '',
     practicalVenueId: '',
-    tutorialVenueId: ''
+    tutorialVenueId: '',
+    degree: '',
+    year: '',
   });
   const [courses, setCourses] = useState([]);
   const [lecturers, setLecturers] = useState([]);
@@ -80,11 +83,14 @@ const CourseManagement = () => {
       id: '',
       name: '',
       code: '',
-      credits: 1,
+      lectureCredits: '',
+      practicalCredits: '',
       lecturerIds: [],
       lectureVenueId: '',
-    practicalVenueId: '',
-    tutorialVenueId: ''
+      practicalVenueId: '',
+      tutorialVenueId: '',
+      degree: '',
+      year: '',
     });
   };
 
@@ -113,44 +119,63 @@ const CourseManagement = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      let degree = null;
-      const codePrefix = formData.code?.substring(0, 3)?.toUpperCase();
+  e.preventDefault();
+  try {
+    setLoading(true);
 
-      if (codePrefix === "SCS") {
-        degree = "CS";
-      } else if (codePrefix === "IS") {
-        degree = "IS";
-      }
+    const code = formData.code?.toUpperCase() || "";
+    let degree = null;
+    let year = null;
 
-      const data = {
-        code: formData.code,
-        name: formData.name,
-        credits: formData.credits,
-        lecturerIds: formData.lecturerIds,
-        lectureVenueId: formData.lectureVenueId,
-        practicalVenueId: formData.practicalVenueId,
-        tutorialVenueId: formData.tutorialVenueId,
-        degree // include the derived degree
-      };
-
-      if (editingCourse) {
-        await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
-      } else {
-        await axios.post(COURSES_API_URL, data);
-      }
-      fetchCourses();
-      setShowAddForm(false);
-      setEditingCourse(null);
-    } catch (error) {
-      console.error("Failed to save course", error);
-      alert("Failed to save course. Please check all fields and try again.");
-    } finally {
-      setLoading(false);
+    if (code.startsWith("SCS")) {
+      degree = "CS";
+    } else if (code.startsWith("IS")) {
+      degree = "IS";
     }
-  };
+
+    // Extract year digit after prefix: For SCS, the prefix length is 3, for IS prefix length is 2
+    let prefixLength = 0;
+    if (code.startsWith("SCS")) prefixLength = 3;
+    else if (code.startsWith("IS")) prefixLength = 2;
+
+    if (prefixLength > 0 && code.length > prefixLength) {
+      const yearChar = code.charAt(prefixLength);
+      if (["1", "2", "3", "4"].includes(yearChar)) {
+        year = `YEAR_${yearChar}`;
+      }
+    }
+
+    const data = {
+      code: formData.code,
+      name: formData.name,
+      lectureCredits: formData.lectureCredits,
+      practicalCredits: formData.practicalCredits,
+      lecturerIds: formData.lecturerIds,
+      lectureVenueId: formData.lectureVenueId,
+      practicalVenueId: formData.practicalVenueId,
+      tutorialVenueId: formData.tutorialVenueId,
+      degree,
+      year
+    };
+
+    if (editingCourse) {
+      await axios.put(`${COURSES_API_URL}/${editingCourse}`, data);
+    } else {
+      await axios.post(COURSES_API_URL, data);
+    }
+
+    fetchCourses();
+    setShowAddForm(false);
+    setEditingCourse(null);
+
+  } catch (error) {
+    console.error("Failed to save course", error);
+    alert("Failed to save course. Please check all fields and try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleCancel = () => {
     setShowAddForm(false);
@@ -173,13 +198,6 @@ const CourseManagement = () => {
     value: l.id,
     label: `${l.name} (${l.code})`
   }));
-
-  const creditOptions = [
-    { value: 1, label: '1 Credit' },
-    { value: 2, label: '2 Credits' },
-    { value: 3, label: '3 Credits' },
-    { value: 4, label: '4 Credits' }
-  ];
 
   const customSelectStyles = {
     control: (provided, state) => ({
@@ -326,7 +344,8 @@ const CourseManagement = () => {
                       <th>Lecture Venue</th>
                       <th>Practical Venue</th>
                       <th>Tutorial Venue</th>
-                      <th>Credits</th>
+                      <th>Lecture Credits</th>
+                      <th>Practical Credits</th>
                       <th>Lecturers</th>
                       <th>Actions</th>
                     </tr>
@@ -348,7 +367,8 @@ const CourseManagement = () => {
                           <td>{course.practicalVenueName || '-'}</td>
                           <td>{course.tutorialVenueName || '-'}</td>
 
-                          <td>{course.credits}</td>
+                          <td>{course.lectureCredits}</td>
+                          <td>{course.practicalCredits}</td>
                           <td>{getLecturerNames(course)}</td>
                           <td>
                             <button onClick={() => handleEditCourse(course)} className="edit-btn" disabled={loading}>
@@ -385,7 +405,7 @@ const CourseManagement = () => {
                   <label>Course Code</label>
                   <input 
                     type="text" 
-                    placeholder="Course Code (e.g., CS101)" 
+                    placeholder="Course Code (e.g., SCS 101)" 
                     required 
                     value={formData.code} 
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
@@ -394,15 +414,27 @@ const CourseManagement = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Credits</label>
+                    <label>Lecture Credits</label>
                     <input
                       type="number"
-                      min="1"
-                      max="10"
-                      placeholder="Enter credits (1-10)"
+                      min="0"
+                      max="4"
+                      placeholder="Enter credits (1-4)"
                       required
-                      value={formData.credits}
-                      onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 1 })}
+                      value={formData.lectureCredits}
+                      onChange={(e) => setFormData({ ...formData, lectureCredits: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Practical Credits</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="8"
+                      placeholder="Enter credits (1-8)"
+                      required
+                      value={formData.practicalCredits}
+                      onChange={(e) => setFormData({ ...formData, practicalCredits: parseInt(e.target.value) || 1 })}
                     />
                   </div>
 

@@ -6,9 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import reidConnect.backend.enums.AcademicRank;
-import reidConnect.backend.enums.Faculties;
-import reidConnect.backend.enums.Years;
+// import reidConnect.backend.enums.AcademicRank;
+// import reidConnect.backend.enums.Faculties;
+// import reidConnect.backend.enums.Years;
 import reidConnect.backend.enums.EventCategory;
 
 import java.time.LocalDate;

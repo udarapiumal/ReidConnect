@@ -7,7 +7,5 @@ import java.util.Optional;
 public interface ClubRepository extends JpaRepository<Club, Long>
 
 {
-
     Optional<Club> findByUser_Id(Long userId);
-
 }

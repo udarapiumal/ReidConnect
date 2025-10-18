@@ -1,15 +1,90 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 
 export default function UnionDashboard() {
-  const recentActivities = [
-    { id: 6, type: 'faculty', message: 'orientation program scheduled', time: '3 days ago', status: 'pending' },
-    { id: 8, type: 'faculty', message: 'seminar on AI announced', time: '1 week ago', status: 'info' },
-    { id: 9, type: 'faculty', message: 'lost item: USB drive', time: '1 week ago', status: 'warning' },
-    { id: 11, type: 'faculty', message: 'event: Tech Talk scheduled', time: '3 weeks ago', status: 'info' },
-    { id: 13, type: 'faculty', message: 'system maintenance completed', time: '1 month ago', status: 'success' },
-  ];
+  const [dashboardStats, setDashboardStats] = useState({
+    totalClubs: 0,
+    totalStudentProfiles: 0,
+    totalBookings: 0,
+    fullyApprovedBookings: 0,
+    pendingBookings: 0
+  });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // API base URL - adjust according to your backend configuration
+  const API_BASE_URL = 'http://localhost:8080/api'; // Change this to your actual backend URL
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get JWT token from localStorage
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("User not authenticated");
+
+      const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` // Include JWT token
+      };
+
+      // Fetch dashboard statistics
+      const statsResponse = await fetch(`${API_BASE_URL}/bookings/dashboard/stats`, { headers });
+      if (!statsResponse.ok) {
+        throw new Error(`Failed to fetch stats: ${statsResponse.status}`);
+      }
+      const stats = await statsResponse.json();
+      setDashboardStats(stats);
+
+      // Fetch recent approved bookings for activities
+      const activitiesResponse = await fetch(`${API_BASE_URL}/bookings/dashboard/approved`, { headers });
+      if (!activitiesResponse.ok) {
+        throw new Error(`Failed to fetch activities: ${activitiesResponse.status}`);
+      }
+      const bookings = await activitiesResponse.json();
+
+      // Transform bookings to activities format
+      const activities = bookings.slice(0, 5).map((booking) => ({
+        id: booking.id,
+        type: 'booking',
+        message: `${booking.clubName} - ${booking.venue?.name || 'Venue'} booking approved`,
+        time: formatTime(booking.date),
+        status: 'success',
+        reason: booking.reason,
+        contactNumber: booking.contactNumber,
+        registrationNumber: booking.registrationNumber
+      }));
+
+      setRecentActivities(activities);
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTime = (dateString) => {
+    if (!dateString) return 'Unknown time';
+    
+    const bookingDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - bookingDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} week${Math.ceil(diffDays / 7) > 1 ? 's' : ''} ago`;
+    return `${Math.ceil(diffDays / 30)} month${Math.ceil(diffDays / 30) > 1 ? 's' : ''} ago`;
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -20,6 +95,91 @@ export default function UnionDashboard() {
       default: return '#64748b'; // slate
     }
   };
+
+  if (loading) {
+    return (
+      <div style={styles.dashboardContainer}>
+        <Sidebar />
+        <div style={styles.contentWrapper}>
+          <header style={styles.headerBar}>
+            <div style={styles.headerLeft}>
+              <span style={styles.reidConnect}>ReidConnect</span>
+              <span style={styles.highlight}>UnionAdmin</span>
+            </div>
+            <div style={styles.adminInfo}>
+              <i className="fa fa-bell" style={styles.headerIcon}></i>
+              <i className="fa fa-user" style={styles.headerIcon}></i>
+              <span>Admin</span>
+            </div>
+          </header>
+          <main style={styles.dashboardMain}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '50vh',
+              color: '#fff',
+              fontSize: '1.2rem'
+            }}>
+              Loading dashboard data...
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.dashboardContainer}>
+        <Sidebar />
+        <div style={styles.contentWrapper}>
+          <header style={styles.headerBar}>
+            <div style={styles.headerLeft}>
+              <span style={styles.reidConnect}>ReidConnect</span>
+              <span style={styles.highlight}>UnionAdmin</span>
+            </div>
+            <div style={styles.adminInfo}>
+              <i className="fa fa-bell" style={styles.headerIcon}></i>
+              <i className="fa fa-user" style={styles.headerIcon}></i>
+              <span>Admin</span>
+            </div>
+          </header>
+          <main style={styles.dashboardMain}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '50vh',
+              color: '#fff'
+            }}>
+              <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '1.2rem' }}>
+                Error loading dashboard data
+              </div>
+              <div style={{ color: '#a1a1aa', marginBottom: '24px' }}>
+                {error}
+              </div>
+              <button 
+                onClick={fetchDashboardData}
+                style={{
+                  background: '#FF0033',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.dashboardContainer}>
@@ -37,33 +197,60 @@ export default function UnionDashboard() {
           </div>
         </header>
         <main style={styles.dashboardMain}>
-          <h2 style={{
-            fontSize: styles.activitiesTitle.fontSize,
-            fontWeight: styles.activitiesTitle.fontWeight,
-            color: '#fff',
-            marginBottom: '12px',
-            letterSpacing: '-0.03em',
-          }}>Dashboard Overview</h2>
-          <div style={styles.dashboardStats}>
-            <div style={styles.statCard}>
-              <i className="fa-solid fa-people-group" style={{...styles.statIcon, color: '#fff'}}></i>
-              <div style={styles.statAmount}>12</div>
-              <h3 style={styles.statTitle}>Total Clubs</h3>
-            </div>
-            <div style={styles.statCard}>
-              <i className="fa-solid fa-user-gear" style={{...styles.statIcon, color: '#fff'}}></i>
-              <div style={styles.statAmount}>120</div>
-              <h3 style={styles.statTitle}>Student Profiles</h3>
-            </div>
-            <div style={styles.statCard}>
-              <i className="fa-solid fa-box-open" style={{...styles.statIcon, color: '#fff'}}></i>
-              <div style={styles.statAmount}>8</div>
-              <h3 style={styles.statTitle}>Lost &amp; Found Items</h3>
-            </div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px'
+          }}>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: '800',
+              color: '#fff',
+              margin: 0,
+              letterSpacing: '-0.03em',
+            }}>Dashboard Overview</h2>
+            <button 
+              onClick={fetchDashboardData}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <i className="fa fa-refresh"></i>
+              Refresh
+            </button>
           </div>
-          {/* Recent Activities Section - Professional View */}
+
+          <div style={styles.dashboardStats}>
+  <div style={styles.statCard}>
+    <i className="fa-solid fa-people-group" style={{...styles.statIcon, color: '#fff'}}></i>
+    <div style={styles.statAmount}>{dashboardStats.totalClubs}</div>
+    <h3 style={styles.statTitle}>Total Clubs</h3>
+  </div>
+  <div style={styles.statCard}>
+    <i className="fa-solid fa-user-gear" style={{...styles.statIcon, color: '#fff'}}></i>
+    <div style={styles.statAmount}>{dashboardStats.totalStudentProfiles}</div>
+    <h3 style={styles.statTitle}>Student Profiles</h3>
+  </div>
+  <div style={styles.statCard}>
+    <i className="fa-solid fa-calendar-check" style={{...styles.statIcon, color: '#fff'}}></i>
+    <div style={styles.statAmount}>{dashboardStats.fullyApprovedBookings}</div>
+    <h3 style={styles.statTitle}>Approved Bookings</h3>
+  </div>
+</div>
+
+          {/* Recent Activities Section */}
           <div style={styles.activitiesSection}>
-            <h3 style={styles.activitiesTitle}>Recent Activities</h3>
+            <h3 style={styles.activitiesTitle}>Recent Approved Venue Bookings</h3>
             <div style={{
               background: '#232323',
               borderRadius: '10px',
@@ -74,42 +261,76 @@ export default function UnionDashboard() {
               flexDirection: 'column',
               gap: '8px',
             }}>
-              {recentActivities.map((activity) => (
-                <div key={activity.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '6px 0',
-                  borderBottom: '1px solid #282828',
-                  fontSize: '1rem',
-                  color: '#e5e7eb',
-                  background: 'none',
-                  borderRadius: 0,
-                  minHeight: '32px',
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity) => (
+                  <div key={activity.id} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    padding: '12px 0',
+                    borderBottom: recentActivities.indexOf(activity) < recentActivities.length - 1 ? '1px solid #282828' : 'none',
+                    fontSize: '1rem',
+                    color: '#e5e7eb',
+                    background: 'none',
+                    borderRadius: 0,
+                    minHeight: '40px',
+                  }}>
+                    <div style={{flex: 1}}>
+                      <div style={{fontWeight: '500', marginBottom: '6px'}}>
+                        {activity.message}
+                      </div>
+                      {activity.reason && (
+                        <div style={{fontSize: '0.9rem', color: '#a1a1aa', marginBottom: '2px'}}>
+                          Purpose: {activity.reason}
+                        </div>
+                      )}
+                      {activity.contactNumber && (
+                        <div style={{fontSize: '0.9rem', color: '#a1a1aa', marginBottom: '2px'}}>
+                          Contact: {activity.contactNumber}
+                        </div>
+                      )}
+                      {activity.registrationNumber && (
+                        <div style={{fontSize: '0.9rem', color: '#a1a1aa'}}>
+                          Registration: {activity.registrationNumber}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: '8px'
+                    }}>
+                      <span style={{
+                        fontSize: '0.92rem',
+                        color: '#8e9297',
+                      }}>{activity.time}</span>
+                      <span style={{
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        color: getStatusColor(activity.status),
+                        minWidth: '70px',
+                        textTransform: 'capitalize',
+                        background: getStatusColor(activity.status) + '22',
+                        border: 'none',
+                        borderRadius: '16px',
+                        padding: '4px 16px',
+                        display: 'inline-block',
+                        textAlign: 'center',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                      }}>{activity.status}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  color: '#a1a1aa',
+                  padding: '32px',
+                  fontSize: '1rem'
                 }}>
-                  <span style={{flex: 1}}>{activity.message}</span>
-                  <span style={{
-                    fontSize: '0.92rem',
-                    color: '#8e9297',
-                    marginLeft: '16px',
-                  }}>{activity.time}</span>
-                  <span style={{
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    color: getStatusColor(activity.status),
-                    marginLeft: '16px',
-                    minWidth: '70px',
-                    textTransform: 'capitalize',
-                    background: getStatusColor(activity.status) + '22',
-                    border: 'none',
-                    borderRadius: '16px',
-                    padding: '4px 16px',
-                    display: 'inline-block',
-                    textAlign: 'center',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                  }}>{activity.status}</span>
-                  <br style={{width: '100%'}} />
+                  No approved venue bookings found
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </main>
@@ -117,6 +338,7 @@ export default function UnionDashboard() {
     </div>
   );
 }
+
 
 const styles = {
   dashboardContainer: {
@@ -131,7 +353,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: '100vh',
-    marginLeft: '220px', // Increased from 200px to 220px for more space
+    marginLeft: '220px',
     transition: 'margin-left 0.2s',
   },
   headerBar: {
@@ -193,22 +415,6 @@ const styles = {
     overflowY: 'auto',
     minHeight: 'calc(100vh - 70px)',
   },
-  pageTitle: {
-    fontSize: '2rem',
-    fontWeight: '800',
-    marginBottom: '16px',
-    letterSpacing: '-0.03em',
-    color: 'white',
-    background: 'linear-gradient(135deg, #FF0033 0%, #ea580c 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  },
-  pageSubtitle: {
-    fontSize: '1.1rem',
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: '32px',
-  },
   dashboardStats: {
     display: 'flex',
     gap: '32px',
@@ -246,12 +452,7 @@ const styles = {
     fontSize: '1.25rem',
     fontWeight: '700',
     marginBottom: '8px',
-    color: '#FF0033', // red
-  },
-  statDesc: {
-    fontSize: '1rem',
-    color: 'rgba(255,255,255,0.7)',
-    textAlign: 'center',
+    color: '#FF0033',
   },
   activitiesSection: {
     marginTop: '16px',
@@ -261,33 +462,5 @@ const styles = {
     fontWeight: '700',
     color: '#fff',
     marginBottom: '12px',
-  },
-  activitiesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  activityCard: {
-    background: 'linear-gradient(135deg, #23272a 0%, #1a1a1a 100%)',
-    borderRadius: '10px',
-    padding: '16px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  activityContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-  },
-  activityMessage: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: '1rem',
-    marginBottom: '4px',
-  },
-  activityTime: {
-    color: '#a1a1aa',
-    fontSize: '0.95rem',
   },
 };

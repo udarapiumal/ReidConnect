@@ -55,4 +55,10 @@ public class VenueServiceImpl implements VenueService {
         }
         venueRepository.deleteById(id);
     }
+
+    @Override
+    public Venue getEntityById(Long id) {
+        return venueRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Venue not found with id: " + id));
+    }
 }

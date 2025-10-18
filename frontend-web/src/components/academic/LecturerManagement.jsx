@@ -20,7 +20,7 @@ const LecturerManagement = () => {
     email: '',
     degree: '',
     faculty: 'UCSC',
-    rank: 'LECTURER'
+    rank: ''
   });
   const [lecturers, setLecturers] = useState([]);
 
@@ -55,7 +55,7 @@ const LecturerManagement = () => {
       email: '',
       degree: '',
       faculty: 'UCSC',
-      rank: 'LECTURER'
+      rank: ''
     });
   };
 
@@ -125,16 +125,21 @@ const LecturerManagement = () => {
   const facultyOptions = [
     { value: 'UCSC', label: 'UCSC' },
     { value: 'FOS', label: 'FOS' },
+    { value: 'STAT', label: 'STAT' },
     { value: 'ALL', label: 'ALL' }
   ];
 
   const rankOptions = [
-    { value: 'SENIOR_LECTURER', label: 'Senior Lecturer' },
-    { value: 'LECTURER', label: 'Lecturer' },
-    { value: 'ASSOCIATE_PROFESSOR', label: 'Associate Professor' },
     { value: 'PROFESSOR', label: 'Professor' },
     { value: 'DEPARTMENT_HEAD', label: 'Department Head' },
-    { value: 'ACADEMIC_SUPPORT_STAFF', label: 'Academic Support Staff' }
+    { value: 'SENIOR_LECTURER', label: 'Senior Lecturer' },
+    { value: 'LECTURER', label: 'Lecturer' },
+    { value: 'LECTURER_PROBATIONARY', label: 'Lecturer (Probationary)' },
+    { value: 'INSTRUCTOR_PERMANENT', label: 'Permanent Instructor' },
+    { value: 'SENIOR_LECTURER_ON_CONTRACT', label: 'Senior Lecturer (On Contract)' },
+    { value: 'LECTURER_ON_CONTRACT', label: 'Lecturer (On Contract)r' },
+    { value: 'ASSISTANT_LECTURER_TEMPORARY', label: 'Assistant Lecturers' },
+    { value: 'INSTRUCTOR_TEMPORARY', label: 'Temporary Instructor' },
   ];
 
   const customSelectStyles = {
@@ -244,7 +249,7 @@ const LecturerManagement = () => {
                     <th>Name</th>
                     <th>Code</th>
                     <th>Email</th>
-                    <th>Faculty</th>
+                    <th>Department</th>
                     <th>Rank</th>
                     <th>Degree</th>
                     <th>Actions</th>
@@ -312,7 +317,7 @@ const LecturerManagement = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Faculty</label>
+                    <label>Department</label>
                     <Select
                       options={facultyOptions}
                       value={facultyOptions.find(opt => opt.value === formData.faculty)}

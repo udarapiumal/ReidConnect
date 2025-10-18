@@ -1,254 +1,239 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, RefreshControl, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
-import { EventData } from '@/components/EventCard';
+import { EventData, EventCard } from '@/components/EventCard';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import axiosInstance from '@/app/api/axiosInstance';
+import { BASE_URL } from '@/constants/config';
+import { router } from 'expo-router';
+import { handleLogout } from '@/utils/logout';
 
-// Mock data
-const userData = {
-  name: 'Alex Doe',
-  username: '@alexdoe',
-  email: '2021cs123@stu.ucsc.cmb.ac.lk',
-  academicYear: '3rd Year',
-  faculty: 'Applied Sciences',
-  contactNumber: '0771234567',
-  bio: 'Computer Science student passionate about technology and community events. Love music festivals and tech conferences!',
-  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1780&auto=format&fit=crop',
-  stats: {
-    eventsAttended: 21,
-    clubsJoined: 5,
-  },
-  interests: ['Technology', 'Music', 'Sports', 'Arts'],
+// Types for API responses
+interface UserData {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  enabled: boolean;
+  authorities: Array<{ authority: string }>;
+  // Additional profile fields that might be returned
+  studentName?: string;
+  academicYear?: string;
+  faculty?: string;
+  contactNumber?: string;
+  bio?: string;
+  profilePictureUrl?: string;
+  interests?: string[];
+  userId?: number;
+}
+
+export type ClubData = {
+  id: number;
+  clubName: string;
+  userId: number;
+  website: string;
+  profilePicture: string;
+  bio: string;
+  subCount: number;
+  isJoined?: boolean;
 };
 
-// Events the student is going to attend
-const goingEvents: EventData[] = [
-  {
-    id: 1,
-    clubId: 1,
-    name: 'Summer Music Festival',
-    description: 'Amazing summer music festival with top artists',
-    date: 'Jul 30, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [],
-    targetFaculties: [],
-    targetYears: [],
-    venueId: 1,
-    venueName: 'Central Park',
-    createdAt: '2025-07-01',
-    category: 'Music',
-    statusOfUser: 'going',
+// Default fallback data structure
+const defaultUserData = {
+  name: 'Loading...',
+  username: '@loading',
+  email: 'loading@ucsc.cmb.ac.lk',
+  academicYear: 'N/A',
+  faculty: 'N/A',
+  contactNumber: 'N/A',
+  bio: '',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1780&auto=format&fit=crop',
+  stats: {
+    eventsAttended: 0,
+    clubsJoined: 0,
   },
-];
+  interests: [] as string[],
+};
 
-// Events the student is interested in
-const interestedEvents: EventData[] = [
-  {
-    id: 2,
-    clubId: 2,
-    name: 'Tech Conference 2025',
-    description: 'Annual technology conference with industry leaders',
-    date: 'Aug 10, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [],
-    targetFaculties: [],
-    targetYears: [],
-    venueId: 2,
-    venueName: 'Convention Center',
-    createdAt: '2025-07-01',
-    category: 'Technology',
-    statusOfUser: 'interested',
-  },
-  {
-    id: 5,
-    clubId: 3,
-    name: 'Art Exhibition Opening',
-    description: 'Contemporary art exhibition featuring local artists',
-    date: 'Aug 15, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [],
-    targetFaculties: [],
-    targetYears: [],
-    venueId: 3,
-    venueName: 'University Gallery',
-    createdAt: '2025-07-01',
-    category: 'Arts',
-    statusOfUser: 'interested',
-  },
-];
 
-// Past events the student attended
-const pastEvents: EventData[] = [
-  {
-    id: 6,
-    clubId: 4,
-    name: 'Career Fair 2025',
-    description: 'Annual career fair with top companies',
-    date: 'Jul 10, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [],
-    targetFaculties: [],
-    targetYears: [],
-    venueId: 4,
-    venueName: 'Main Auditorium',
-    createdAt: '2025-06-01',
-    category: 'Career',
-    statusOfUser: 'going',
-  },
-  {
-    id: 7,
-    clubId: 5,
-    name: 'Sports Day 2025',
-    description: 'Annual university sports competition',
-    date: 'Jun 25, 2025',
-    imagePath: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2070&auto=format&fit=crop',
-    slotIds: [],
-    targetFaculties: [],
-    targetYears: [],
-    venueId: 5,
-    venueName: 'Sports Complex',
-    createdAt: '2025-05-01',
-    category: 'Sports',
-    statusOfUser: 'going',
-  },
-];
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
-// Clubs the student is subscribed to
-const subscribedClubs = [
-  {
-    id: 1,
-    name: 'Music Society',
-    description: 'University music club organizing concerts and events',
-    avatar: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=2070&auto=format&fit=crop',
-    memberCount: 234,
-  },
-  {
-    id: 2,
-    name: 'Tech Club',
-    description: 'Technology enthusiasts and developers community',
-    avatar: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?q=80&w=2070&auto=format&fit=crop',
-    memberCount: 189,
-  },
-  {
-    id: 3,
-    name: 'Art Society',
-    description: 'Creative arts and visual design community',
-    avatar: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?q=80&w=2070&auto=format&fit=crop',
-    memberCount: 156,
-  },
-];
+// API Functions (using provided endpoints)
+const fetchStudentDetails = async (): Promise<UserData | null> => {
+  try {
+    const response = await axiosInstance.get('/student/me');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    return null;
+  }
+};
+
+const fetchGoingEvents = async () => {
+  try {
+    const response = await axiosInstance.get('/student/events/going/upcoming');
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching going events:', error);
+    return [];
+  }
+};
+
+const fetchInterestedEvents = async () => {
+  try {
+    const response = await axiosInstance.get('/student/events/interested/upcoming');
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching interested events:', error);
+    return [];
+  }
+};
+
+const fetchPastEvents = async () => {
+  try {
+    const response = await axiosInstance.get('/student/events/past');
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching past events:', error);
+    return [];
+  }
+};
+
+const fetchPastGoingEventsCount = async () => {
+  try {
+    const response = await axiosInstance.get('/student/events/past/going/count');
+    return response.data || 0;
+  } catch (error) {
+    console.error('Error fetching past going events count:', error);
+    return 0;
+  }
+};
+
+const fetchSubscribedClubsCount = async () => {
+  try {
+    const response = await axiosInstance.get('/student/clubs/subscribed/count');
+    return response.data || 0;
+  } catch (error) {
+    console.error('Error fetching subscribed clubs count:', error);
+    return 0;
+  }
+};
+
+const fetchSubscribedClubs = async () => {
+  try {
+    const response = await axiosInstance.get('/student/clubs/subscribed');
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching subscribed clubs:', error);
+    return [];
+  }
+};
+
+// API function to update student details
+const updateStudentDetails = async (data: {
+  username: string;
+  studentName: string;
+  profilePictureUrl: string;
+  contactNumber: string;
+}) => {
+  try {
+    const response = await axiosInstance.put('/student/me', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating student details:', error);
+    throw error;
+  }
+};
 
 const settingsOptions = [
-  { id: '1', title: 'Edit Profile', icon: 'user' },
-  { id: '2', title: 'Notifications', icon: 'bell' },
-  { id: '3', title: 'Privacy', icon: 'lock' },
+  { 
+    id: '1', 
+    title: 'Edit Profile', 
+    icon: 'user',
+    subItems: [
+      { id: '1a', title: 'Personal Information', icon: 'edit-3' },
+      { id: '1b', title: 'Change Password', icon: 'key' },
+    ]
+  },
+  { 
+    id: '2', 
+    title: 'Notifications', 
+    icon: 'bell',
+  },
   { id: '4', title: 'Help & Support', icon: 'help-circle' },
   { id: '5', title: 'Log Out', icon: 'log-out' },
 ];
 
-type TabName = 'Events' | 'Clubs' | 'Activity' | 'Settings';
-
-type EventItemProps = {
-  event: EventData;
-  onPress?: () => void;
-  showStatus?: boolean;
-};
-
-const EventItem = ({ event, onPress, showStatus = true }: EventItemProps) => {
-  const cardColor = useThemeColor({}, 'card');
-  const iconColor = useThemeColor({}, 'icon');
-  const borderColor = useThemeColor({}, 'border');
-  const tintColor = useThemeColor({}, 'tint');
-  
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'going': return '#4CAF50';
-      case 'interested': return '#FF9800';
-      default: return iconColor;
-    }
-  };
-  
-  const getStatusText = (status?: string) => {
-    switch (status) {
-      case 'going': return 'Going';
-      case 'interested': return 'Interested';
-      default: return '';
-    }
-  };
-  
-  return (
-    <TouchableOpacity style={[styles.eventItem, { backgroundColor: cardColor }]} onPress={onPress}>
-      <Image 
-        source={{ uri: event.imagePath }}
-        style={styles.eventImage}
-        contentFit="cover"
-      />
-      <View style={styles.eventContent}>
-        <ThemedText style={styles.eventTitle}>{event.name}</ThemedText>
-        <View style={styles.eventMeta}>
-          <Feather name="calendar" size={14} color={iconColor} />
-          <ThemedText style={styles.eventMetaText}>{event.date}</ThemedText>
-        </View>
-        <View style={styles.eventMeta}>
-          <Feather name="map-pin" size={14} color={iconColor} />
-          <ThemedText style={styles.eventMetaText}>{event.venueName}</ThemedText>
-        </View>
-        {showStatus && event.statusOfUser && (
-          <View style={styles.eventMeta}>
-            <Feather name="user-check" size={14} color={getStatusColor(event.statusOfUser)} />
-            <ThemedText style={[styles.eventMetaText, { color: getStatusColor(event.statusOfUser) }]}>
-              {getStatusText(event.statusOfUser)}
-            </ThemedText>
-          </View>
-        )}
-      </View>
-      <View style={[styles.eventStatusContainer, { borderLeftColor: borderColor }]}>
-        <Feather name="chevron-right" size={20} color={iconColor} />
-      </View>
-    </TouchableOpacity>
-  );
-};
+type TabName = 'Events' | 'Clubs' | 'Notifications' | 'Settings';
 
 type ClubItemProps = {
   club: any;
   onPress?: () => void;
 };
 
-const ClubItem = ({ club, onPress }: ClubItemProps) => {
+
+type ClubCardProps = {
+  club: ClubData;
+  onPress: () => void;
+};
+
+function ClubCard({ club, onPress }: ClubCardProps) {
   const cardColor = useThemeColor({}, 'card');
-  const iconColor = useThemeColor({}, 'icon');
-  
+  const textColor = useThemeColor({}, 'text');
+  const secondaryTextColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const borderColor = useThemeColor({}, 'border');
+
   return (
-    <TouchableOpacity style={[styles.clubItem, { backgroundColor: cardColor }]} onPress={onPress}>
-      <Image 
-        source={{ uri: club.avatar }}
-        style={styles.clubAvatar}
-        contentFit="cover"
-      />
-      <View style={styles.clubContent}>
-        <ThemedText style={styles.clubName}>{club.name}</ThemedText>
-        <ThemedText style={styles.clubDescription} numberOfLines={2}>{club.description}</ThemedText>
+    <TouchableOpacity 
+      style={[styles.clubCard, { backgroundColor: cardColor, borderColor }]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.clubImageWrapper}>
+        <Image 
+          source={{ uri: `${BASE_URL}/${club.profilePicture}` }}
+          style={styles.clubImage}
+        />
+      </View>
+
+      <View style={styles.clubInfo}>
+        <View style={styles.clubHeader}>
+          <ThemedText style={[styles.clubName, { color: textColor }]}>{club.clubName}</ThemedText>
+          {club.isJoined && (
+            <View style={[styles.joinedBadge, { backgroundColor: tintColor }]}>
+              <ThemedText style={styles.joinedText}>Joined</ThemedText>
+            </View>
+          )}
+        </View>
+        <ThemedText style={[styles.clubDescription]}>
+          {club.bio}
+        </ThemedText>
         <View style={styles.clubMeta}>
-          <Feather name="users" size={14} color={iconColor} />
-          <ThemedText style={styles.clubMetaText}>{club.memberCount} members</ThemedText>
+          <ThemedText style={[styles.clubCategory]}>
+            {club.website}
+          </ThemedText>
         </View>
       </View>
-      <Feather name="chevron-right" size={20} color={iconColor} />
     </TouchableOpacity>
   );
-};
+}
 
 type SettingsItemProps = {
   title: string;
   icon: keyof typeof Feather.glyphMap;
-  onPress?: () => void;
+  onPress: () => void;
+  isExpanded?: boolean;
+  hasSubItems?: boolean;
 };
 
-const SettingsItem = ({ title, icon, onPress }: SettingsItemProps) => {
+const SettingsItem = ({ title, icon, onPress, isExpanded, hasSubItems }: SettingsItemProps) => {
   const cardColor = useThemeColor({}, 'card');
   const iconColor = useThemeColor({}, 'icon');
   const secondaryButtonColor = useThemeColor({}, 'secondaryButton');
@@ -259,13 +244,76 @@ const SettingsItem = ({ title, icon, onPress }: SettingsItemProps) => {
         <Feather name={icon} size={18} color={iconColor} />
       </View>
       <ThemedText style={styles.settingsTitle}>{title}</ThemedText>
-      <Feather name="chevron-right" size={20} color={iconColor} />
+      {/* Show chevron only if it has sub-items, and change icon based on state */}
+      {hasSubItems && (
+         <Feather name={isExpanded ? "chevron-down" : "chevron-right"} size={20} color={iconColor} />
+      )}
+    </TouchableOpacity>
+  );
+};
+
+const SubSettingItem = ({ title, icon, onPress }: Omit<SettingsItemProps, 'isExpanded' | 'hasSubItems'>) => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'icon');
+  const secondaryButtonColor = useThemeColor({}, 'secondaryButton');
+
+  return (
+    <TouchableOpacity style={[styles.settingsItem, styles.subSettingsItem, { backgroundColor }]} onPress={onPress}>
+      <View style={[styles.settingsIconContainer, { backgroundColor: secondaryButtonColor }]}>
+        <Feather name={icon} size={18} color={iconColor} />
+      </View>
+      <ThemedText style={styles.settingsTitle}>{title}</ThemedText>
     </TouchableOpacity>
   );
 };
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabName>('Events');
+  const [userData, setUserData] = useState(defaultUserData);
+  const [subscribedClubs, setSubscribedClubs] = useState<ClubData[]>([]);
+  const [goingEvents, setGoingEvents] = useState<EventData[]>([]);
+  const [interestedEvents, setInterestedEvents] = useState<EventData[]>([]);
+  const [pastEvents, setPastEvents] = useState<EventData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  const handleEventPress = (eventId: number) => {
+    router.push(`/student/pages/EventPage?id=${eventId}`);
+  };
+
+  const handleClubPress = (club: ClubData) => {
+      // Navigate to club details page
+      console.log('Navigate to club:', club.clubName);
+      router.push({
+        pathname: '/student/pages/ClubPage',
+        params: { clubId: club.id.toString() }
+      });
+    };
+
+  const handleItemPress = (option: (typeof settingsOptions)[0]) => {
+      if (option.subItems) {
+          // Animate the layout change
+          // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          // Toggle expansion
+          setExpandedId(expandedId === option.id ? null : option.id);
+      } else if (option.title === 'Log Out') {
+          handleLogout();
+      }else if(option.title === 'Help & Support'){
+          console.log("wobbily wibbily");
+      }
+       else {
+          // Handle navigation for items without sub-menus
+          // navigation.navigate('PrivacyScreen');
+      }
+  };
 
   // Theme colors
   const backgroundColor = useThemeColor({}, 'background');
@@ -274,54 +322,145 @@ export default function ProfilePage() {
   const tintColor = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'icon');
 
+  // Fetch user data and clubs on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        if (!refreshing) setLoading(true);
+        setError(null);
+
+        // Fetch current user
+        const currentUser = await fetchStudentDetails();
+        if (!currentUser) {
+          throw new Error('Failed to fetch user data');
+        }
+
+        // Fetch all required data in parallel
+        const [
+          goingEventsData,
+          interestedEventsData,
+          pastEventsData,
+          pastGoingCount,
+          clubsCount,
+          clubsData
+        ] = await Promise.all([
+          fetchGoingEvents(),
+          fetchInterestedEvents(),
+          fetchPastEvents(),
+          fetchPastGoingEventsCount(),
+          fetchSubscribedClubsCount(),
+          fetchSubscribedClubs()
+        ]);
+
+        // Update user data with API response, falling back to defaults for missing fields
+        const updatedUserData = {
+          name: currentUser.studentName || 'Unknown User',
+          username: `@${currentUser.username}`,
+          email: currentUser.email,
+          academicYear: currentUser.academicYear || 'N/A',
+          faculty: currentUser.faculty || 'N/A',
+          contactNumber: currentUser.contactNumber || 'N/A',
+          bio: currentUser.bio || '',
+          avatar: currentUser.profilePictureUrl || defaultUserData.avatar,
+          stats: {
+            eventsAttended: pastGoingCount,
+            clubsJoined: clubsCount,
+          },
+          interests: currentUser.interests || [],
+        };
+
+        setUserData(updatedUserData);
+        setGoingEvents(goingEventsData);
+        setInterestedEvents(interestedEventsData);
+        setPastEvents(pastEventsData);
+        setSubscribedClubs(clubsData);
+
+      } catch (err) {
+        console.error('Error loading user data:', err);
+        setError('Failed to load profile data. Please try again.');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    };
+
+    loadUserData();
+  }, [refreshTrigger]);
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'Events':
         return (
           <View>
             <ThemedText style={styles.sectionTitle}>Going Events</ThemedText>
-            {goingEvents.map(event => (
-              <EventItem key={event.id} event={event} />
-            ))}
-            
+            {goingEvents.length > 0 ? (
+              goingEvents.map(event => (
+                <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginBottom: 16 }}>
+                No events to show
+              </ThemedText>
+            )}
+
             <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Interested Events</ThemedText>
-            {interestedEvents.map(event => (
-              <EventItem key={event.id} event={event} />
-            ))}
-            
+            {interestedEvents.length > 0 ? (
+              interestedEvents.map(event => (
+                <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginBottom: 16 }}>
+                No events to show
+              </ThemedText>
+            )}
+
             <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Past Events</ThemedText>
-            {pastEvents.map(event => (
-              <EventItem key={event.id} event={event} showStatus={false} />
-            ))}
+            {pastEvents.length > 0 ? (
+              pastEvents.map(event => (
+                <EventCard key={event.id} event={event} size="small" onPress={() => handleEventPress(event.id)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginBottom: 16 }}>
+                No events to show
+              </ThemedText>
+            )}
           </View>
         );
       case 'Clubs':
         return (
           <View>
             <ThemedText style={styles.sectionTitle}>Subscribed Clubs</ThemedText>
-            {subscribedClubs.map(club => (
-              <ClubItem key={club.id} club={club} />
-            ))}
+            {loading ? (
+              <ActivityIndicator size="large" color={tintColor} style={{ marginTop: 20 }} />
+            ) : subscribedClubs.length > 0 ? (
+              subscribedClubs.map(club => (
+                <ClubCard key={club.id} club={club} onPress={() => handleClubPress(club)} />
+              ))
+            ) : (
+              <ThemedText style={{ textAlign: 'center', opacity: 0.6, marginTop: 20 }}>
+                No clubs joined yet
+              </ThemedText>
+            )}
           </View>
         );
-      case 'Activity':
+      case 'Notifications':
         return (
           <View>
-            <ThemedText style={styles.sectionTitle}>Recent Activity</ThemedText>
-            <View style={[styles.activityItem, { backgroundColor: cardColor }]}>
+            <ThemedText style={styles.sectionTitle}>Recent Notifications</ThemedText>
+            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
               <Feather name="heart" size={20} color="#FF6B6B" />
-              <ThemedText style={styles.activityText}>Liked Tech Conference 2025</ThemedText>
-              <ThemedText style={styles.activityTime}>2 hours ago</ThemedText>
+              <ThemedText style={styles.NotificationsText}>Liked Tech Conference 2025</ThemedText>
+              <ThemedText style={styles.NotificationsTime}>2 hours ago</ThemedText>
             </View>
-            <View style={[styles.activityItem, { backgroundColor: cardColor }]}>
+            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
               <Feather name="user-plus" size={20} color="#4ECDC4" />
-              <ThemedText style={styles.activityText}>Joined Music Society</ThemedText>
-              <ThemedText style={styles.activityTime}>1 day ago</ThemedText>
+              <ThemedText style={styles.NotificationsText}>Joined Music Society</ThemedText>
+              <ThemedText style={styles.NotificationsTime}>1 day ago</ThemedText>
             </View>
-            <View style={[styles.activityItem, { backgroundColor: cardColor }]}>
+            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
               <Feather name="check-circle" size={20} color="#45B7D1" />
-              <ThemedText style={styles.activityText}>Attended Career Fair 2025</ThemedText>
-              <ThemedText style={styles.activityTime}>2 weeks ago</ThemedText>
+              <ThemedText style={styles.NotificationsText}>Attended Career Fair 2025</ThemedText>
+              <ThemedText style={styles.NotificationsTime}>2 weeks ago</ThemedText>
             </View>
           </View>
         );
@@ -330,11 +469,39 @@ export default function ProfilePage() {
           <View>
             <ThemedText style={styles.sectionTitle}>Account Settings</ThemedText>
             {settingsOptions.map(option => (
-              <SettingsItem 
-                key={option.id} 
-                title={option.title} 
-                icon={option.icon as keyof typeof Feather.glyphMap} 
-              />
+                <View key={option.id}>
+                    {/* Main Setting Item */}
+                    <SettingsItem
+                        title={option.title}
+                        icon={option.icon as keyof typeof Feather.glyphMap}
+                        onPress={() => handleItemPress(option)}
+                        hasSubItems={!!option.subItems}
+                        isExpanded={expandedId === option.id}
+                    />
+
+                    {/* Conditionally Rendered Sub-Items */}
+                    {expandedId === option.id && option.subItems && (
+                        <View>
+                            {option.subItems.map(subItem => (
+                                <SubSettingItem
+                                    key={subItem.id}
+                                    title={subItem.title}
+                                    icon={subItem.icon as keyof typeof Feather.glyphMap}
+                                    onPress={() => {
+                                        // Handle sub-item press (e.g., navigate)
+                                        if (subItem.title === 'Personal Information') {
+                                            router.push('/student/profile/profileEdit');
+                                        } else if (subItem.title === 'Change Password') {
+                                            router.push('/student/profile/changePassword');
+                                        } else {
+                                            console.log(`Pressed ${subItem.title}`);
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </View>
+                    )}
+                </View>
             ))}
           </View>
         );
@@ -343,11 +510,38 @@ export default function ProfilePage() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={tintColor} />
+          <ThemedText style={styles.loadingText}>Loading profile...</ThemedText>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Feather name="alert-circle" size={48} color="#FF6B6B" />
+          <ThemedText style={styles.errorText}>{error}</ThemedText>
+          <TouchableOpacity 
+            style={[styles.retryButton, { backgroundColor: tintColor }]}
+            onPress={() => {
+              setError(null);
+              setRefreshTrigger(prev => prev + 1);
+            }}
+          >
+            <ThemedText style={[styles.retryButtonText, { color: 'white' }]}>Retry</ThemedText>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={tintColor} />
+          }
+        >
         {/* User Info */}
         <View style={styles.userInfoContainer}>
           <Image 
-            source={{ uri: userData.avatar }}
+            // source={{ uri: userData.avatar }}
+            source={{ uri: `${BASE_URL}/${userData.avatar}` }}
             style={styles.avatar}
             contentFit="cover"
           />
@@ -357,7 +551,7 @@ export default function ProfilePage() {
           
           {/* Academic Info */}
           <View style={styles.academicInfo}>
-            <ThemedText style={styles.academicText}>{userData.academicYear} • {userData.faculty}</ThemedText>
+            <ThemedText style={styles.academicText}>{userData.academicYear}rd Year • {userData.faculty}</ThemedText>
           </View>
           
           {/* Bio */}
@@ -366,13 +560,15 @@ export default function ProfilePage() {
           )} */}
           
           {/* Interests */}
-          <View style={styles.interestsContainer}>
-            {userData.interests.map((interest, index) => (
-              <View key={index} style={[styles.interestTag, { backgroundColor: tintColor }]}>
-                <ThemedText style={[styles.interestText, { color: 'white' }]}>{interest}</ThemedText>
-              </View>
-            ))}
-          </View>
+          {userData.interests && userData.interests.length > 0 && (
+            <View style={styles.interestsContainer}>
+              {userData.interests.map((interest: string, index: number) => (
+                <View key={index} style={[styles.interestTag, { backgroundColor: tintColor }]}>
+                  <ThemedText style={[styles.interestText, { color: 'white' }]}>{interest}</ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={[styles.statsContainer, { backgroundColor: cardColor }]}>
             <View style={styles.statItem}>
@@ -391,7 +587,7 @@ export default function ProfilePage() {
 
         {/* Tab Navigation */}
         <View style={[styles.tabContainer, { borderBottomColor: borderColor }]}>
-          {(['Events', 'Clubs', 'Activity', 'Settings'] as TabName[]).map(tab => (
+          {(['Events', 'Clubs', 'Notifications', 'Settings'] as TabName[]).map(tab => (
             <TouchableOpacity
               key={tab}
               style={[
@@ -418,6 +614,7 @@ export default function ProfilePage() {
         {/* Bottom padding */}
         <View style={styles.bottomPadding} />
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -585,51 +782,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderLeftWidth: 1,
   },
-  // Club Item Styles
-  clubItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  clubAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-    backgroundColor: '#eee',
-  },
-  clubContent: {
-    flex: 1,
-  },
-  clubName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  clubDescription: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginBottom: 4,
-    lineHeight: 18,
-  },
-  clubMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  clubMetaText: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginLeft: 4,
-  },
-  // Activity Item Styles
-  activityItem: {
+  // Notifications Item Styles
+  NotificationsItem: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
@@ -641,12 +795,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  activityText: {
+  NotificationsText: {
     flex: 1,
     fontSize: 14,
     marginLeft: 12,
   },
-  activityTime: {
+  NotificationsTime: {
     fontSize: 12,
     opacity: 0.6,
   },
@@ -676,7 +830,128 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  subSettingsItem: {
+    marginLeft: 0,
+  },
   bottomPadding: {
     height: 80,
   },
+  // Loading and error states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    opacity: 0.7,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 50,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+    opacity: 0.7,
+    lineHeight: 22,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  //club cards
+  clubCard: {
+  flexDirection: 'row',
+  borderRadius: 20,
+  marginBottom: 20,
+  padding: 20,
+  backgroundColor: '#ffffff',
+  borderWidth: 1,
+  borderColor: '#ddd',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  elevation: 4,
+},
+
+clubImageWrapper: {
+  width: 85,
+  height: 85,
+  borderRadius: 100,
+  borderWidth: 2,
+  padding: 2,
+  shadowOpacity: 0.4,
+  shadowRadius: 6,
+  shadowOffset: { width: 0, height: 2 },
+  backgroundColor: '#fff',
+  marginRight: 16,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+clubImage: {
+  width: 80,
+  height: 80,
+  borderRadius: 100,
+},
+
+clubName: {
+  fontSize: 18,
+  fontWeight: '800',
+  marginBottom: 4,
+},
+
+clubDescription: {
+  fontSize: 14,
+  fontWeight: '500',
+  lineHeight: 20,
+  marginBottom: 8,
+  color: '#555',
+},
+clubInfo: {
+    flex: 1,
+  },
+  clubHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+
+  clubMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  joinedBadge: {
+  backgroundColor: '#2DC653',
+  borderRadius: 12,
+  paddingVertical: 4,
+  paddingHorizontal: 10,
+},
+
+joinedText: {
+  fontSize: 12,
+  fontWeight: '600',
+  color: 'white',
+},
+
+clubCategory: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#1591EA',
+},
 });

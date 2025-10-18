@@ -3,6 +3,7 @@ package reidConnect.backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.dto.venue.DashboardStatsDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.service.VenueBookingService;
@@ -10,22 +11,64 @@ import reidConnect.backend.service.VenueBookingService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/venue-bookings")
+@RequestMapping("/api/bookings")
 @RequiredArgsConstructor
 public class VenueBookingController {
 
-    private final VenueBookingService venueBookingService;
+    private final VenueBookingService bookingService;
 
-    // Club sends booking request
-    @PostMapping("/create")
-    public ResponseEntity<String> createBooking(@RequestBody VenueBookingRequestDto dto) {
-        venueBookingService.createVenueBooking(dto);
-        return ResponseEntity.ok("Booking request submitted successfully.");
+    @PostMapping("/create/{clubUserId}")
+    public ResponseEntity<VenueBookingResponseDto> createBooking(
+            @PathVariable Long clubUserId,
+            @RequestBody VenueBookingRequestDto dto
+    ) {
+        VenueBookingResponseDto response = bookingService.createBooking(clubUserId, dto);
+        return ResponseEntity.ok(response);
     }
 
-    // Clerk views all bookings
-    @GetMapping("/all")
+    @PostMapping("/approve/{sarId}/{bookingId}")
+    public ResponseEntity<VenueBookingResponseDto> approveBooking(
+            @PathVariable Long sarId,
+            @PathVariable Long bookingId,
+            @RequestBody String sarSignature
+    ) {
+        VenueBookingResponseDto response = bookingService.approveBooking(sarId, bookingId, sarSignature);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/final-approve/{finalSignerId}/{bookingId}")
+    public ResponseEntity<VenueBookingResponseDto> finalApproveBooking(
+            @PathVariable Long finalSignerId,
+            @PathVariable Long bookingId,
+            @RequestBody String finalSignature
+    ) {
+        VenueBookingResponseDto response = bookingService.finalApproveBooking(finalSignerId, bookingId, finalSignature);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<VenueBookingResponseDto> getBooking(
+            @PathVariable Long bookingId
+    ) {
+        VenueBookingResponseDto response = bookingService.getBookingById(bookingId);
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping
     public ResponseEntity<List<VenueBookingResponseDto>> getAllBookings() {
-        return ResponseEntity.ok(venueBookingService.getAllBookings());
+        List<VenueBookingResponseDto> responses = bookingService.getAllBookings();
+        return ResponseEntity.ok(responses);
+    }
+    @GetMapping("/dashboard/approved")
+    public ResponseEntity<List<VenueBookingResponseDto>> getFullyApprovedBookings() {
+        List<VenueBookingResponseDto> responses = bookingService.getFullyApprovedBookings();
+        return ResponseEntity.ok(responses);
+    }
+
+    // New endpoint for dashboard statistics
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<DashboardStatsDto> getDashboardStats() {
+        DashboardStatsDto stats = bookingService.getDashboardStats();
+        return ResponseEntity.ok(stats);
     }
 }

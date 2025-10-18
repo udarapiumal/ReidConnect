@@ -26,7 +26,10 @@ public class Course {
     private String name;
 
     @Column(nullable = false)
-    private int credits;
+    private int lectureCredits = 0;
+
+    @Column(nullable = false)
+    private int practicalCredits = 0;
 
     @ManyToMany
     @JoinTable(
@@ -41,11 +44,11 @@ public class Course {
     private Venue lectureVenue;
 
     @ManyToOne
-    @JoinColumn(name = "practical_venue_id")
+    @JoinColumn(name = "practical_venue_id", nullable = true)
     private Venue practicalVenue;
 
     @ManyToOne
-    @JoinColumn(name = "tutorial_venue_id")
+    @JoinColumn(name = "tutorial_venue_id", nullable = true)
     private Venue tutorialVenue;
 
     @Enumerated(EnumType.STRING)

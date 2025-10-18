@@ -61,3 +61,5 @@ pnpm-debug.log*
 *.bak
 *.swp
 *.swo
+
+target/

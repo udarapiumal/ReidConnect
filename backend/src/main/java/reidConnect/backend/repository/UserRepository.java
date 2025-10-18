@@ -15,8 +15,6 @@ public interface UserRepository extends CrudRepository<User,Long> {
     @Query("SELECT u FROM User u WHERE u.email LIKE CONCAT(:regNumber, '%')")
     Optional<User> findByRegNumberPrefix(@Param("regNumber") String regNumber);
 
-
-    @SuppressWarnings("override")
-    Optional<User> findById(Long id);
+    Optional<User> findByRole(String role);
 }
 

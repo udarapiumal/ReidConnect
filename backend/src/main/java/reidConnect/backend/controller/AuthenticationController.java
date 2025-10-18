@@ -7,14 +7,18 @@ import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.*;
 import reidConnect.backend.entity.Club;
+import reidConnect.backend.entity.KeyStoreEntity;
 import reidConnect.backend.entity.User;
+import reidConnect.backend.repository.KeyStoreRepository;
 import reidConnect.backend.responses.LoginResponse;
 import reidConnect.backend.service.AuthenticationService;
 import reidConnect.backend.service.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.util.KeyUtil;
 
 import java.io.IOException;
+import java.security.KeyPair;
 import java.util.Collection;
 
 @RestController
@@ -22,10 +26,12 @@ import java.util.Collection;
 public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
+    private final KeyStoreRepository keyStoreRepository;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
+    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, KeyStoreRepository keyStoreRepository) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
+        this.keyStoreRepository = keyStoreRepository;
     }
 
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -93,27 +99,19 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
-        try {
-            authenticationService.verifyUser(verifyUserDto);
-            return ResponseEntity.ok("User verified successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<String> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
+        authenticationService.verifyUser(verifyUserDto);
+        return ResponseEntity.ok("User verified successfully");
     }
 
     @PostMapping("/resend")
-    public ResponseEntity<?> resendVerificationCode(@RequestParam String email) {
-        try {
-            authenticationService.resendVerificationCode(email);
-            return ResponseEntity.ok("Verification code resent");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<String> resendVerificationCode(@RequestParam String email) {
+        authenticationService.resendVerificationCode(email);
+        return ResponseEntity.ok("Verification code resent successfully");
     }
 
     @PostMapping(value = "/register-club", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> registerClub(
+    public ResponseEntity<RegisterClubDto> registerClub(
             @RequestPart("username") String username,
             @RequestPart("email") String email,
             @RequestPart("password") String password,
@@ -124,54 +122,80 @@ public class AuthenticationController {
             @RequestPart(value = "coverPicture", required = false) MultipartFile coverPicture,
             HttpServletRequest request) {
 
-        try {
-            // Upload directory
-            String uploadPath = new java.io.File("src/main/resources/static/uploads").getAbsolutePath();
+        // Upload directory
+        String uploadPath = new java.io.File("src/main/resources/static/uploads").getAbsolutePath();
 
-            // Save profile picture
-            String profilePicPath = null;
-            if (profilePicture != null && !profilePicture.isEmpty()) {
-                String profilePicName = java.util.UUID.randomUUID() + "_" + profilePicture.getOriginalFilename();
-                java.nio.file.Path profileFilePath = java.nio.file.Paths.get(uploadPath, profilePicName);
+        // Save profile picture
+        String profilePicPath = null;
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String profilePicName = java.util.UUID.randomUUID() + "_" + profilePicture.getOriginalFilename();
+            java.nio.file.Path profileFilePath = java.nio.file.Paths.get(uploadPath, profilePicName);
+            try {
                 java.nio.file.Files.write(profileFilePath, profilePicture.getBytes());
                 profilePicPath = "/uploads/" + profilePicName;
+            } catch (java.io.IOException e) {
+                throw new reidConnect.backend.exception.FileUploadException("Could not save profile picture: " + e.getMessage(), e);
             }
+        }
 
-            // Save cover picture
-            String coverPicPath = null;
-            if (coverPicture != null && !coverPicture.isEmpty()) {
-                String coverPicName = java.util.UUID.randomUUID() + "_" + coverPicture.getOriginalFilename();
-                java.nio.file.Path coverFilePath = java.nio.file.Paths.get(uploadPath, coverPicName);
+        // Save cover picture
+        String coverPicPath = null;
+        if (coverPicture != null && !coverPicture.isEmpty()) {
+            String coverPicName = java.util.UUID.randomUUID() + "_" + coverPicture.getOriginalFilename();
+            java.nio.file.Path coverFilePath = java.nio.file.Paths.get(uploadPath, coverPicName);
+            try {
                 java.nio.file.Files.write(coverFilePath, coverPicture.getBytes());
                 coverPicPath = "/uploads/" + coverPicName;
+            } catch (java.io.IOException e) {
+                throw new reidConnect.backend.exception.FileUploadException("Could not save cover picture: " + e.getMessage(), e);
             }
+        }
 
-            // Create and save User
-            User user = new User();
-            user.setUsername(username);
-            user.setEmail(email);
-            user.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password));
-            user.setRole("club");
-            user.setEnabled(false);
-            user.setVerificationCode(null);
-            user.setVerificationExpiration(null);
-            User savedUser = authenticationService.saveUser(user);
+        // Create and save User
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password));
+        user.setRole("club");
+        user.setEnabled(false);
+        user.setVerificationCode(null);
+        user.setVerificationExpiration(null);
+        User savedUser = authenticationService.saveUser(user);
 
-            // Create and save Club
-            Club club = new Club();
-            club.setClub_name(clubName);
-            club.setWebsite(website);
-            club.setBio(bio);
-            club.setProfile_picture(profilePicPath);
-            club.setCover_picture(coverPicPath);
-            club.setUser(savedUser);
+        // ---- Generate keys and save to keystore ----
+        try {
+            KeyPair pair = KeyUtil.generateKeyPair();
+            String pubKey = KeyUtil.publicKeyToBase64(pair.getPublic());
+            String privKeyEnc = KeyUtil.encryptPrivateKey(pair.getPrivate());
+            System.out.println("Public key: " + pubKey.substring(0, 50) + "...");
+            System.out.println("Encrypted private key: " + privKeyEnc.substring(0, 50) + "...");
 
-            RegisterClubDto savedClub = authenticationService.saveClub(club);
-            return ResponseEntity.ok(savedClub);
+            KeyStoreEntity keyStoreEntity = new KeyStoreEntity();
+            keyStoreEntity.setUser(savedUser);
+            keyStoreEntity.setPublicKey(pubKey);
+            keyStoreEntity.setPrivateKey(privKeyEnc);
+
+            keyStoreRepository.save(keyStoreEntity);
+            System.out.println("Encrypted private key: " + privKeyEnc.substring(0, 50) + "...");
+            KeyStoreEntity test = keyStoreRepository.findByUserId(savedUser.getId());
+            System.out.println("DB private key = " + test.getPrivateKey().substring(0, 50) + "...");
+
 
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error registering club: " + e.getMessage());
+            throw new RuntimeException("Error generating keypair: " + e.getMessage(), e);
         }
+
+        // Create and save Club
+        Club club = new Club();
+        club.setClub_name(clubName);
+        club.setWebsite(website);
+        club.setBio(bio);
+        club.setProfile_picture(profilePicPath);
+        club.setCover_picture(coverPicPath);
+        club.setUser(savedUser);
+
+        RegisterClubDto savedClub = authenticationService.saveClub(club);
+        return ResponseEntity.ok(savedClub);
     }
 
 
