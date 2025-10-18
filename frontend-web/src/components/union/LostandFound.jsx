@@ -24,7 +24,7 @@ function LostItemForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const {
       itemName,
       category,
@@ -35,26 +35,26 @@ function LostItemForm() {
       posterName,
       contactNumber,
     } = formData;
-
+  
+    // Validation (image is NOT required)
     if (
       !itemName.trim() ||
       !category.trim() ||
       !description.trim() ||
       !location.trim() ||
       !dateLost ||
-      !image ||
       !posterName.trim() ||
       !contactNumber.trim()
     ) {
       alert("Please fill in all required fields.");
       return;
     }
-
+  
     if (!/^\d{10}$/.test(contactNumber)) {
       alert("Please enter a valid 10-digit contact number.");
       return;
     }
-
+  
     try {
       const formPayload = new FormData();
       formPayload.append("itemName", itemName);
@@ -62,10 +62,15 @@ function LostItemForm() {
       formPayload.append("description", description);
       formPayload.append("location", location);
       formPayload.append("dateLost", dateLost);
-      formPayload.append("image", image);
+  
+      // Only append image if it exists
+      if (image) {
+        formPayload.append("image", image);
+      }
+  
       formPayload.append("posterName", posterName);
       formPayload.append("contactNumber", contactNumber);
-
+  
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:8080/lost/lost-items",
@@ -77,10 +82,10 @@ function LostItemForm() {
           },
         }
       );
-
+  
       alert("Lost item post submitted successfully!");
       console.log(response.data);
-
+  
       // Reset form
       setFormData({
         itemName: "",
@@ -97,6 +102,7 @@ function LostItemForm() {
       alert("Failed to submit the lost item post.");
     }
   };
+  
 
   const categories = [
     "Electronics", "Clothing", "Accessories", "Books",
@@ -195,7 +201,7 @@ function LostItemForm() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="image">Upload Image *</label>
+              <label htmlFor="image">Upload Image (Optional)</label>
               <div className="file-upload-container">
                 <input
                   type="file"
