@@ -27,6 +27,12 @@ public class Student {
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
+    @Column(name="registered_year")
+    private int registeredYear;
+
+    @Column(name="faculty")
+    private String faculty;
+
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;

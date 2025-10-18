@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import reidConnect.backend.dto.venue.DashboardStatsDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
@@ -252,6 +253,9 @@ public class VenueBookingServiceImpl implements VenueBookingService {
     public List<VenueBookingResponseDto> getBookingsByClubId(Long clubId) {
         List<VenueBooking> bookings = bookingRepository.findByClubId(clubId);
         return bookings.stream()
+    public List<VenueBookingResponseDto> getFullyApprovedBookings() {
+        return bookingRepository.findByStatus(BookingStatus.APPROVED)
+                .stream()
                 .map(bookingMapper::toDto)
                 .toList();
     }
@@ -320,5 +324,36 @@ public class VenueBookingServiceImpl implements VenueBookingService {
         return bookingPage.map(bookingMapper::toDto);
     }
 
+
+    public DashboardStatsDto getDashboardStats() {
+        long totalBookings = bookingRepository.count();
+        long fullyApprovedBookings = bookingRepository.countByStatus(BookingStatus.APPROVED);
+        long pendingBookings = bookingRepository.countByStatus(BookingStatus.PENDING);
+        long sarSignedBookings = bookingRepository.countByStatus(BookingStatus.SAR_SIGNED);
+
+        // Count total users (you can adjust this based on your business logic)
+        long totalClubs = 0;
+        long totalStudentProfiles = 0;
+
+        try {
+            // Get total user counts - you can filter by role if you have role-based logic
+            long totalUsers = userRepository.count();
+            totalClubs = totalUsers; // Adjust this logic based on your requirements
+            totalStudentProfiles = totalUsers;
+        } catch (Exception e) {
+            // Fallback in case of any issues
+            totalClubs = 0;
+            totalStudentProfiles = 0;
+        }
+
+        return DashboardStatsDto.builder()
+                .totalClubs(totalClubs)
+                .totalStudentProfiles(totalStudentProfiles)
+                .totalBookings(totalBookings)
+                .fullyApprovedBookings(fullyApprovedBookings)
+                .pendingBookings(pendingBookings)
+                .rejectedBookings(0) // You can add logic for rejected bookings if you have that status
+                .build();
+    }
 
 }

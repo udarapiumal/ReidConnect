@@ -1,6 +1,7 @@
 package reidConnect.backend.service;
 
 import org.springframework.data.domain.Page;
+import reidConnect.backend.dto.venue.DashboardStatsDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
@@ -33,5 +34,7 @@ public interface VenueBookingService {
     Page<VenueBookingResponseDto> getAllBookingsPaged(int page, int size);
 
     Page<VenueBookingResponseDto> getBookingsByStatus(BookingStatus status, int page, int size);
+    List<VenueBookingResponseDto> getFullyApprovedBookings();
+    DashboardStatsDto getDashboardStats();
 
 }
