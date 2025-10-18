@@ -1,5 +1,6 @@
 package reidConnect.backend.service;
 
+import reidConnect.backend.dto.venue.DashboardStatsDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 
@@ -16,5 +17,8 @@ public interface VenueBookingService {
     List<VenueBookingResponseDto> getAllBookings();
 
     VenueBookingResponseDto finalApproveBooking(Long finalSignerId, Long bookingId, String finalSignatureImg);
+
+    List<VenueBookingResponseDto> getFullyApprovedBookings();
+    DashboardStatsDto getDashboardStats();
 
 }

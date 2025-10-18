@@ -1,6 +1,7 @@
 package reidConnect.backend.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.LostandFoundDto;
 import reidConnect.backend.dto.LostandFoundResponseDto;
 import reidConnect.backend.entity.LostandFound;
@@ -31,25 +32,31 @@ public class LostandFoundService {
         lostandFound.setPosterName(lostandFoundDto.getPosterName());
         lostandFound.setContactNumber(lostandFoundDto.getContactNumber());
 
+        MultipartFile imageFile = lostandFoundDto.getImage();
 
-        if (lostandFoundDto.getImage() != null && !lostandFoundDto.getImage().isEmpty()) {
-            String fileName = UUID.randomUUID() + "_" + lostandFoundDto.getImage().getOriginalFilename();
+        // ✅ Only handle upload if an image is actually provided
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
 
             try {
-
                 Path uploadDir = Paths.get(System.getProperty("user.dir"), "src", "main", "resources", "static", "uploads");
                 Files.createDirectories(uploadDir);
 
                 Path filePath = uploadDir.resolve(fileName);
-                lostandFoundDto.getImage().transferTo(filePath.toFile());
+                imageFile.transferTo(filePath.toFile());
                 lostandFound.setImagePath(fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to save image", e);
             }
+        } else {
+            // ✅ No image uploaded → set null or default placeholder
+            lostandFound.setImagePath(null);
+            // or: lostandFound.setImagePath("default.jpg");
         }
 
         lostandFoundRepository.save(lostandFound);
     }
+
     public List<LostandFoundResponseDto> getAllLostItems() {
         List<LostandFound> items = lostandFoundRepository.findAll();
 

@@ -3,6 +3,7 @@ package reidConnect.backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.dto.venue.DashboardStatsDto;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.service.VenueBookingService;
@@ -57,5 +58,17 @@ public class VenueBookingController {
     public ResponseEntity<List<VenueBookingResponseDto>> getAllBookings() {
         List<VenueBookingResponseDto> responses = bookingService.getAllBookings();
         return ResponseEntity.ok(responses);
+    }
+    @GetMapping("/dashboard/approved")
+    public ResponseEntity<List<VenueBookingResponseDto>> getFullyApprovedBookings() {
+        List<VenueBookingResponseDto> responses = bookingService.getFullyApprovedBookings();
+        return ResponseEntity.ok(responses);
+    }
+
+    // New endpoint for dashboard statistics
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<DashboardStatsDto> getDashboardStats() {
+        DashboardStatsDto stats = bookingService.getDashboardStats();
+        return ResponseEntity.ok(stats);
     }
 }
