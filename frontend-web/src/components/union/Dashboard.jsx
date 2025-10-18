@@ -191,9 +191,8 @@ export default function UnionDashboard() {
             <span style={styles.highlight}>UnionAdmin</span>
           </div>
           <div style={styles.adminInfo}>
-            <i className="fa fa-bell" style={styles.headerIcon}></i>
-            <i className="fa fa-user" style={styles.headerIcon}></i>
-            <span>Admin</span>
+            
+            
           </div>
         </header>
         <main style={styles.dashboardMain}>
