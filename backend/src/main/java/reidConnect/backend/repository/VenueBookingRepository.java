@@ -18,9 +18,6 @@ public interface VenueBookingRepository extends JpaRepository<VenueBooking, Long
     Page<VenueBooking> findByStatus(BookingStatus status, Pageable pageable);
     List<VenueBooking> findByStatus(BookingStatus status);
 
-    // Count bookings by status
-    long countByStatus(BookingStatus status);
-
     // Additional useful queries for dashboard
     List<VenueBooking> findByStatusOrderByDateDesc(BookingStatus status);
 

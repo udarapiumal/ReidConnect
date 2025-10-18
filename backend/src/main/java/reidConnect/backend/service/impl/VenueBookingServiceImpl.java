@@ -253,6 +253,11 @@ public class VenueBookingServiceImpl implements VenueBookingService {
     public List<VenueBookingResponseDto> getBookingsByClubId(Long clubId) {
         List<VenueBooking> bookings = bookingRepository.findByClubId(clubId);
         return bookings.stream()
+                .map(bookingMapper::toDto)
+                .toList();
+    }
+
+    @Override
     public List<VenueBookingResponseDto> getFullyApprovedBookings() {
         return bookingRepository.findByStatus(BookingStatus.APPROVED)
                 .stream()
