@@ -102,7 +102,12 @@ function LostItemForm() {
       alert("Failed to submit the lost item post.");
     }
   };
-  
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   const categories = [
     "Electronics", "Clothing", "Accessories", "Books",
@@ -196,6 +201,7 @@ function LostItemForm() {
                   value={formData.dateLost}
                   onChange={handleChange}
                   className="form-input"
+                  max={getTodayDate()}
                 />
               </div>
             </div>
