@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Search, X } from 'lucide-react';
-import axios from 'axios';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [featuredEventIds, setFeaturedEventIds] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('asc');
+  const itemsPerPage = 6;
 
   // Fetch all events on mount
   useEffect(() => {
@@ -16,74 +18,52 @@ const EventsPage = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/events');
-      setEvents(response.data);
+      const response = await fetch('http://localhost:8080/api/events');
+      const data = await response.json();
+      setEvents(data);
     } catch (error) {
       console.error('Error fetching events:', error);
     }
-    console.log('Token:', localStorage.getItem('token'));
   };
 
   const fetchFeaturedEvents = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/events/featured');
-      const ids = new Set(response.data.map(event => event.id));
+      const response = await fetch('http://localhost:8080/api/events/featured');
+      const data = await response.json();
+      const ids = new Set(data.map(event => event.id));
       setFeaturedEventIds(ids);
     } catch (error) {
       console.error('Error fetching featured events:', error);
     }
   };
 
-  // Filter events by search term
-  const filteredEvents = events.filter((event) =>
+  // Filter and sort events
+  let processedEvents = events.filter((event) =>
     event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleToggleFeature = async (eventId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const isFeatured = featuredEventIds.has(eventId);
+  // Sort by date
+  processedEvents = processedEvents.sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+  });
 
-      if (isFeatured) {
-        // Unfeature the event
-        await axios.delete(
-          `http://localhost:8080/api/events/${eventId}/feature`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-       
-        alert('✅ Event unfeatured successfully!');
-        setFeaturedEventIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(eventId);
-          return newSet;
-        });
-      } else {
-        // Feature the event
-        await axios.put(
-          `http://localhost:8080/api/events/${eventId}/feature`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        alert('✅ Event featured successfully!');
-        setFeaturedEventIds(prev => new Set([...prev, eventId]));
-      }
+  // Pagination
+  const totalPages = Math.ceil(processedEvents.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const filteredEvents = processedEvents.slice(startIndex, startIndex + itemsPerPage);
 
-      // Update selected event if it's currently open
-      if (selectedEvent && selectedEvent.id === eventId) {
-        setSelectedEvent({ ...selectedEvent });
-      }
-    } catch (error) {
-      console.error('❌ Error toggling feature:', error);
-      alert('❌ Failed to toggle feature status.');
+  const handleToggleFeature = (eventId) => {
+    if (featuredEventIds.has(eventId)) {
+      setFeaturedEventIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(eventId);
+        return newSet;
+      });
+    } else {
+      setFeaturedEventIds(prev => new Set([...prev, eventId]));
     }
   };
 
@@ -144,9 +124,29 @@ const EventsPage = () => {
                 type="text"
                 placeholder="Search events..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="search-input"
               />
+            </div>
+            <div className="sort-controls">
+              <label htmlFor="sort" style={{ color: '#a1a1a1', marginRight: '0.5rem' }}>
+                Sort by Date:
+              </label>
+              <select
+                id="sort"
+                value={sortOrder}
+                onChange={(e) => {
+                  setSortOrder(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="sort-select"
+              >
+                <option value="asc">Earliest First</option>
+                <option value="desc">Latest First</option>
+              </select>
             </div>
           </div>
         </header>
@@ -163,14 +163,6 @@ const EventsPage = () => {
                 key={event.id}
                 className="gallery-card"
                 onClick={() => setSelectedEvent(event)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 6px 12px rgb(239 68 68 / 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px rgb(0 0 0 / 0.25)';
-                }}
               >
                 <img
                   src={`http://localhost:8080/${event.imagePath}`}
@@ -189,6 +181,31 @@ const EventsPage = () => {
         )}
       </main>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <button
+            className="pagination-btn"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            ← Previous
+          </button>
+          
+          <div className="pagination-info">
+            Page {currentPage} of {totalPages}
+          </div>
+
+          <button
+            className="pagination-btn"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
       {selectedEvent && (
         <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -200,7 +217,7 @@ const EventsPage = () => {
             </button>
 
             <img
-              src={`http://localhost:8080/${selectedEvent.imagePath}`}
+              src={selectedEvent.imagePath}
               alt={selectedEvent.name}
               className="modal-image"
             />
@@ -533,8 +550,91 @@ const EventsPage = () => {
           background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
         }
 
-        .feature-btn-modal.featured:hover {
+        .sort-controls {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .sort-controls label {
+          font-weight: 500;
+          font-size: 0.95rem;
+        }
+
+        .sort-select {
+          padding: 0.75rem 1rem;
+          border: 1px solid #333;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          background-color: #2a2a2a;
+          color: #ffffff;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-weight: 500;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a1a1a1' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 0.75rem center;
+          padding-right: 2.5rem;
+        }
+
+        .sort-select option {
+          background-color: #2a2a2a;
+          color: #ffffff;
+          padding: 0.5rem;
+        }
+
+        .sort-select option:hover {
+          background-color: #3a3a3a;
+        }
+
+        .sort-select:hover {
+          border-color: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .sort-select:focus {
+          outline: none;
+          border-color: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+
+        .pagination-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 2rem;
+          padding: 2rem;
+          background-color: #151718;
+          border-radius: 8px;
+          margin-top: 2rem;
+          border: 1px solid #333;
+        }
+
+        .pagination-btn {
+          padding: 0.75rem 1.5rem;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
           opacity: 0.9;
+        }
+
+        .pagination-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .pagination-info {
+          color: #a1a1a1;
+          font-weight: 600;
+          font-size: 1rem;
         }
 
         @media (max-width: 768px) {
