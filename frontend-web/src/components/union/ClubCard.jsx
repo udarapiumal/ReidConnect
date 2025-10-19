@@ -32,15 +32,13 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
   };
 
   const handleRowClick = (e) => {
-    if (e.target.type === 'checkbox' || e.target.tagName === 'A' || e.target.closest('input')) {
-      return;
-    }
+    if (e.target.type === 'checkbox' || e.target.tagName === 'A' || e.target.closest('input')) return;
     navigate(`/club/${club.id}`);
   };
 
   const handleCheckboxClick = (e) => {
     e.stopPropagation();
-    onSelect();
+    onSelect && onSelect();
   };
 
   return (
@@ -49,7 +47,7 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
       onClick={handleRowClick}
       style={{ cursor: 'pointer' }}
     >
-      {/* Profile Picture & Name */}
+      {/* Name & Avatar */}
       <td className="name-col">
         <div className="club-name-cell">
           <div className="club-avatar">
@@ -57,10 +55,7 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
               src={club.profilePicture ? `${baseUrl}${club.profilePicture}` : "/default-profile.png"}
               alt={`${club.clubName || 'Club'} profile`}
               className="club-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/default-profile.png";
-              }}
+              onError={(e) => { e.target.onerror = null; e.target.src = "/default-profile.png"; }}
             />
           </div>
           <span className="club-name">{club.clubName || 'Unnamed Club'}</span>
@@ -85,21 +80,16 @@ const ClubCard = ({ club, isSelected, onSelect }) => {
         )}
       </td>
 
+      {/* Members */}
+      <td className="members-col">
+        <span>{club.membersCount || '--'}</span>
+      </td>
+
       {/* Bio */}
       <td className="bio-col">
         <span className="club-bio" title={club.bio || 'No bio available'}>
           {truncateText(club.bio)}
         </span>
-      </td>
-
-      {/* Members */}
-      <td className="members-col">
-        <span>--</span>
-      </td>
-
-      {/* Created (used club.bio for now as placeholder) */}
-      <td className="created-col">
-        <span title={club.bio}>{club.bio}</span>
       </td>
 
       {/* Owner Info */}
