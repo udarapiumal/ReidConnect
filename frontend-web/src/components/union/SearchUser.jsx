@@ -6,6 +6,55 @@ function SearchUser() {
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
 
+  const styles = {
+    contentWrapper: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      marginLeft: '220px',
+      transition: 'margin-left 0.2s',
+    },
+    headerBar: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      width: '100%',
+      height: '70px',
+      backdropFilter: 'blur(20px)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '0 24px',
+      zIndex: 1200,
+      background: 'rgba(20, 20, 20, 0.95)',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+    },
+    headerLeft: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0px',
+    },
+    reidConnect: {
+      fontWeight: 700,
+      fontSize: '22px',
+      color: 'white',
+      letterSpacing: '-0.02em',
+    },
+    highlight: {
+      fontWeight: 700,
+      fontSize: '22px',
+      color: '#FF0033',
+      background: 'linear-gradient(135deg, #FF0033 0%, #ea580c 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      marginLeft: '0px',
+    },
+  };
+
   const extractRegNumber = (email) => {
     return email.split('@')[0];
   };
@@ -39,8 +88,14 @@ function SearchUser() {
 
   return (
     <div className="app-container">
+      <header style={styles.headerBar}>
+        <div style={styles.headerLeft}>
+          <span style={styles.reidConnect}>ReidConnect</span>
+          <span style={styles.highlight}>UnionAdmin</span>
+        </div>
+      </header>
       {/* Main Content */}
-      <main className="main-content">
+      <main className="main-content" style={{ marginTop: '70px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <h2 className="heading">Search Student</h2>
 
