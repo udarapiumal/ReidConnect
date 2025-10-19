@@ -11,7 +11,6 @@ const Sidebar = () => {
     { label: 'Profile Management', path: '/union/Profilemanagement', icon: 'fa-solid fa-user-gear' },
     { label: 'Club Management', path: '/union/Clubmanagement', icon: 'fa-solid fa-people-group' },
     { label: 'Events', path: '/union/events', icon: 'fa-solid fa-calendar-days' },  // Added Events here
-    { label: 'Sign Out', isLogout: true, icon: 'fa-solid fa-right-from-bracket' }
   ];
 
   const handleLogout = () => {
@@ -26,42 +25,38 @@ const Sidebar = () => {
         <ul style={styles.sidebarNav}>
           {links.map((link) => (
             <li key={link.label} style={styles.navListItem}>
-              {link.isLogout ? (
-                <button
-                  onClick={handleLogout}
+              <Link
+                to={link.path}
+                style={{
+                  ...styles.sidebarLink,
+                  ...(location.pathname === link.path ? styles.sidebarLinkActive : {})
+                }}
+              >
+                <i className={link.icon} style={styles.navIcon}></i>
+                <span
                   style={{
-                    ...styles.sidebarLink,
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    width: '100%',
-                    cursor: 'pointer',
+                    ...styles.navText,
+                    ...(location.pathname === link.path ? styles.navTextActive : {})
                   }}
                 >
-                  <i className={link.icon} style={styles.navIcon}></i>
-                  <span style={styles.navText}>{link.label}</span>
-                </button>
-              ) : (
-                <Link
-                  to={link.path}
-                  style={{
-                    ...styles.sidebarLink,
-                    ...(location.pathname === link.path ? styles.sidebarLinkActive : {})
-                  }}
-                >
-                  <i className={link.icon} style={styles.navIcon}></i>
-                  <span
-                    style={{
-                      ...styles.navText,
-                      ...(location.pathname === link.path ? styles.navTextActive : {})
-                    }}
-                  >
-                    {link.label}
-                  </span>
-                </Link>
-              )}
+                  {link.label}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
+      </div>
+      <div style={styles.bottomSection}>
+        <button
+          style={styles.logoutButton}
+          onClick={handleLogout}
+        >
+          <i
+            className="fa-solid fa-right-from-bracket"
+            style={{ marginRight: '10px', fontSize: '16px', color: '#fff' }}
+          ></i>
+          <span style={styles.logoutText}>Sign Out</span>
+        </button>
       </div>
     </div>
   );
@@ -131,6 +126,27 @@ const styles = {
     fontWeight: '400',
   },
   navTextActive: {
+    fontWeight: '500',
+  },
+  bottomSection: {
+    padding: '0 16px 20px 16px',
+  },
+  logoutButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF453A',
+    padding: '12px 16px',
+    marginBottom: '10px',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    width: '100%',
+    transition: 'background-color 0.2s ease',
+  },
+  logoutText: {
+    color: '#ffffff',
+    fontSize: '14px',
     fontWeight: '500',
   },
 };
