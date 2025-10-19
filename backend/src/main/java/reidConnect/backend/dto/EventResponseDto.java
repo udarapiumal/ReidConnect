@@ -22,6 +22,7 @@ public class EventResponseDto {
     private Long id;
     private Long clubId;
     private String name;
+    private String clubName;
     private String description;
     private Long venueId;
     private String venueName;

@@ -34,7 +34,7 @@ export default function Login() {
 
         try {
             console.log("Sending login request...");
-            const res =   axios.post(`${BASE_URL}/auth/login`, { email, password });
+            const res = await axios.post(`${BASE_URL}/auth/login`, { email, password });
             console.log("Login response:", res.data);
 
             const { token, role } = res.data;

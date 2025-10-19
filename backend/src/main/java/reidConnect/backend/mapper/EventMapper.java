@@ -49,17 +49,19 @@ public class EventMapper {
             event.setImagePath(dto.getImagePath());
         }
     }
-
     public static EventResponseDto toResponseDto(Event event, List<Long> slotIds) {
         List<Years> years = event.getTargetYears().stream()
-                .map(EventYear::getYear).collect(Collectors.toList());
+                .map(EventYear::getYear)
+                .collect(Collectors.toList());
         List<Faculties> faculties = event.getTargetFaculties().stream()
-                .map(EventFaculty::getFaculty).collect(Collectors.toList());
+                .map(EventFaculty::getFaculty)
+                .collect(Collectors.toList());
 
         return new EventResponseDto(
                 event.getId(),
                 event.getClub().getId(),
                 event.getName(),
+                event.getClub().getClub_name(), // ✅ include club name
                 event.getDescription(),
                 event.getVenue() != null ? event.getVenue().getId() : null,
                 event.getVenueName(),
@@ -69,7 +71,7 @@ public class EventMapper {
                 event.getCreatedAt(),
                 years,
                 faculties,
-                event.getCategory() // Include category
+                event.getCategory()
         );
     }
 
@@ -77,7 +79,6 @@ public class EventMapper {
         List<Years> years = event.getTargetYears().stream()
                 .map(EventYear::getYear)
                 .collect(Collectors.toList());
-
         List<Faculties> faculties = event.getTargetFaculties().stream()
                 .map(EventFaculty::getFaculty)
                 .collect(Collectors.toList());
@@ -86,16 +87,19 @@ public class EventMapper {
                 event.getId(),
                 event.getClub().getId(),
                 event.getName(),
+                event.getClub().getClub_name(), // ✅ include club name
                 event.getDescription(),
                 event.getVenue() != null ? event.getVenue().getId() : null,
                 event.getVenueName(),
                 event.getDate(),
                 event.getImagePath(),
-                new ArrayList<>(), // or pass real slot IDs if available
+                new ArrayList<>(),
                 event.getCreatedAt(),
                 years,
                 faculties,
-                event.getCategory() // Include category
+                event.getCategory()
         );
     }
+
+
 }

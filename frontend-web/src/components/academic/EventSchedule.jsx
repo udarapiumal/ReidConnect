@@ -4,6 +4,10 @@ import Header from './components/Header';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance'; 
 import { getCurrentUserRole, getCurrentUserId } from '../../utils/auth';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import ucscLogo from '../../../src/images/UCSC_FULL_LOGO.png';
+
 
 const EventSchedule = () => {
   const now = new Date();
@@ -127,6 +131,283 @@ const EventSchedule = () => {
     return colors[category] || colors.OTHER;
   };
 
+const generateReport = (period) => {
+  const doc = new jsPDF();
+  const now = new Date();
+  let filteredEvents = [];
+  let reportTitle = "";
+  let periodLabel = "";
+
+  if (period === "month") {
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const month = lastMonth.getMonth() + 1;
+    const year = lastMonth.getFullYear();
+
+    filteredEvents = events.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+
+    reportTitle = `${months[month - 1]} ${year}`;
+    periodLabel = "Monthly Event Report";
+
+  } else if (period === "year") {
+    const lastYear = now.getFullYear();
+
+    filteredEvents = events.filter(e => new Date(e.date).getFullYear() === lastYear);
+
+    reportTitle = `Year ${lastYear}`;
+    periodLabel = "Annual Event Report";
+  }
+
+  // Sort events by date
+  filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // === COVER PAGE ===
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  // Background accent
+  doc.setFillColor(255, 255, 255); // UCSC Maroon
+  doc.rect(0, 0, pageWidth, 60, 'F');
+  
+  // University Logo
+  // Option 1: Use path from public folder
+  const logoPath = ucscLogo;
+  
+  // Option 2: Use Base64 encoded image (most reliable)
+  // Convert your logo to Base64 at: https://www.base64-image.de/
+  // Then paste the data here:
+  const logoBase64 = "data:image/png;base64,YOUR_BASE64_STRING_HERE";
+  
+  try {
+    // Add the logo image
+    // Using path (requires logo in public folder)
+    doc.addImage(logoPath, "PNG", pageWidth / 2 - 15, 20, 30, 30);
+    
+    // OR using Base64 (uncomment to use):
+    // doc.addImage(logoBase64, "PNG", pageWidth / 2 - 15, 20, 30, 30);
+  } catch (error) {
+    // Fallback to placeholder if logo doesn't load
+    console.warn("Logo not found, using placeholder:", error);
+    doc.setFillColor(255, 255, 255);
+    doc.circle(pageWidth / 2, 35, 15, 'F');
+    doc.setFontSize(12);
+    doc.setTextColor(139, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("UCSC", pageWidth / 2, 37, { align: "center" });
+  }
+
+  // University Name
+  doc.setFontSize(18);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
+  doc.text("UNIVERSITY OF COLOMBO", pageWidth / 2, 75, { align: "center" });
+  doc.text("SCHOOL OF COMPUTING", pageWidth / 2, 85, { align: "center" });
+
+  // Decorative line
+  doc.setDrawColor(139, 0, 0);
+  doc.setLineWidth(0.5);
+  doc.line(40, 95, pageWidth - 40, 95);
+
+  // Report Title
+  doc.setFontSize(24);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
+  doc.text("EVENT SCHEDULE REPORT", pageWidth / 2, 120, { align: "center" });
+
+  // Period
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text(periodLabel, pageWidth / 2, 135, { align: "center" });
+  
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(139, 0, 0);
+  doc.text(reportTitle, pageWidth / 2, 150, { align: "center" });
+
+  // Category breakdown
+  const categories = {};
+  filteredEvents.forEach(e => {
+    categories[e.category] = (categories[e.category] || 0) + 1;
+  });
+
+  let categoryY = 225;
+  categoryY += 10;
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.setFont("helvetica", "italic");
+  doc.text(`Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, pageWidth / 2, pageHeight - 20, { align: "center" });
+  doc.text("Academic, Publications & Welfare Division", pageWidth / 2, pageHeight - 15, { align: "center" });
+
+  if (filteredEvents.length === 0) {
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("No events found for the selected period.", pageWidth / 2, 40, { align: "center" });
+    doc.save(`UCSC_Event_Report_${reportTitle.replace(/\s+/g, '_')}.pdf`);
+    return;
+  }
+
+  // === NEW PAGE FOR TABLE ===
+  doc.addPage();
+
+  // Header for table page
+  doc.setFillColor(139, 0, 0);
+  doc.rect(0, 0, pageWidth, 25, 'F');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Detailed Event Schedule - ${reportTitle}`, pageWidth / 2, 16, { align: "center" });
+
+  // Prepare table data
+  const tableData = filteredEvents.map((e, index) => [
+    index + 1,
+    e.name,
+    e.category,
+    new Date(e.date).toLocaleDateString(),
+    e.venueName || e.venue || "N/A",
+    e.clubName || "Unknown",
+    e.targetFaculties?.join(", ") || "All Faculties",
+    e.targetYears?.map(y => y.replace('_', ' ')).join(", ") || "All Years"
+  ]);
+
+  // Generate professional table
+  autoTable(doc, {
+    head: [["#", "Event Name", "Category", "Date", "Venue", "Organized By", "Target Faculties", "Target Years"]],
+    body: tableData,
+    startY: 35,
+    theme: "striped",
+    headStyles: { 
+      fillColor: [139, 0, 0],
+      textColor: 255,
+      fontSize: 9,
+      fontStyle: "bold",
+      halign: "center",
+      valign: "middle"
+    },
+    styles: { 
+      fontSize: 8,
+      cellPadding: 4,
+      overflow: "linebreak",
+      halign: "left",
+      valign: "middle"
+    },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 15 },
+      1: { cellWidth: 30, fontStyle: "bold" },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 22 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 28 },
+      6: { cellWidth: 25 },
+      7: { cellWidth: 20 }
+    },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    margin: { top: 35, left: 10, right: 10 },
+    didDrawPage: (data) => {
+      // Footer on each page
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Page ${doc.internal.getCurrentPageInfo().pageNumber}`,
+        pageWidth - 20,
+        pageHeight - 10,
+        { align: "right" }
+      );
+    }
+  });
+
+  // Final summary at bottom
+  const finalY = doc.lastAutoTable.finalY + 15;
+  
+  // Calculate category statistics
+  filteredEvents.forEach(e => {
+    categories[e.category] = (categories[e.category] || 0) + 1;
+  });
+  
+  const categoryEntries = Object.entries(categories);
+  const summaryHeight = 35 + (categoryEntries.length * 7);
+  
+  // Check if we need a new page for summary
+  if (finalY + summaryHeight > pageHeight - 30) {
+    doc.addPage();
+  }
+  
+  const summaryY = doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY + 15 : 40;
+  
+  // Summary box
+  doc.setFillColor(139, 0, 0);
+  doc.roundedRect(10, summaryY, pageWidth - 20, 12, 2, 2, 'F');
+  
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.text("REPORT SUMMARY", pageWidth / 2, summaryY + 8, { align: "center" });
+  
+  // Total events section
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(10, summaryY + 15, pageWidth - 20, 15, 2, 2, 'F');
+  
+  doc.setFontSize(11);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Total Events: `, 20, summaryY + 25);
+  
+  doc.setTextColor(139, 0, 0);
+  doc.setFontSize(12);
+  doc.text(`${filteredEvents.length}`, 55, summaryY + 25);
+  
+  // Category breakdown section
+  if (categoryEntries.length > 0) {
+    doc.setFillColor(250, 250, 250);
+    doc.roundedRect(10, summaryY + 33, pageWidth - 20, 10 + (categoryEntries.length * 7), 2, 2, 'F');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text("Events by Category:", 20, summaryY + 41);
+    
+    let catY = summaryY + 49;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    
+    categoryEntries.forEach(([cat, count]) => {
+      doc.setTextColor(80, 80, 80);
+      doc.text(`• ${cat}:`, 25, catY);
+      
+      doc.setTextColor(139, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${count}`, 70, catY);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(120, 120, 120);
+      doc.text(`(${((count / filteredEvents.length) * 100).toFixed(1)}%)`, 78, catY);
+      
+      catY += 7;
+    });
+  }
+  
+  // Report footer signature
+  const footerY = pageHeight - 25;
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(20, footerY, pageWidth - 20, footerY);
+  
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.setFont("helvetica", "italic");
+  doc.text("This is a computer-generated report ReidConnect", pageWidth / 2, footerY + 5, { align: "center" });
+  doc.text(`Generated: ${now.toLocaleDateString()} | Academic, Publications & Welfare Division`, pageWidth / 2, footerY + 10, { align: "center" });
+
+  // Save with professional filename
+  doc.save(`UCSC_Event_Report_${reportTitle.replace(/\s+/g, '_')}.pdf`);
+};
+
+
   return (
     <div className="event-schedule-container">
       <Header />
@@ -233,29 +514,20 @@ const EventSchedule = () => {
             </div>
 
             <div className="calendar-footer">
-              <div className="calendar-legend">
-                <div className="legend-item">
-                  <div className="legend-color" style={{ backgroundColor: '#10b981' }}></div>
-                  <span>Sports</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-color" style={{ backgroundColor: '#8b5cf6' }}></div>
-                  <span>Music</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div>
-                  <span>Wellness</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-color" style={{ backgroundColor: '#ef4444' }}></div>
-                  <span>Competition</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-color" style={{ backgroundColor: '#6b7280' }}></div>
-                  <span>Other</span>
-                </div>
-              </div>
-            </div>
+  <div className="calendar-legend">
+    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#10b981' }}></div><span>Sports</span></div>
+    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#8b5cf6' }}></div><span>Music</span></div>
+    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div><span>Wellness</span></div>
+    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#ef4444' }}></div><span>Competition</span></div>
+    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#6b7280' }}></div><span>Other</span></div>
+  </div>
+
+  <div className="report-buttons">
+    <button className="report-btn month" onClick={() => generateReport('month')}>📅 Print Last Month Report</button>
+    <button className="report-btn year" onClick={() => generateReport('year')}>📆 Print This Year Report</button>
+  </div>
+</div>
+
           </div>
         </main>
       </div>
@@ -304,7 +576,7 @@ const EventSchedule = () => {
                             </svg>
                             <div className="info-content">
                               <span className="info-label">Organized by</span>
-                              <span className="info-value">{event.club?.name || 'Unknown Club'}</span>
+                              <span className="info-value">{event.clubName || 'Unknown Club'}</span>
                             </div>
                           </div>
                           
@@ -1024,6 +1296,48 @@ main.event-schedule-main {
     background: rgba(255, 255, 255, 0.2);
     background-clip: content-box;
 }
+    .report-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.report-btn {
+  background: linear-gradient(135deg, #ff453a, #ff5e57);
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 69, 58, 0.3);
+}
+
+.report-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(255, 69, 58, 0.4);
+  background: linear-gradient(135deg, #ff5e57, #ff786d);
+}
+
+.report-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 15px rgba(255, 69, 58, 0.2);
+}
+
+.report-btn.year {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+}
+
+.report-btn.year:hover {
+  background: linear-gradient(135deg, #60a5fa, #93c5fd);
+}
+
 
 /* Responsive Design */
 @media (max-width: 1200px) {

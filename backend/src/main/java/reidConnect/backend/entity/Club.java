@@ -42,5 +42,4 @@ public class Club {
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
 
-
 }
