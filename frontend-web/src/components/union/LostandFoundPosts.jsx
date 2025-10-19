@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Calendar, MapPin, Phone, User, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import UnionHeader from './UnionHeader';
 
 function LostItemsGallery() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,6 +81,7 @@ function LostItemsGallery() {
 console.log(filteredItems)
   return (
     <div className="app-container">
+      <UnionHeader />
       {/* Main Content */}
       <main className="main-content">
         <header className="gallery-header">
@@ -249,12 +251,12 @@ console.log(filteredItems)
         /* Main content - Dark Theme */
         .main-content {
           margin-left: 200px;
-          padding: 2rem;
+          padding: 6rem;
           min-height: 100vh;
           background-color: #1a1c1e;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
             Oxygen, Ubuntu, Cantarell, sans-serif;
-          color: #ffffff;
+          color: #ffffff; 
         }
 
         /* Gallery header */
@@ -281,7 +283,7 @@ console.log(filteredItems)
 
         .controls {
           display: flex;
-          gap: 1rem;
+          gap: 5rem;
           align-items: center;
           flex-wrap: wrap;
         }
@@ -322,7 +324,6 @@ console.log(filteredItems)
         .search-bar {
           position: relative;
           flex: 1;
-          max-width: 400px;
         }
 
         .search-icon {
@@ -331,7 +332,7 @@ console.log(filteredItems)
           top: 50%;
           transform: translateY(-50%);
           color: #a1a1a1;
-          z-index: 2;
+         
         }
 
         .search-input {
@@ -340,9 +341,8 @@ console.log(filteredItems)
           border: 1px solid #333;
           border-radius: 8px;
           font-size: 0.95rem;
-          transition: border-color 0.2s ease;
           background-color: #2a2a2a;
-          color: #ffffff;
+          
         }
 
         .search-input:focus {
