@@ -1,25 +1,23 @@
 package reidConnect.backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class UserWithProfileDto {
     private Long id;
-    private String username;
+    private String name;
     private String email;
     private String role;
+
+    // Student fields
     private String profilePicUrl;
-
-    // Constructors
-    public UserWithProfileDto() {}
-
-    public UserWithProfileDto(Long id, String username, String email, String role, String profilePicUrl) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-        this.role = role;
-        this.profilePicUrl = profilePicUrl;
-    }
+    private String academicYear;
+    private String contactNumber;
+    private int registeredYear;
+    private String faculty;
+    private String studentName;
 }
