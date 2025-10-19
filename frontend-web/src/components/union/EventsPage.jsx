@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import UnionHeader from './UnionHeader';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -47,6 +48,7 @@ const EventsPage = () => {
 
   return (
     <div style={styles.container}>
+      <UnionHeader />
       <h2 style={styles.heading}>Events</h2>
 
       <input
