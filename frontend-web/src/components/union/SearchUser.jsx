@@ -1,20 +1,42 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { Search, User } from 'lucide-react';
+import '../../components/academic/styles/TimeTable.css';
 
 function SearchUser() {
   const [email, setEmail] = useState('');
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
 
-  const styles = {
-    contentWrapper: {
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      marginLeft: '220px',
-      transition: 'margin-left 0.2s',
-    },
+  const extractRegNumber = (email) => {
+    return email.split('@')[0];
+  };
+
+  const handleSearch = async () => {
+    const regNumber = extractRegNumber(email.trim());
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please log in first");
+      return;
+    }
+
+    try {
+      const response = await axios.get(`http://localhost:8080/users/search`, {
+        params: { regNumber },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUser(response.data);
+      setError('');
+    } catch (err) {
+      setUser(null);
+      setError('User not found or error occurred');
+    }
+  };
+
+  const headerStyles = {
     headerBar: {
       position: 'fixed',
       top: 0,
@@ -53,246 +75,316 @@ function SearchUser() {
       backgroundClip: 'text',
       marginLeft: '0px',
     },
-  };
-
-  const extractRegNumber = (email) => {
-    return email.split('@')[0];
-  };
-
-  const handleSearch = async () => {
-    const regNumber = extractRegNumber(email.trim());
-
-    const token = localStorage.getItem("token"); // get the JWT token
-
-    if (!token) {
-      alert("Please log in first");
-      return;
-    }
-
-    try {
-      const response = await axios.get(`http://localhost:8080/users/search`, {
-        params: { regNumber },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUser(response.data);
-      setError('');
-
-      console.log('User data received:', response.data);
-    } catch (err) {
-      setUser(null);
-      setError('User not found or error occurred');
-    }
+    adminInfo: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '20px',
+      color: 'rgba(255,255,255,0.8)',
+    },
+    headerIcon: {
+      fontSize: '18px',
+      cursor: 'pointer',
+      padding: '8px',
+      borderRadius: '8px',
+      transition: 'color 0.3s',
+      color: '#fff',
+    },
   };
 
   return (
     <div className="app-container">
-      <header style={styles.headerBar}>
-        <div style={styles.headerLeft}>
-          <span style={styles.reidConnect}>ReidConnect</span>
-          <span style={styles.highlight}>UnionAdmin</span>
+      <header style={headerStyles.headerBar}>
+        <div style={headerStyles.headerLeft}>
+          <span style={headerStyles.reidConnect}>ReidConnect</span>
+          <span style={headerStyles.highlight}>UnionAdmin</span>
+        </div>
+        <div style={headerStyles.adminInfo}>
+          
         </div>
       </header>
-      {/* Main Content */}
-      <main className="main-content" style={{ marginTop: '70px' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <h2 className="heading">Search Student</h2>
-
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="Enter student registration number"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-            />
-            <button onClick={handleSearch} className="button">
-              Search
-            </button>
+      <main className="main-content">
+        <header className="gallery-header">
+          <div className="header-text">
+            <h1>Search Student</h1>
+            <p>Enter a registration number to find a student</p>
           </div>
 
-          {user && (
-            <div className="user-profile-card">
-              <div className="user-profile-header">User Found:</div>
+          <div className="controls">
+            <div className="search-bar">
+              <Search className="search-icon" size={20} />
+              <input
+                type="text"
+                placeholder="Enter student registration number..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="search-input"
+              />
+            </div>
 
-              <div className="profile-pic-container">
-                <img 
-                  src={
-                    user.profilePicUrl
-                      ? `http://localhost:8080${user.profilePicUrl}`
-                      : user.profile_picture_url
-                      ? `http://localhost:8080${user.profile_picture_url}`
-                      : user.profilePictureUrl
-                      ? `http://localhost:8080${user.profilePictureUrl}`
-                      : 'https://via.placeholder.com/100x100.png?text=No+Image'
-                  }
-                  alt="Profile"
-                  className="profile-pic"
-                  onLoad={(e) => {
-                    console.log('✓ Image loaded successfully:', e.target.src);
-                    e.target.style.border = '3px solid #22c55e'; // Green border on success
-                  }}
-                  onError={(e) => {
-                    console.log('✗ Failed to load profile picture:', e.target.src);
-                    e.target.style.border = '3px solid #dc2626'; // Red border on error
-                    e.target.alt = 'Image failed to load';
-                  }}
-                />
-              </div>
+            <button className="create-post-btn" onClick={handleSearch}>
+              <User size={18} />
+              Search Student
+            </button>
+          </div>
+        </header>
 
-              <div className="user-profile-detail">
-                <div className="user-profile-field">
-                  <span className="user-profile-label">ID:</span>
-                  <span className="user-profile-value">{user.id}</span>
+        {error && (
+          <div className="no-results">
+            <h3>No Results Found</h3>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {user && (
+          <div className="gallery-grid">
+            <div className="gallery-card">
+              <img
+                src={
+                  user.profilePicUrl
+                    ? `http://localhost:8080${user.profilePicUrl}`
+                    : user.profile_picture_url
+                    ? `http://localhost:8080${user.profile_picture_url}`
+                    : user.profilePictureUrl
+                    ? `http://localhost:8080${user.profilePictureUrl}`
+                    : 'https://via.placeholder.com/100x100.png?text=No+Image'
+                }
+                alt="Profile"
+                className="gallery-image round-image" // Add round-image or square-image class
+                loading="lazy"
+              />
+              <div className="gallery-info">
+                <div className="info-header">
+                  <h3>{user.username}</h3>
+                  <span className="gallery-category">{user.role}</span>
                 </div>
                 
-                <div className="user-profile-field">
-                  <span className="user-profile-label">Username:</span>
-                  <span className="user-profile-value">{user.username}</span>
-                </div>
-                
-                <div className="user-profile-field">
-                  <span className="user-profile-label">Email:</span>
-                  <span className="user-profile-value">{user.email}</span>
-                </div>
-                
-                <div className="user-profile-field">
-                  <span className="user-profile-label">Role:</span>
-                  <span className="user-profile-value">{user.role}</span>
+                <div className="user-details">
+                  <div className="detail-item">
+                    <strong>ID:</strong>
+                    <span>{user.id}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Email:</strong>
+                    <span>{user.email}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
-
-          {error && <p className="error">{error}</p>}
-        </div>
+          </div>
+        )}
       </main>
 
       <style jsx>{`
         /* Main content - Dark Theme */
         .main-content {
           margin-left: 200px;
-          padding: 2rem;
+          padding: 6rem;
           min-height: 100vh;
           background-color: #1a1c1e;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+            Oxygen, Ubuntu, Cantarell, sans-serif;
           color: #ffffff;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
         }
 
-        h2.heading {
-          font-size: 24px;
-          color: #ffffff;
-          margin-bottom: 1.5rem;
-          text-align: center;
-          border-bottom: 2px solid #ef4444;
-          padding-bottom: 0.5rem;
-        }
-
-        .input-group {
-          display: flex;
-          gap: 1rem;
+        /* Gallery header */
+        .gallery-header {
+          background: #151718;
+          border-radius: 8px;
+          padding: 2rem;
           margin-bottom: 2rem;
-          flex-wrap: wrap;
-          justify-content: center;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          border: 1px solid #333;
         }
 
-        .input {
-          padding: 12px;
-          flex: 1;
-          min-width: 250px;
-          border-radius: 6px;
-          border: 1px solid #333;
-          font-size: 16px;
-          background-color: #2a2a2a;
+        .header-text h1 {
+          font-size: 2rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
           color: #ffffff;
         }
 
-        .button {
-          padding: 12px 20px;
-          background-color: #ef4444;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          font-weight: bold;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background 0.3s ease;
+        .header-text p {
+          color: #a1a1a1;
+          margin-bottom: 2rem;
         }
 
-        .button:hover {
-          background-color: #dc2626;
+        .controls {
+          display: flex;
+          gap: 5rem;
+          align-items: center;
         }
 
-        /* User Profile Card - Dark Theme */
-        .user-profile-card {
-          background-color: #151718;
+        .search-bar {
+          position: relative;
+          flex: 1;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #a1a1a1;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 0.75rem 1rem 0.75rem 3rem;
           border: 1px solid #333;
           border-radius: 8px;
-          padding: 20px;
-          color: white;
-          width: 100%;
-          margin-top: 20px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .user-profile-header {
-          font-size: 18px;
-          font-weight: 500;
-          margin-bottom: 16px;
+          background-color: #2a2a2a;
           color: #ffffff;
-          border-bottom: 1px solid #333;
-          padding-bottom: 8px;
+          font-size: 0.95rem;
         }
 
-        .profile-pic-container {
+        .search-input:focus {
+          outline: none;
+          border-color: #ef4444;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+
+        .create-post-btn {
+          background: #ef4444;
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
           display: flex;
-          justify-content: center;
+          align-items: center;
+          gap: 0.5rem;
+          transition: all 0.2s ease;
+        }
+
+        .create-post-btn:hover {
+          background: #dc2626;
+        }
+
+        /* Gallery grid and card */
+        .gallery-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          padding: 1rem;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+
+        .gallery-card {
+          background-color: #151718;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          border: 1px solid #333;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          padding: 1rem;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+
+        .gallery-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .gallery-image {
+          width: 100px;
+          height: 100px;
+          object-fit: cover;
+          margin: 2rem auto;
+          display: block;
+          border: 3px solid #333;
+          transition: all 0.3s ease;
+        }
+
+        /* Round Image Style */
+        .round-image {
+          border-radius: 50%;
+        }
+
+        /* Square Image Style */
+        .square-image {
+          border-radius: 15px;
+        }
+
+        .gallery-card:hover .gallery-image {
+          border-color: #ef4444;
+          transform: scale(1.05);
+        }
+
+        .gallery-info {
+          padding: 1.5rem;
+          text-align: center;
+        }
+
+        .info-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 1.5rem;
         }
 
-        .profile-pic {
-          width: 100px;
-          height: 100px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 3px solid #333;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          transition: border-color 0.3s ease;
-          background-color: #2a2a2a;
+        .info-header h3 {
+          color: #ffffff;
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 600;
         }
 
-        .user-profile-detail {
+        .gallery-category {
+          background-color: #ef4444;
+          color: white;
+          padding: 0.35rem 1rem;
+          border-radius: 20px;
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-transform: capitalize;
+          margin: 0;
+        }
+
+        .user-details {
+          margin-top: 1.5rem;
+          border-top: 1px solid #2a2a2a;
+          padding-top: 1rem;
+        }
+
+        .detail-item {
           display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin-bottom: 16px;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.5rem 0;
         }
 
-        .user-profile-field {
-          display: flex;
-          flex-direction: column;
+        .detail-item:not(:last-child) {
+          border-bottom: 1px solid #2a2a2a;
         }
 
-        .user-profile-label {
-          font-size: 12px;
+        .detail-item strong {
           color: #a1a1a1;
-          margin-bottom: 4px;
+          font-weight: 500;
         }
 
-        .user-profile-value {
-          font-size: 14px;
+        .detail-item span {
           color: #ffffff;
           font-weight: 400;
         }
 
-        .error {
-          color: #ef4444;
-          margin-top: 1rem;
+        .no-results {
           text-align: center;
+          padding: 4rem 2rem;
+          background: #151718;
+          border-radius: 8px;
+          border: 1px solid #333;
+        }
+
+        .no-results h3 {
+          color: #ffffff;
+          margin-bottom: 0.5rem;
+        }
+
+        .no-results p {
+          color: #a1a1a1;
         }
 
         @media (max-width: 768px) {
@@ -301,13 +393,21 @@ function SearchUser() {
             padding: 1rem;
           }
 
-          .input-group {
-            justify-content: stretch;
+          .controls {
             flex-direction: column;
           }
 
-          .input, .button {
+          .search-bar {
             width: 100%;
+          }
+
+          .create-post-btn {
+            width: 100%;
+          }
+
+          .gallery-image {
+            width: 150px;
+            height: 150px;
           }
         }
       `}</style>
