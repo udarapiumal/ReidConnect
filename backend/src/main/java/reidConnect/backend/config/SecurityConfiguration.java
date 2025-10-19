@@ -39,6 +39,7 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/test", "/uploads/**").permitAll()
+                        .requestMatchers("/api/timetable/byDay/**").permitAll()
                         // Allow WebSocket handshake + SockJS info/endpoints
                         .requestMatchers("/ws-notifications/**").permitAll()
                         // Allow CORS preflight requests globally
@@ -47,6 +48,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/posts/**").authenticated()
+                        .requestMatchers("/api/academic-calendar/**").permitAll()
                         .requestMatchers("/api/timetable/**").authenticated()
                         .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/events/**").authenticated() // Other event operations still require auth
@@ -85,6 +87,7 @@ public class SecurityConfiguration {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:4200",
                 "http://localhost:3000",
+                "http://localhost:3001",
                 "http://localhost:8080",
                 "http://localhost:8081",
                 "http://localhost:8082",

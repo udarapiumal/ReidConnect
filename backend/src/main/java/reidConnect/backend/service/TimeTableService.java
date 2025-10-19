@@ -1,11 +1,10 @@
 package reidConnect.backend.service;
 
+import java.util.List;
 import reidConnect.backend.dto.timetable.TimeTableRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableResponseDto;
 import reidConnect.backend.enums.Degree;
 import reidConnect.backend.enums.Years;
-
-import java.util.List;
 
 public interface TimeTableService {
     TimeTableResponseDto create(TimeTableRequestDto dto);
@@ -14,6 +13,8 @@ public interface TimeTableService {
     TimeTableResponseDto update(Long id, TimeTableRequestDto dto);
     void delete(Long id);
     List<TimeTableResponseDto> getByYearAndDegree(Degree degree, Years year);
+    List<TimeTableResponseDto> getByDay(String day);
+    long countSessionsToday();
     List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year);
 
 

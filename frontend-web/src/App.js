@@ -2,8 +2,8 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Login from './components/Login';
+import Home from './components/Home';
 import Sidebar from './components/union/Sidebar';
-import AcademicSidebar from './components/academic/AcademicSidebar';
 import { PRIVILEGES, FEATURE_MAP } from './api/rolePrivileges';
 import { getCurrentUserRole } from './utils/auth';
 
@@ -11,7 +11,6 @@ import { getCurrentUserRole } from './utils/auth';
 import AcademicDashboard from './components/academic/Dashboard';
 import LecturerManagement from './components/academic/LecturerManagement';
 import CourseManagement from './components/academic/CourseManagement';
-import Reports from './components/academic/Reports';
 import TimeTable from './components/academic/TimeTable';
 import EventSchedule from './components/academic/EventSchedule';
 import HallBookings from './components/academic/HallBookings';
@@ -40,24 +39,28 @@ function AppWrapper() {
   const isUnionRoute = location.pathname.startsWith('/union') || location.pathname.startsWith('/club');
   const isAcademicRoute = location.pathname.startsWith('/academic');
 
+  // ✅ Sidebar should not render on Home
+  const isHome = location.pathname === "/";
+
   return (
     <>
-      {isUnionRoute && <Sidebar />}
-      {isAcademicRoute && <AcademicSidebar />}
+      {!isHome && isUnionRoute && <Sidebar />}
 
       <Routes>
-        {/* Login */}
-        <Route path="/" element={<Login />} />
+        {/* Login + Home */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
 
-        {/* Always accessible dashboards */}
+        {/* Academic */}
         {role?.startsWith("ACADEMIC") && (
           <>
             <Route path="/academic/dashboard" element={<AcademicDashboard />} />
             <Route path="/academic/lecturers" element={<LecturerManagement />} />
             <Route path="/academic/courses" element={<CourseManagement />} />
-            <Route path="/academic/reports" element={<Reports />} />
           </>
         )}
+
+        {/* Union */}
         {role === "UNION" && (
           <>
             <Route path="/union/dashboard" element={<UnionDashboard />} />
@@ -69,7 +72,7 @@ function AppWrapper() {
           </>
         )}
 
-        {/* Privilege-based routes */}
+        {/* Privilege-based */}
         {userPrivs.map(priv => {
           const feature = FEATURE_MAP[priv];
           if (!feature) return null;
@@ -81,6 +84,7 @@ function AppWrapper() {
     </>
   );
 }
+
 
 export default function App() {
   return (

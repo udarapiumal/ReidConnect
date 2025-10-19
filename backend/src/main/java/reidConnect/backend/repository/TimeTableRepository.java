@@ -22,4 +22,9 @@ public interface TimeTableRepository extends JpaRepository<TimeTable, Long> {
             "WHERE c.degree = :degree AND c.year = :year " +
             "ORDER BY t.day, t.id")
     List<TimeTable> findByYearAndDegreeWithDetails(@Param("degree") Degree degree, @Param("year") Years year);
+
+    List<TimeTable> findByDayIgnoreCase(String day);
+
+    long countByDay(String day);
+
 }

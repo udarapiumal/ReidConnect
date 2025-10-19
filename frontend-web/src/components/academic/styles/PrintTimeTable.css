@@ -1,0 +1,276 @@
+/* Enhanced Print Styles to Match Reference Image */
+@media print {
+  /* Hide all screen elements */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only print content */
+  #print-content,
+  #print-content * {
+    visibility: visible;
+  }
+  
+  #print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Reset body styles for print */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: "Arial", Times, serif !important;
+    color: black !important;
+    background: white !important;
+    font-size: 10pt !important;
+  }
+
+  .print-page {
+    page-break-after: always;
+    margin: 0;
+    padding: 15mm 10mm 15mm 10mm;
+    font-family: "Arial", Times, serif !important;
+    font-size: 9pt !important;
+    background: white !important;
+    color: black !important;
+    width: 100%;
+    box-sizing: border-box;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  .print-header {
+    text-align: center;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  .print-header h1 {
+    font-family: "Arial", Times, serif !important;
+    font-size: 14pt !important;
+    font-weight: bold !important;
+    margin: 0 0 6px 0 !important;
+    text-transform: none !important;
+    letter-spacing: 0px !important;
+    color: black !important;
+    line-height: 1.1;
+  }
+
+  .print-header h2 {
+    font-family: "Arial", Times, serif !important;
+    font-size: 11pt !important;
+    font-weight: bold !important;
+    margin: 0 0 6px 0 !important;
+    line-height: 1.2;
+    color: black !important;
+  }
+
+  .print-header h3 {
+    font-family: "Arial", Times, serif !important;
+    font-size: 12pt !important;
+    font-weight: bold !important;
+    margin: 6px 0 0 0 !important;
+    color: black !important;
+  }
+
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 12px !important;
+    font-family: "Arial", Times, serif !important;
+    font-size: 8pt !important;
+    border: 1px solid #000 !important;
+    background: white !important;
+    flex-shrink: 0;
+    table-layout: fixed !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #000 !important;
+    padding: 3px 2px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    background: white !important;
+    color: black !important;
+    line-height: 1.1 !important;
+    font-family: "Arial", Times, serif !important;
+  }
+
+  .print-table th {
+    background-color: white !important;
+    font-weight: bold !important;
+    font-size: 8pt !important;
+    height: 18px !important;
+    color: black !important;
+    padding: 2px 1px !important;
+    font-family: "Arial", Times, serif !important;
+  }
+
+  .time-header-print {
+    background-color: white !important;
+    font-family: "Arial", Times, serif !important;
+    font-weight: bold !important;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    font-size: 8pt !important;
+    color: black !important;
+    text-align: center !important;
+  }
+
+  .degree-header {
+    background-color: white !important;
+    font-weight: bold !important;
+    font-size: 8pt !important;
+    color: black !important;
+    width: calc((100% - 60px) / 10) !important;
+    font-family: "Arial", Times, serif !important;
+  }
+
+  .time-cell-print {
+    background-color: white !important;
+    font-family: "Arial", Times, serif !important; 
+    font-weight: bold !important;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    font-size: 7pt !important;
+    text-align: center !important;
+    color: black !important;
+    height: 30px !important;
+    padding: 2px 1px !important;
+    vertical-align: middle !important;
+  }
+
+  .schedule-cell-print {
+    font-size: 7pt !important;
+    line-height: 1.0 !important;
+    font-weight: bold !important;
+    white-space: pre-line !important;
+    width: calc((100% - 60px) / 10) !important;
+    padding: 2px 1px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    color: black !important;
+    background: white !important;
+    height: 30px !important;
+    overflow: hidden !important;
+    font-family: "Arial", Times, serif !important;
+    word-break: break-all !important;
+    hyphens: auto !important;
+  }
+
+  /* Lunch break row styling */
+  .print-table tbody tr:nth-child(5) .schedule-cell-print {
+    background-color: white !important;
+    font-style: italic !important;
+    color: black !important;
+    font-size: 8pt !important;
+    font-weight: bold !important;
+  }
+
+  .print-courses {
+    display: flex !important;
+    gap: 20px !important;
+    font-family: "Arial", Times, serif !important;
+    font-size: 8pt !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    flex: 1 !important;
+    overflow: visible !important; /* ✅ allow content to show */
+    align-items: flex-start !important; /* ✅ keep columns aligned at top */
+}
+
+
+  .print-courses-column {
+    flex: 1 !important;
+    height: auto !important; /* ✅ no height restriction */
+}
+
+
+  .print-courses-column h4 {
+    font-family: "Arial", Times, serif !important;
+    font-size: 10pt !important;
+    font-weight: bold !important;
+    margin-bottom: 5px !important;
+    color: black !important;
+    border-bottom: none !important;
+    padding-bottom: 2px !important;
+  }
+
+  .course-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .print-course-item {
+    margin-bottom: 2px !important;
+    line-height: 1.2 !important;
+    font-weight: bold !important;
+    font-family: "Arial", Times, serif !important;
+    font-size: 8pt !important;
+    padding: 1px 0 !important;
+    color: black !important;
+  }
+
+  .print-course-item strong {
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  .lecturer-info {
+    font-style: italic !important;
+    color: black !important;
+    font-size: 7pt !important;
+  }
+
+  .print-loading {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100vh !important;
+    font-size: 16px !important;
+    color: black !important;
+  }
+
+  @page {
+    margin: 15mm 10mm;
+    size: A4 landscape;
+  }
+
+  /* Force table layout */
+  .print-table {
+    table-layout: fixed !important;
+  }
+  
+  .print-table col:first-child {
+    width: 60px !important;
+  }
+  
+  .print-table col:not(:first-child) {
+    width: calc((100% - 60px) / 10) !important;
+  }
+
+  /* Ensure no unwanted elements appear */
+  .header,
+  .main-content,
+  .content,
+  .timetable-section,
+  .courses-section {
+    display: none !important;
+  }
+}

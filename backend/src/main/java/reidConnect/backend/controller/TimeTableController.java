@@ -55,6 +55,16 @@ public class TimeTableController {
         return ResponseEntity.ok(timeTableService.getByYearAndDegree(degree, year));
     }
 
+    @GetMapping("/byDay")
+    public ResponseEntity<List<TimeTableResponseDto>> getByDay(@RequestParam String day) {
+        return ResponseEntity.ok(timeTableService.getByDay(day));
+    }
+
+    @GetMapping("/count/today")
+    public ResponseEntity<Long> countSessionsToday() {
+        return ResponseEntity.ok(timeTableService.countSessionsToday());
+    }
+
     @GetMapping("/byYearAndDegreeApproved")
     public ResponseEntity<List<TimeTableResponseDto>> getByYearAndDegreeApproved(
             @RequestParam Degree degree,

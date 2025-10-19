@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,7 +23,7 @@ import SignatureScreen from 'react-native-signature-canvas';
 
 const { width, height } = Dimensions.get('window');
 
-// Time slots from 8 AM to 5 PM with slot IDs
+// Time slots from 8 AM to 5:30 PM with slot IDs
 const TIME_SLOTS = [
   { id: 1, time: '08:00', label: '8:00 AM' },
   { id: 2, time: '08:30', label: '8:30 AM' },
@@ -56,6 +57,9 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export default function VenueBookingRequest() {
   const { clubDetails, token } = useClub();
 
+  // Step control
+  const [step, setStep] = useState(1);
+
   // Form state
   const [reason, setReason] = useState('');
   const [applicantName, setApplicantName] = useState('');
@@ -72,12 +76,9 @@ export default function VenueBookingRequest() {
   const [signatureModalVisible, setSignatureModalVisible] = useState(false);
   const [clubSignatureImage, setClubSignatureImage] = useState(null);
 
-
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  const [timeSlotModalVisible, setTimeSlotModalVisible] = useState(false);
 
   // Fetch all venues on mount
   useEffect(() => {
@@ -100,10 +101,10 @@ export default function VenueBookingRequest() {
 
   const formatDateForDisplay = (date) => {
     return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -133,7 +134,6 @@ export default function VenueBookingRequest() {
     }
     
     setSelectedDate(selected);
-    setCalendarVisible(false);
   };
 
   const toggleTimeSlot = (slotId) => {
@@ -147,63 +147,65 @@ export default function VenueBookingRequest() {
   };
 
   const handleSubmit = async () => {
-  if (!reason.trim() || !applicantName.trim() || !registrationNumber.trim() || !contactNumber.trim() || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0) {
-    Alert.alert('Error', 'Please fill in all required fields');
-    return;
-  }
+    if (!reason.trim() || !applicantName.trim() || !registrationNumber.trim() || !contactNumber.trim() || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const bookingData = {
-      venueId: selectedVenue.id,
-      slotIds: selectedTimeSlots,
-      clubName: applicantName.trim(),   // maps to dto.clubName
-      registrationNumber: registrationNumber.trim(),
-      contactNumber: contactNumber.trim(),
-      date: formatDateForAPI(selectedDate),
-      reason: reason.trim(),
-      clubSignatureImage: clubSignatureImage, 
-    };
+    try {
+      const bookingData = {
+        venueId: selectedVenue.id,
+        slotIds: selectedTimeSlots,
+        clubName: applicantName.trim(),
+        registrationNumber: registrationNumber.trim(),
+        contactNumber: contactNumber.trim(),
+        date: formatDateForAPI(selectedDate),
+        reason: reason.trim(),
+        clubSignatureImage: clubSignatureImage,
+      };
 
-    console.log('Sending booking data:', bookingData);
-    console.log('User ID:', clubDetails?.userId);
+      await axios.post(`${BASE_URL}/api/bookings/create/${clubDetails.userId}`, bookingData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
 
-    await axios.post(`${BASE_URL}/api/bookings/create/${clubDetails.userId}`, bookingData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-    });
+      Alert.alert('Success', 'Venue booking request submitted successfully!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
 
-    Alert.alert('Success', 'Venue booking request submitted successfully!', [
-      { text: 'OK', onPress: () => router.back() }
-    ]);
+      // Reset form
+      setReason('');
+      setApplicantName('');
+      setRegistrationNumber('');
+      setContactNumber('');
+      setSelectedVenue(null);
+      setSelectedDate(null);
+      setSelectedTimeSlots([]);
+      setClubSignatureImage(null);
+      setStep(1);
 
-    // Reset form
-    setReason('');
-    setApplicantName('');
-    setRegistrationNumber('');
-    setContactNumber('');
-    setSelectedVenue(null);
-    setSelectedDate(null);
-    setSelectedTimeSlots([]);
-    setClubSignatureImage(null);
+    } catch (error) {
+      console.error('Error submitting booking request:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking request. Please try again.';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  } catch (error) {
-    console.error('Error submitting booking request:', error);
-    const errorMessage = error.response?.data?.message || error.message || 'Failed to submit booking request. Please try again.';
-    Alert.alert('Error', errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  const canProceedToStep2 = () => {
+    return reason.trim() && applicantName.trim() && registrationNumber.trim() && contactNumber.trim() && selectedVenue;
+  };
 
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentMonth, currentYear);
     const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     const days = [];
     
@@ -219,7 +221,7 @@ export default function VenueBookingRequest() {
       const date = new Date(currentYear, currentMonth, day);
       const isToday = date.toDateString() === today.toDateString();
       const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
-      const isPast = date < today.setHours(0, 0, 0, 0);
+      const isPast = date < today;
       
       days.push(
         <TouchableOpacity
@@ -245,68 +247,25 @@ export default function VenueBookingRequest() {
       );
     }
     
-    return (
-      <View style={styles.calendar}>
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity
-            onPress={() => {
-              if (currentMonth === 0) {
-                setCurrentMonth(11);
-                setCurrentYear(currentYear - 1);
-              } else {
-                setCurrentMonth(currentMonth - 1);
-              }
-            }}
-          >
-            <Ionicons name="chevron-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          
-          <Text style={styles.calendarTitle}>
-            {MONTHS[currentMonth]} {currentYear}
-          </Text>
-          
-          <TouchableOpacity
-            onPress={() => {
-              if (currentMonth === 11) {
-                setCurrentMonth(0);
-                setCurrentYear(currentYear + 1);
-              } else {
-                setCurrentMonth(currentMonth + 1);
-              }
-            }}
-          >
-            <Ionicons name="chevron-forward" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.calendarWeekDays}>
-          {DAYS.map(day => (
-            <Text key={day} style={styles.weekDayText}>{day}</Text>
-          ))}
-        </View>
-        
-        <View style={styles.calendarGrid}>
-          {days}
-        </View>
-      </View>
-    );
+    return days;
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.heading}>Venue Booking Request</Text>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Venue Booking Request</Text>
+        <View style={styles.stepIndicator}>
+          <Text style={styles.stepText}>{step}/2</Text>
         </View>
+      </View>
 
+      {/* STEP 1: Basic Information */}
+      {step === 1 && (
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          
           {/* Reason Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Reason for Booking *</Text>
@@ -369,13 +328,15 @@ export default function VenueBookingRequest() {
                   setSelectedVenue(venue || null);
                 }}
                 style={styles.picker}
+                dropdownIconColor="#666"
               >
-                <Picker.Item label="-- Select a Venue --" value={null} />
+                <Picker.Item label="-- Select a Venue --" value={null} color="#666" />
                 {allVenues.map(venue => (
                   <Picker.Item 
                     key={venue.id} 
                     label={`${venue.name} - ${venue.faculty} (Cap: ${venue.capacity})`} 
-                    value={venue.id} 
+                    value={venue.id}
+                    color="#666"
                   />
                 ))}
               </Picker>
@@ -390,147 +351,102 @@ export default function VenueBookingRequest() {
             </View>
           )}
 
-          {/* Date Selection */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Select Date *</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setCalendarVisible(true)}
+          {/* Next Button */}
+          <TouchableOpacity 
+            style={[styles.nextButton, !canProceedToStep2() && styles.disabledButton]} 
+            onPress={() => setStep(2)}
+            disabled={!canProceedToStep2()}
+          >
+            <LinearGradient
+              colors={canProceedToStep2() ? ['#007aff', '#0056b3'] : ['#333', '#333']}
+              style={styles.buttonGradient}
             >
-              <Ionicons name="calendar" size={20} color="#666" />
-              <Text style={styles.dateButtonText}>
-                {selectedDate ? formatDateForDisplay(selectedDate) : 'Select a date'}
-              </Text>
-            </TouchableOpacity>
+              <Text style={styles.nextText}>Next</Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
+      {/* STEP 2: Date, Time & Signature */}
+      {step === 2 && (
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          {/* Selected Venue Preview */}
+          <View style={styles.previewSection}>
+            <Text style={styles.sectionTitle}>Booking Details</Text>
+            <View style={styles.detailRow}>
+              <Ionicons name="location" size={20} color="#007aff" />
+              <Text style={styles.detailText}>{selectedVenue?.name}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="person" size={20} color="#007aff" />
+              <Text style={styles.detailText}>{applicantName}</Text>
+            </View>
           </View>
 
-          {/* Time Slots Selection */}
-          {selectedDate && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Select Time Slots *</Text>
-              <TouchableOpacity
-                style={styles.timeButton}
-                onPress={() => setTimeSlotModalVisible(true)}
-              >
-                <Ionicons name="time" size={20} color="#666" />
-                <Text style={styles.timeButtonText}>
-                  {selectedTimeSlots.length > 0 
-                    ? `${selectedTimeSlots.length} slot(s) selected`
-                    : 'Select time slots'}
+          {/* Custom Calendar */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Select Date *</Text>
+            <View style={styles.calendarContainer}>
+              <View style={styles.calendarHeader}>
+                <TouchableOpacity
+                  style={styles.monthNavButton}
+                  onPress={() => {
+                    if (currentMonth === 0) {
+                      setCurrentMonth(11);
+                      setCurrentYear(currentYear - 1);
+                    } else {
+                      setCurrentMonth(currentMonth - 1);
+                    }
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={24} color="#007aff" />
+                </TouchableOpacity>
+                
+                <Text style={styles.calendarTitle}>
+                  {MONTHS[currentMonth]} {currentYear}
                 </Text>
-              </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.monthNavButton}
+                  onPress={() => {
+                    if (currentMonth === 11) {
+                      setCurrentMonth(0);
+                      setCurrentYear(currentYear + 1);
+                    } else {
+                      setCurrentMonth(currentMonth + 1);
+                    }
+                  }}
+                >
+                  <Ionicons name="chevron-forward" size={24} color="#007aff" />
+                </TouchableOpacity>
+              </View>
               
-              {selectedTimeSlots.length > 0 && (
-                <View style={styles.selectedSlotsContainer}>
-                  {selectedTimeSlots.map(slotId => {
-                    const timeSlot = TIME_SLOTS.find(t => t.id === slotId);
-                    return (
-                      <View key={slotId} style={styles.selectedSlot}>
-                        <Text style={styles.selectedSlotText}>{timeSlot?.label}</Text>
-                      </View>
-                    );
-                  })}
+              <View style={styles.calendarWeekDays}>
+                {DAYS.map(day => (
+                  <Text key={day} style={styles.weekDayText}>{day}</Text>
+                ))}
+              </View>
+              
+              <View style={styles.calendarGrid}>
+                {renderCalendar()}
+              </View>
+
+              {selectedDate && (
+                <View style={styles.selectedDateDisplay}>
+                  <Ionicons name="calendar" size={20} color="#007aff" />
+                  <Text style={styles.selectedDateText}>
+                    {formatDateForDisplay(selectedDate)}
+                  </Text>
                 </View>
               )}
             </View>
-          )}
-
-          {/* Club Signature */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Club Signature *</Text>
-            {clubSignatureImage ? (
-              <TouchableOpacity onPress={() => setSignatureModalVisible(true)}>
-                <Text style={{ color: '#4CAF50' }}>✔ Signature Captured (Tap to redo)</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={() => setSignatureModalVisible(true)}>
-                <Text style={{ color: '#FF5722' }}>✍ Tap to Sign</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
-          {/* Signature Modal */}
-          <Modal visible={signatureModalVisible} animationType="slide">
-            <View style={{ flex: 1 }}>
-              <SignatureScreen
-                onOK={(sig) => {
-                  const base64Data = sig.replace(/^data:image\/\w+;base64,/, "");
-                  setClubSignatureImage(base64Data);
-                  setSignatureModalVisible(false);
-                }}
-                onEmpty={() => Alert.alert('Error', 'Please provide a signature')}
-                onClear={() => {}}
-                onEnd={() => {}}
-                descriptionText="Sign above"
-                clearText="Clear"
-                confirmText="Save"
-                webStyle={`.m-signature-pad {box-shadow: none; border: none;}`}
-              />
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setSignatureModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </Modal>
-
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (!reason || !applicantName || !registrationNumber || !contactNumber || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage) && styles.disabledButton
-            ]}
-            onPress={handleSubmit}
-            disabled={!reason || !applicantName || !registrationNumber || !contactNumber || !selectedVenue || !selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Text style={styles.submitButtonText}>Submit Booking Request</Text>
-                <Ionicons name="send" size={20} color="#fff" />
-              </>
-            )}
-          </TouchableOpacity>
-
-        </ScrollView>
-
-        {/* Calendar Modal */}
-        <Modal
-          visible={calendarVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setCalendarVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date</Text>
-              <TouchableOpacity onPress={() => setCalendarVisible(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            {renderCalendar()}
-          </View>
-        </Modal>
-
-        {/* Time Slots Modal */}
-        <Modal
-          visible={timeSlotModalVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setTimeSlotModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Time Slots</Text>
-              <TouchableOpacity onPress={() => setTimeSlotModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView style={styles.timeSlotsContainer}>
+          {/* Time Slots */}
+          {selectedDate && (
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Select Time Slots *</Text>
               <View style={styles.timeSlotsGrid}>
                 {TIME_SLOTS.map(slot => (
                   <TouchableOpacity
@@ -548,63 +464,149 @@ export default function VenueBookingRequest() {
                       {slot.label}
                     </Text>
                     {selectedTimeSlots.includes(slot.id) && (
-                      <Ionicons name="checkmark" size={16} color="#fff" />
+                      <Ionicons name="checkmark-circle" size={18} color="#fff" />
                     )}
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
-          </View>
-        </Modal>
+              
+              {selectedTimeSlots.length > 0 && (
+                <Text style={styles.slotCount}>
+                  {selectedTimeSlots.length} slot(s) selected
+                </Text>
+              )}
+            </View>
+          )}
 
-      </View>
+          {/* Signature */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Club Signature *</Text>
+            <TouchableOpacity 
+              style={styles.signatureButton}
+              onPress={() => setSignatureModalVisible(true)}
+            >
+              {clubSignatureImage ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={24} color="#28a745" />
+                  <Text style={styles.signatureButtonTextSuccess}>Signature Captured</Text>
+                  <Text style={styles.signatureButtonSubtext}>Tap to redo</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="create-outline" size={24} color="#007aff" />
+                  <Text style={styles.signatureButtonText}>Tap to Sign</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => setStep(1)}
+            >
+              <Ionicons name="arrow-back" size={20} color="#007aff" />
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[
+                styles.submitButton,
+                (!selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage || loading) && styles.disabledButton
+              ]}
+              onPress={handleSubmit}
+              disabled={!selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage || loading}
+            >
+              <LinearGradient
+                colors={(!selectedDate || selectedTimeSlots.length === 0 || !clubSignatureImage || loading) ? ['#333', '#333'] : ['#28a745', '#20a145']}
+                style={styles.buttonGradient}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={20} color="#fff" />
+                    <Text style={styles.submitButtonText}>Submit Request</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Signature Modal */}
+      <Modal visible={signatureModalVisible} animationType="slide">
+        <View style={{ flex: 1 }}>
+          <SignatureScreen
+            onOK={(sig) => {
+              const base64Data = sig.replace(/^data:image\/\w+;base64,/, "");
+              setClubSignatureImage(base64Data);
+              setSignatureModalVisible(false);
+            }}
+            onEmpty={() => Alert.alert('Error', 'Please provide a signature')}
+            onClear={() => {}}
+            onEnd={() => {}}
+            descriptionText="Sign above"
+            clearText="Clear"
+            confirmText="Save"
+            webStyle={`.m-signature-pad {box-shadow: none; border: none;}`}
+          />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setSignatureModalVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#151718",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0a0a',
+  container: { 
+    flex: 1, 
+    backgroundColor: '#0a0a0a' 
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#222',
   },
-  backButton: {
-    width: 24,
-    height: 24,
-    position: 'absolute',
-    left: 20,
-    zIndex: 1,
-  },
-  heading: {
+  headerTitle: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    flex: 1,
+  },
+  stepIndicator: {
+    backgroundColor: '#333',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  stepText: {
+    color: '#007aff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   scrollContainer: {
     flex: 1,
     padding: 20,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 8,
+    fontWeight: '600',
+    marginBottom: 12,
   },
   input: {
     backgroundColor: '#1a1a1a',
@@ -616,7 +618,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
   },
   pickerWrapper: {
@@ -628,13 +630,15 @@ const styles = StyleSheet.create({
   },
   picker: {
     color: '#fff',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'transparent',
+    height: 56,
   },
   venueInfo: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: -12,
+    marginBottom: 24,
     borderLeftWidth: 3,
     borderLeftColor: '#007aff',
   },
@@ -642,98 +646,66 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 14,
   },
-  dateButton: {
-    backgroundColor: '#1a1a1a',
+  nextButton: {
+    marginTop: 'auto',
+    marginBottom: 20,
     borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#333',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    overflow: 'hidden',
   },
-  dateButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    flex: 1,
+  disabledButton: {
+    opacity: 0.5,
   },
-  timeButton: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#333',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  timeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    flex: 1,
-  },
-  selectedSlotsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  selectedSlot: {
-    backgroundColor: '#007aff',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  selectedSlotText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  submitButton: {
-    backgroundColor: '#007aff',
-    borderRadius: 12,
-    padding: 16,
+  buttonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 16,
     gap: 8,
-    marginTop: 20,
-    marginBottom: 40,
   },
-  submitButtonText: {
-    color: '#fff',
+  nextText: { 
+    color: '#fff', 
     fontSize: 16,
     fontWeight: '600',
   },
-  disabledButton: {
-    backgroundColor: '#333',
-    opacity: 0.5,
+  previewSection: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#0a0a0a',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  sectionTitle: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
   },
-  calendar: {
-    padding: 20,
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  detailText: {
+    color: '#ccc',
+    fontSize: 14,
+  },
+  calendarContainer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   calendarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  monthNavButton: {
+    padding: 8,
   },
   calendarTitle: {
     fontSize: 18,
@@ -742,33 +714,33 @@ const styles = StyleSheet.create({
   },
   calendarWeekDays: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   weekDayText: {
     flex: 1,
     textAlign: 'center',
     color: '#666',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   calendarDay: {
-    width: width / 7 - 4,
-    height: 40,
+    width: (width - 80) / 7,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 2,
-    borderRadius: 8,
+    marginVertical: 2,
   },
   calendarDayText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
   },
   todayDay: {
-    backgroundColor: '#333',
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
   },
   todayText: {
     color: '#007aff',
@@ -776,6 +748,7 @@ const styles = StyleSheet.create({
   },
   selectedDay: {
     backgroundColor: '#007aff',
+    borderRadius: 8,
   },
   selectedDayText: {
     color: '#fff',
@@ -787,14 +760,25 @@ const styles = StyleSheet.create({
   pastDayText: {
     color: '#666',
   },
-  timeSlotsContainer: {
-    flex: 1,
-    padding: 20,
+  selectedDateDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  selectedDateText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   timeSlotsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
   },
   timeSlot: {
     backgroundColor: '#1a1a1a',
@@ -804,8 +788,9 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    minWidth: '45%',
+    justifyContent: 'space-between',
+    minWidth: '48%',
+    maxWidth: '48%',
   },
   selectedTimeSlot: {
     backgroundColor: '#007aff',
@@ -813,20 +798,91 @@ const styles = StyleSheet.create({
   },
   timeSlotText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   selectedTimeSlotText: {
     color: '#fff',
+    fontWeight: '600',
+  },
+  slotCount: {
+    color: '#007aff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  signatureButton: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#333',
+    borderStyle: 'dashed',
+  },
+  signatureButtonText: {
+    color: '#007aff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  signatureButtonTextSuccess: {
+    color: '#28a745',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  signatureButtonSubtext: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  backButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#007aff',
+    gap: 8,
+  },
+  backText: {
+    color: '#007aff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  submitButton: {
+    flex: 2,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   closeButton: {
-  padding: 15,
-  backgroundColor: '#333',
-  alignItems: 'center',
-},
-closeButtonText: {
-  color: '#fff',
-  fontSize: 16,
-},
-
+    padding: 15,
+    backgroundColor: '#333',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  charCount: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'right',
+    marginTop: 4,
+  },
 });

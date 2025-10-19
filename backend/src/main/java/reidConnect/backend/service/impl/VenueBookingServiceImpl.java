@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.venue.VenueBookingRequestDto;
 import reidConnect.backend.dto.venue.VenueBookingResponseDto;
+import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.BookingStatus;
 import reidConnect.backend.mapper.VenueBookingMapper;
@@ -102,17 +103,37 @@ public class VenueBookingServiceImpl implements VenueBookingService {
             VenueBooking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-            // SAR signs booking + club signature
+            //Verify that the club’s signature is valid before SAR signs
+            KeyStoreEntity clubKeyStore = keyStoreRepository.findByUserId(booking.getClub().getId());
+            if (clubKeyStore == null) {
+                throw new RuntimeException("Club public key not found in keystore");
+            }
+
+            PublicKey clubPublicKey = KeyUtil.decodePublicKey(
+                    Base64.getDecoder().decode(clubKeyStore.getPublicKey())
+            );
+
+            Signature clubSigVerifier = Signature.getInstance("SHA256withRSA");
+            clubSigVerifier.initVerify(clubPublicKey);
+            clubSigVerifier.update(booking.getBookingData().getBytes());
+
+            boolean isValid = clubSigVerifier.verify(Base64.getDecoder().decode(booking.getClubSignature()));
+
+            if (!isValid) {
+                throw new RuntimeException("Club signature verification failed: Signature does not match the club");
+            }
+
+            //SAR signs booking + club signature
             String dataToSign = booking.getBookingData() + booking.getClubSignature();
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(sarPrivateKey);
-            signature.update(dataToSign.getBytes());
-            String sarSignature = Base64.getEncoder().encodeToString(signature.sign());
+            Signature sarSigner = Signature.getInstance("SHA256withRSA");
+            sarSigner.initSign(sarPrivateKey);
+            sarSigner.update(dataToSign.getBytes());
+            String sarSignature = Base64.getEncoder().encodeToString(sarSigner.sign());
 
             booking.setSar(sar);
             booking.setSarSignature(sarSignature);
 
-            // Add null safety for SAR signature image
+            //Handle SAR signature image
             if (sarSignatureImg != null && !sarSignatureImg.trim().isEmpty()) {
                 try {
                     booking.setSarSignatureImage(Base64.getDecoder().decode(sarSignatureImg));
@@ -127,13 +148,13 @@ public class VenueBookingServiceImpl implements VenueBookingService {
 
             VenueBooking savedBooking = bookingRepository.save(booking);
 
-            // Map to DTO
             return bookingMapper.toDto(savedBooking);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to approve booking", e);
         }
     }
+
 
     @Override
     public VenueBookingResponseDto getBookingById(Long bookingId) {
@@ -161,12 +182,38 @@ public class VenueBookingServiceImpl implements VenueBookingService {
             VenueBooking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-            // Final signer signs booking + club signature + sar signature
+            // 🔹 Verify that the SAR’s signature is valid before final signer signs
+            if (booking.getSar() == null || booking.getSarSignature() == null) {
+                throw new RuntimeException("SAR signature not found for this booking");
+            }
+
+            KeyStoreEntity sarKeyStore = keyStoreRepository.findByUserId(booking.getSar().getId());
+            if (sarKeyStore == null) {
+                throw new RuntimeException("SAR public key not found in keystore");
+            }
+
+            PublicKey sarPublicKey = KeyUtil.decodePublicKey(
+                    Base64.getDecoder().decode(sarKeyStore.getPublicKey())
+            );
+
+            Signature sarSigVerifier = Signature.getInstance("SHA256withRSA");
+            sarSigVerifier.initVerify(sarPublicKey);
+
+            // SAR signed bookingData + clubSignature
+            String sarSignedData = booking.getBookingData() + booking.getClubSignature();
+            sarSigVerifier.update(sarSignedData.getBytes());
+
+            boolean sarValid = sarSigVerifier.verify(Base64.getDecoder().decode(booking.getSarSignature()));
+            if (!sarValid) {
+                throw new RuntimeException("SAR signature verification failed: Signature does not match the SAR");
+            }
+
+            // 🔹 Final signer signs booking + club signature + SAR signature
             String dataToSign = booking.getBookingData() + booking.getClubSignature() + booking.getSarSignature();
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(finalPrivateKey);
-            signature.update(dataToSign.getBytes());
-            String finalSignature = Base64.getEncoder().encodeToString(signature.sign());
+            Signature finalSignerEngine = Signature.getInstance("SHA256withRSA");
+            finalSignerEngine.initSign(finalPrivateKey);
+            finalSignerEngine.update(dataToSign.getBytes());
+            String finalSignature = Base64.getEncoder().encodeToString(finalSignerEngine.sign());
 
             booking.setFinalSigner(finalSigner);
             booking.setFinalSignature(finalSignature);
@@ -191,5 +238,67 @@ public class VenueBookingServiceImpl implements VenueBookingService {
             throw new RuntimeException("Failed to final approve booking", e);
         }
     }
+
+    @Override
+    public long countPendingBookings() {
+        return bookingRepository.countByStatus(BookingStatus.PENDING);
+    }
+
+    @Override
+    public List<VenueBookingResponseDto> getBookingsByClubId(Long clubId) {
+        List<VenueBooking> bookings = bookingRepository.findByClubId(clubId);
+        return bookings.stream()
+                .map(bookingMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getAllBookingsSummary() {
+        return bookingRepository.findAll()
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getBookingsSummaryByClubId(Long clubId) {
+        return bookingRepository.findByClubId(clubId)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
+
+    // Helper method to convert to summary DTO
+    private VenueBookingSummaryDto toSummaryDto(VenueBooking booking) {
+        VenueBookingSummaryDto dto = new VenueBookingSummaryDto();
+        dto.setBookingId(booking.getId());
+        dto.setClubName(booking.getClubName());
+        dto.setRegistrationNumber(booking.getRegistrationNumber());
+        dto.setContactNumber(booking.getContactNumber());
+        dto.setDate(booking.getDate());
+        dto.setReason(booking.getReason());
+        dto.setStatus(booking.getStatus().name());
+        dto.setVenueId(booking.getVenue().getId());
+        dto.setVenueName(booking.getVenue().getName());
+
+        dto.setSlotIds(booking.getSlots().stream().map(slot -> {
+            VenueBookingSummaryDto.SlotDto s = new VenueBookingSummaryDto.SlotDto();
+            s.setId(slot.getId());
+            s.setStartTime(slot.getStartTime().toString());
+            s.setEndTime(slot.getEndTime().toString());
+            return s;
+        }).toList());
+
+        return dto;
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getBookingsSummaryByVenueId(Long venueId) {
+        return bookingRepository.findByVenueId(venueId)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
+
 
 }

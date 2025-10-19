@@ -17,6 +17,7 @@ import reidConnect.backend.service.OccupiedStaffService;
 import reidConnect.backend.service.OccupiedVenueService;
 import reidConnect.backend.service.TimeTableApprovalService;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -250,16 +251,32 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
     }
 
     @Override
-    public List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year) {
-        // Use optimized query with fetch joins to avoid N+1 problems
-        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
-        //check 
-        if (timeTableApprovalService.hasApprovedDecision() == false) {
-            return List.of(); // return empty list if no approved decision
-            
-        }
+    public List<TimeTableResponseDto> getByDay(String day) {
+        List<TimeTable> timeTables = timeTableRepository.findByDayIgnoreCase(day);
         return timeTables.stream()
                 .map(timeTableMapper::toDto)
                 .collect(Collectors.toList());
     }
+    @Override
+    public List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year) {
+        // Use optimized query with fetch joins to avoid N+1 problems
+        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
+
+        // Check if timetable approval is done
+        if (!timeTableApprovalService.hasApprovedDecision()) {
+            return List.of(); // return empty list if no approved decision
+        }
+
+        return timeTables.stream()
+                .map(timeTableMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countSessionsToday() {
+        String today = LocalDate.now().getDayOfWeek().name(); // e.g. "MONDAY"
+        return timeTableRepository.countByDay(today);
+    }
+
+
 }
