@@ -2,7 +2,6 @@ package reidConnect.backend.service;
 
 import reidConnect.backend.dto.timetable.TimeTableRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableResponseDto;
-import reidConnect.backend.entity.TimeTable;
 import reidConnect.backend.enums.Degree;
 import reidConnect.backend.enums.Years;
 

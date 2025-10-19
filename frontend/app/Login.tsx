@@ -38,7 +38,6 @@ export default function Login() {
             console.log("Login response:", res.data);
 
             const { token, role } = res.data;
-            Alert.alert("Success", "Login successful!");
 
             // Save token securely
             await AsyncStorage.setItem("token", token);

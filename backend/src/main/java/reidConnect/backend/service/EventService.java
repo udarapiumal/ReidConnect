@@ -1,6 +1,5 @@
 package reidConnect.backend.service;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 import reidConnect.backend.dto.EventAttendanceCountDto;
