@@ -377,7 +377,7 @@ console.log(filteredItems)
         .search-bar {
           position: relative;
           flex: 1;
-          max-width: 400px;
+          max-width: 600px;
         }
 
         .search-icon {
