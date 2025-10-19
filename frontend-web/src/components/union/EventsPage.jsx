@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import axios from 'axios';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [featuredEventIds, setFeaturedEventIds] = useState(new Set());
 
   // Fetch all events on mount
   useEffect(() => {
     fetchEvents();
+    fetchFeaturedEvents();
   }, []);
 
   const fetchEvents = async () => {
@@ -18,31 +21,69 @@ const EventsPage = () => {
     } catch (error) {
       console.error('Error fetching events:', error);
     }
+    console.log('Token:', localStorage.getItem('token'));
   };
 
-  // Filter events by search term (by name or description)
+  const fetchFeaturedEvents = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/events/featured');
+      const ids = new Set(response.data.map(event => event.id));
+      setFeaturedEventIds(ids);
+    } catch (error) {
+      console.error('Error fetching featured events:', error);
+    }
+  };
+
+  // Filter events by search term
   const filteredEvents = events.filter((event) =>
     event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleFeatureEvent = async (eventId) => {
+  const handleToggleFeature = async (eventId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(
-        `http://localhost:8080/api/events/${eventId}/feature`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      alert('✅ Event featured successfully!');
-      fetchEvents();
+      const isFeatured = featuredEventIds.has(eventId);
+
+      if (isFeatured) {
+        // Unfeature the event
+        await axios.delete(
+          `http://localhost:8080/api/events/${eventId}/feature`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+       
+        alert('✅ Event unfeatured successfully!');
+        setFeaturedEventIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(eventId);
+          return newSet;
+        });
+      } else {
+        // Feature the event
+        await axios.put(
+          `http://localhost:8080/api/events/${eventId}/feature`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        alert('✅ Event featured successfully!');
+        setFeaturedEventIds(prev => new Set([...prev, eventId]));
+      }
+
+      // Update selected event if it's currently open
+      if (selectedEvent && selectedEvent.id === eventId) {
+        setSelectedEvent({ ...selectedEvent });
+      }
     } catch (error) {
-      console.error('❌ Error featuring event:', error);
-      alert('❌ Failed to feature event.');
+      console.error('❌ Error toggling feature:', error);
+      alert('❌ Failed to toggle feature status.');
     }
   };
 
@@ -87,15 +128,8 @@ const EventsPage = () => {
             marginLeft: '0px',
           }}>UnionAdmin</span>
         </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '20px',
-          color: 'rgba(255,255,255,0.8)',
-        }}>
-        </div>
       </header>
-      {/* Main Content */}
+
       <main className="main-content" style={{ marginTop: '70px' }}>
         <header className="gallery-header">
           <div className="header-text">
@@ -117,7 +151,6 @@ const EventsPage = () => {
           </div>
         </header>
 
-        {/* Events grid */}
         {filteredEvents.length === 0 ? (
           <div className="no-results">
             <h3>No events found</h3>
@@ -129,6 +162,7 @@ const EventsPage = () => {
               <div
                 key={event.id}
                 className="gallery-card"
+                onClick={() => setSelectedEvent(event)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-4px)';
                   e.currentTarget.style.boxShadow = '0 6px 12px rgb(239 68 68 / 0.5)';
@@ -146,15 +180,8 @@ const EventsPage = () => {
                 />
                 <div className="gallery-info">
                   <h3>{event.name}</h3>
-                  <p className="gallery-description">{event.description}</p>
                   <p className="gallery-date">📅 {event.date}</p>
                   <p className="gallery-category">{event.category}</p>
-                  <button
-                    className="feature-btn"
-                    onClick={() => handleFeatureEvent(event.id)}
-                  >
-                    🌟 Feature
-                  </button>
                 </div>
               </div>
             ))}
@@ -162,19 +189,70 @@ const EventsPage = () => {
         )}
       </main>
 
+      {selectedEvent && (
+        <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="close-btn"
+              onClick={() => setSelectedEvent(null)}
+            >
+              <X size={24} />
+            </button>
+
+            <img
+              src={`http://localhost:8080/${selectedEvent.imagePath}`}
+              alt={selectedEvent.name}
+              className="modal-image"
+            />
+
+            <div className="modal-info">
+              <h2>{selectedEvent.name}</h2>
+              
+              <div className="event-details">
+                <div className="detail-item">
+                  <span className="detail-label">📅 Date:</span>
+                  <span className="detail-value">{selectedEvent.date}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">📍 Venue:</span>
+                  <span className="detail-value">{selectedEvent.venueName}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">🏢 Club:</span>
+                  <span className="detail-value">{selectedEvent.clubName}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">📂 Category:</span>
+                  <span className="category-badge">{selectedEvent.category}</span>
+                </div>
+              </div>
+
+              <div className="description-section">
+                <h3>Description</h3>
+                <p>{selectedEvent.description}</p>
+              </div>
+
+              <button
+                className={`feature-btn-modal ${featuredEventIds.has(selectedEvent.id) ? 'featured' : ''}`}
+                onClick={() => handleToggleFeature(selectedEvent.id)}
+              >
+                {featuredEventIds.has(selectedEvent.id) ? '⭐ Unfeature This Event' : '🌟 Feature This Event'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
-        /* Main content - Dark Theme */
         .main-content {
           margin-left: 200px;
           padding: 2rem;
           min-height: 100vh;
           background-color: #1a1c1e;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-            Oxygen, Ubuntu, Cantarell, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
           color: #ffffff;
         }
 
-        /* Gallery header */
         .gallery-header {
           background: #151718;
           border-radius: 8px;
@@ -235,7 +313,6 @@ const EventsPage = () => {
           box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
 
-        /* No results message */
         .no-results {
           text-align: center;
           padding: 4rem 2rem;
@@ -255,7 +332,6 @@ const EventsPage = () => {
           color: #a1a1a1;
         }
 
-        /* Gallery grid */
         .gallery-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -301,13 +377,6 @@ const EventsPage = () => {
           font-size: 1.1rem;
         }
 
-        .gallery-description {
-          color: #a1a1a1;
-          margin: 0.5rem 0;
-          font-size: 0.9rem;
-          line-height: 1.4;
-        }
-
         .gallery-date {
           color: #888;
           font-size: 0.85rem;
@@ -323,24 +392,149 @@ const EventsPage = () => {
           font-weight: 500;
           width: fit-content;
           text-transform: capitalize;
-          margin-bottom: 0.5rem;
+          margin-top: 0.5rem;
         }
 
-        .feature-btn {
-          background-color: #6366f1;
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 2000;
+          backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+          background-color: #151718;
+          border-radius: 12px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          max-width: 600px;
+          width: 90%;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+          border: 1px solid #333;
+        }
+
+        .close-btn {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background-color: rgba(0, 0, 0, 0.5);
+          border: none;
+          border-radius: 50%;
+          color: white;
+          cursor: pointer;
+          padding: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          transition: background-color 0.2s ease;
+        }
+
+        .close-btn:hover {
+          background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-image {
+          width: 100%;
+          height: 300px;
+          object-fit: cover;
+          border-bottom: 1px solid #333;
+        }
+
+        .modal-info {
+          padding: 2rem;
+        }
+
+        .modal-info h2 {
+          font-size: 1.8rem;
+          margin-bottom: 1.5rem;
+          color: #ffffff;
+        }
+
+        .event-details {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          margin-bottom: 2rem;
+          padding-bottom: 2rem;
+          border-bottom: 1px solid #333;
+        }
+
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .detail-label {
+          color: #a1a1a1;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        .detail-value {
+          color: #ffffff;
+          font-size: 0.95rem;
+        }
+
+        .category-badge {
+          background-color: #ef4444;
+          color: white;
+          padding: 0.35rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 500;
+          width: fit-content;
+          text-transform: capitalize;
+        }
+
+        .description-section {
+          margin-bottom: 2rem;
+        }
+
+        .description-section h3 {
+          color: #ffffff;
+          margin-bottom: 0.75rem;
+          font-size: 1.1rem;
+        }
+
+        .description-section p {
+          color: #a1a1a1;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .feature-btn-modal {
+          width: 100%;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
           color: white;
           border: none;
           border-radius: 8px;
-          padding: 0.5rem 1rem;
-          font-size: 0.9rem;
+          padding: 1rem;
+          font-size: 1rem;
           cursor: pointer;
-          transition: background-color 0.2s ease;
-          font-weight: 500;
-          margin-top: auto;
+          transition: all 0.2s ease;
+          font-weight: 600;
         }
 
-        .feature-btn:hover {
-          background-color: #5855eb;
+        .feature-btn-modal:hover {
+          opacity: 0.9;
+        }
+
+        .feature-btn-modal.featured {
+          background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        }
+
+        .feature-btn-modal.featured:hover {
+          opacity: 0.9;
         }
 
         @media (max-width: 768px) {
@@ -362,6 +556,15 @@ const EventsPage = () => {
 
           .gallery-grid {
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          }
+
+          .modal-content {
+            width: 95%;
+            max-height: 95vh;
+          }
+
+          .event-details {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
