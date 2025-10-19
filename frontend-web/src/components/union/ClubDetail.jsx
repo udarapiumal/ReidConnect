@@ -4,6 +4,7 @@ import PostCard from './PostCard';
 import EventCard from './EventCard';
 import axios from 'axios';
 import '../../css/ClubDetail.css';
+import UnionHeader from './UnionHeader';
 
 const ClubDetail = () => {
   const { clubId } = useParams();
@@ -278,6 +279,7 @@ const ClubDetail = () => {
 
   return (
     <div className="club-detail-container">
+      <UnionHeader />
       {/* Navigation Tabs */}
       <div className="club-detail-nav">
         <button
