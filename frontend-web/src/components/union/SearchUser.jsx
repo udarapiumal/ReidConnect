@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Search, User } from 'lucide-react';
+import UnionHeader from './UnionHeader';
 
 function SearchUser() {
   const [email, setEmail] = useState('');
@@ -37,6 +38,7 @@ function SearchUser() {
 
   return (
     <div className="app-container">
+      <UnionHeader />
       <main className="main-content">
         <header className="gallery-header">
           <div className="header-text">
