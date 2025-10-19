@@ -1,6 +1,7 @@
 
 import React from "react";
 import Sidebar from "./Sidebar";
+import UnionHeader from './UnionHeader';
 
 export default function UnionDashboard() {
   const recentActivities = [
@@ -25,17 +26,7 @@ export default function UnionDashboard() {
     <div style={styles.dashboardContainer}>
       <Sidebar />
       <div style={styles.contentWrapper}>
-        <header style={styles.headerBar}>
-          <div style={styles.headerLeft}>
-            <span style={styles.reidConnect}>ReidConnect</span>
-            <span style={styles.highlight}>UnionAdmin</span>
-          </div>
-          <div style={styles.adminInfo}>
-            <i className="fa fa-bell" style={styles.headerIcon}></i>
-            <i className="fa fa-user" style={styles.headerIcon}></i>
-            <span>Admin</span>
-          </div>
-        </header>
+        <UnionHeader />
         <main style={styles.dashboardMain}>
           <h2 style={{
             fontSize: styles.activitiesTitle.fontSize,
