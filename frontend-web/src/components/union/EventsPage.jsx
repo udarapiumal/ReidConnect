@@ -55,9 +55,6 @@ const EventsPage = () => {
           <span style={styles.highlight}>UnionAdmin</span>
         </div>
         <div style={styles.adminInfo}>
-          <i className="fa fa-bell" style={styles.headerIcon}></i>
-          <i className="fa fa-user" style={styles.headerIcon}></i>
-          <span>Admin</span>
         </div>
       </header>
 
@@ -118,11 +115,12 @@ const EventsPage = () => {
 
 const styles = {
   container: {
-    padding: '0',
-    backgroundColor: '#0f0f0f',
+    padding: '2rem',
+    backgroundColor: '#1a1c1e',
     minHeight: '100vh',
     color: '#ffffff',
-    fontFamily: 'Inter, Segoe UI, Roboto, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
+    marginLeft: '200px',
   },
   headerBar: {
     position: 'fixed',
