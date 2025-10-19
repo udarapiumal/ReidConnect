@@ -210,13 +210,14 @@ function SearchUser() {
 
         .controls {
           display: flex;
-          gap: 5rem;
+          gap: 1rem;
           align-items: center;
         }
 
         .search-bar {
           position: relative;
           flex: 1;
+          max-width: 600px;
         }
 
         .search-icon {
