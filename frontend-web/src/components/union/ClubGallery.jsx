@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ClubCard from './ClubCard';
 import '../../css/Clubgallery.css'
 import axios from 'axios';
+import UnionHeader from './UnionHeader';
 
 const ClubGallery = () => {
   const [clubs, setClubs] = useState([]);
@@ -48,6 +49,7 @@ const ClubGallery = () => {
 
   return (
     <div className="club-gallery-container">
+      <UnionHeader />
       <div className="gallery-header">
         <div className="gallery-stats">
           <div className="stat-item">
