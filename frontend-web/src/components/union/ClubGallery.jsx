@@ -5,6 +5,7 @@ import axios from 'axios';
 
 const ClubGallery = () => {
   const [clubs, setClubs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchClubs = async () => {
@@ -20,6 +21,11 @@ const ClubGallery = () => {
     };
     fetchClubs();
   }, []);
+
+  // Filter clubs based on search term
+  const filteredClubs = clubs.filter(club =>
+    club.clubName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="club-gallery-container">
@@ -39,18 +45,19 @@ const ClubGallery = () => {
         </div>
       </header>
 
-      <div className="gallery-header" style={{ marginTop: '70px' }}>
-        <div className="gallery-stats">
-          <div className="stat-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span className="stat-value" style={{ fontSize: '24px', fontWeight: '700', color: 'white' }}>
-              {clubs.length}
-            </span>
-          </div>
+      <div className="gallery-header" style={{ marginTop: '70px', display: 'flex', justifyContent: 'flex-start', gap: '1rem' }}>
+        <div className="search-container" style={{ width: '300px' }}>
+          <input
+            type="text"
+            placeholder="Search club by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="clubs-table-container">
-        {clubs.length === 0 ? (
+      <div className="clubs-table-container" style={{ marginTop: '1rem' }}>
+        {filteredClubs.length === 0 ? (
           <div className="no-clubs">
             <p>No clubs found.</p>
           </div>
@@ -66,7 +73,7 @@ const ClubGallery = () => {
               </tr>
             </thead>
             <tbody>
-              {clubs.map((club) => (
+              {filteredClubs.map((club) => (
                 <ClubCard key={club.id} club={club} />
               ))}
             </tbody>
