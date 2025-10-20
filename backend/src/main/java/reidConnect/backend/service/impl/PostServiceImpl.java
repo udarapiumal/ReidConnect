@@ -30,6 +30,8 @@ public class PostServiceImpl implements PostService {
     private final PostLikeRepository PostLikeRepository;
     private final UserRepository UserRepository;
     private final EventRepository eventRepository;
+    private final SubscriptionRepository subscriptionRepository;
+
 
 
     @Override
@@ -263,6 +265,37 @@ public class PostServiceImpl implements PostService {
                 postPage.getSize()
         );
     }
+    @Override
+    public List<PostResponseDto> getLatestThreeActivePosts() {
+        List<Post> posts = postRepository.findTop3ByActiveTrueOrderByCreatedAtDesc();
+
+        return posts.stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+    }
+
+    @Override
+    public List<PostResponseDto> getLatestThreePostsFromSubscribedClubs(Long userId) {
+        // Fetch subscribed club IDs
+        List<Long> clubIds = subscriptionRepository.findClubIdsByUserId(userId);
+        if (clubIds.isEmpty()) {
+            return List.of(); // no subscribed clubs
+        }
+
+        // Fetch top 3 active posts from those clubs
+        List<Post> posts = postRepository.findTop3ByClub_IdInAndActiveTrueOrderByCreatedAtDesc(clubIds);
+
+        return posts.stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+    }
+
 
 
 

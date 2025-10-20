@@ -21,4 +21,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     long countSubscriptionsByClubAndDateRange(@Param("club") Club club,
                                               @Param("start") LocalDateTime start,
                                               @Param("end") LocalDateTime end);
+
+    @Query("SELECT s.club.id FROM Subscription s WHERE s.user.id = :userId")
+    List<Long> findClubIdsByUserId(@Param("userId") Long userId);
+
 }

@@ -28,5 +28,8 @@ public interface PostRepository extends JpaRepository<Post, Long>
     // Paginated query for active posts
     Page<Post> findAllByActiveTrue(Pageable pageable);
 
+    List<Post> findTop3ByActiveTrueOrderByCreatedAtDesc();
+
+    List<Post> findTop3ByClub_IdInAndActiveTrueOrderByCreatedAtDesc(List<Long> clubIds);
 
 }

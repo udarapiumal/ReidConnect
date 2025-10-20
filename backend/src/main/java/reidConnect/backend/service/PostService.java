@@ -45,4 +45,8 @@ public interface PostService {
 
     PagedPostResponseDto getActivePostsPaginated(int page, int limit);
 
+    List<PostResponseDto> getLatestThreeActivePosts();
+
+    List<PostResponseDto> getLatestThreePostsFromSubscribedClubs(Long userId);
+
 }

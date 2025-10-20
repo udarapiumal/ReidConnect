@@ -210,35 +210,61 @@ const getAllEvents = async () => {
 };
 
 // API function to fetch posts
+// API function to fetch posts
 const getPosts = async () => {
   try {
-    const response = await axiosInstance.get(`/api/posts`);
+    const token = await AsyncStorage.getItem("token");
+    const decoded = jwtDecode<UserType>(token);
+    const userId = decoded?.id;
+    const response = await axiosInstance.get(`/api/posts/user/${userId}/subscriptions/latest`);
     console.log('Fetched posts for home page:', response.data);
 
-    const formattedPosts: PostData[] = response.data.map((post: any) => {
-      const imageUrl = post.mediaPaths && post.mediaPaths.length > 0
-        ? post.mediaPaths[0].startsWith('uploads/')
-          ? `${BASE_URL}/${post.mediaPaths[0]}`
-          : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
-        : null;
+    // Enrich posts with club profile pictures and comment counts
+    const enrichedPosts: PostData[] = await Promise.all(
+      response.data.map(async (post: any) => {
+        let profilePicture = null;
+        let commentsCount = 0;
 
-      return {
-        id: post.id,
-        club: post.clubName || 'Unknown Club',
-        avatar: post.clubAvatar || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732',
-        time: formatTimeAgo(post.createdAt),
-        text: post.description || 'No description',
-        image: imageUrl || require('@/assets/images/event1.png'),
-        likes: post.likes || 0,
-        comments: post.comments || 0,
-      };
-    });
+        // Fetch club profile picture
+        try {
+          const clubResponse = await axiosInstance.get(`/api/club/${post.clubId}`);
+          profilePicture = clubResponse.data.profilePicture;
+        } catch (error) {
+          console.warn(`Error fetching club for post ${post.id}:`, error);
+        }
+
+        // Fetch comment count
+        try {
+          const commentCountResponse = await axiosInstance.get(`/api/comments/post/${post.id}/count`);
+          commentsCount = commentCountResponse.data;
+        } catch (error) {
+          console.warn(`Error fetching comment count for post ${post.id}:`, error);
+        }
+
+        // Format image URL
+        const imageUrl = post.mediaPaths && post.mediaPaths.length > 0
+          ? post.mediaPaths[0].startsWith('uploads/')
+            ? `${BASE_URL}/${post.mediaPaths[0]}`
+            : `${BASE_URL}/uploads/${post.mediaPaths[0]}`
+          : null;
+
+        return {
+          id: post.id,
+          club: post.clubName || 'Unknown Club',
+          avatar: profilePicture || 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Closeup_of_lawn_grass.jpg/1920px-Closeup_of_lawn_grass.jpg?20220125170732',
+          time: formatTimeAgo(post.createdAt),
+          text: post.description || 'No description',
+          image: imageUrl || require('@/assets/images/event1.png'),
+          likes: post.likes || 0,
+          comments: commentsCount,
+        };
+      })
+    );
 
     // Sort by creation date (newest first) and return only the latest 3
-    const sortedPosts = formattedPosts.sort((a, b) => {
-      // Since we already formatted the time, we'll rely on the API returning posts in order
-      // or we could use the original timestamp if available
-      return 0; // Keep the order from API (assuming it's already sorted by newest first)
+    const sortedPosts = enrichedPosts.sort((a, b) => {
+      // Keep the order from API (assuming it's already sorted by newest first)
+      return 0;
     });
 
     return sortedPosts.slice(0, 3); // Return only the latest 3 posts

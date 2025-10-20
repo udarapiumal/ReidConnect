@@ -264,5 +264,20 @@ public class PostController {
         }
     }
 
+    // Get the latest 3 active posts globally
+    @GetMapping("/latest")
+    public ResponseEntity<List<PostResponseDto>> getLatestThreeActivePosts() {
+        List<PostResponseDto> posts = postService.getLatestThreeActivePosts();
+        return ResponseEntity.ok(posts);
+    }
+
+    // Get latest 3 active posts from clubs the user is subscribed to
+    @GetMapping("/user/{userId}/subscriptions/latest")
+    public ResponseEntity<List<PostResponseDto>> getLatestThreePostsFromSubscribedClubs(@PathVariable Long userId) {
+        List<PostResponseDto> posts = postService.getLatestThreePostsFromSubscribedClubs(userId);
+        return ResponseEntity.ok(posts);
+    }
+
+
 }
 
