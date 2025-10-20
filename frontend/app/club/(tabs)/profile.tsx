@@ -1,10 +1,11 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
+//Club profile
+import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   Image,
@@ -16,16 +17,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
-import { useThemeColor } from '../../../hooks/useThemeColor';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
-import { useFocusEffect } from '@react-navigation/native';
+import { TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { useClub } from "../../context/ClubContext";
+import { useNavigation } from '@react-navigation/native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const GRID_SPACING = 12;
@@ -35,7 +33,8 @@ const imageHeight = imageSize * (4/3);
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const createdAt = new Date(timestamp);
-  const diffMs = now.getTime() - createdAt.getTime();
+  
+  const diffMs = now - createdAt;
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const totalHours = Math.floor(totalMinutes / 60);
   const days = Math.floor(totalHours / 24);
@@ -48,9 +47,12 @@ const formatTimeAgo = (timestamp) => {
   return result.trim() + ' ago';
 };
 
+
+
+
 export default function ClubProfileScreen() {
-  const [token, setToken] = useState(null);
-  const { clubId } = useLocalSearchParams();
+  const router = useRouter();
+  const { token, clubDetails } = useClub();
   const [selectedTab, setSelectedTab] = useState('posts');
   const [posts, setPosts] = useState([]);
   const [events, setEvents] = useState([]);
@@ -61,10 +63,6 @@ export default function ClubProfileScreen() {
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [postStats, setPostStats] = useState({});
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [clubDetails, setClubDetails] = useState(null);
-  const [subscribeLoading, setSubscribeLoading] = useState(false);
-  const [user, setUser] = useState(null);
   const [showComments, setShowComments] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [comments, setComments] = useState([]);
@@ -72,103 +70,31 @@ export default function ClubProfileScreen() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [loadingComments, setLoadingComments] = useState(false);
   const [likedPosts, setLikedPosts] = useState({});
-  const router = useRouter();
+  const navigation = useNavigation();
+  
+const handleLogout = async () => {
+    // Remove stored JWT / user info
+    await AsyncStorage.removeItem('token'); 
+    await AsyncStorage.removeItem('userId'); // if you store user info
 
-  // Get theme colors
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const buttonColor = useThemeColor({}, 'button');
-  const buttonTextColor = useThemeColor({}, 'buttonText');
-
-  useFocusEffect(
-    useCallback(() => {
-      const loadToken = async () => {
-        try {
-          const storedToken = await AsyncStorage.getItem('token');
-          if (!storedToken) {
-            console.warn('No token found');
-            return;
-          }
-
-          setToken(storedToken);
-
-          try {
-            const decoded = jwtDecode(storedToken);
-            setUser(decoded);
-          } catch (decodeErr) {
-            console.error('Token decode error:', decodeErr);
-          }
-        } catch (err) {
-          console.error('Error loading token:', err);
-        }
-      };
-
-      loadToken();
-    }, [])
-  );
-
-  const fetchClubDetails = async (clubId) => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/club/${clubId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setClubDetails(res.data);
-    } catch (error) {
-      console.error('Error fetching club details:', error);
-    }
-  };
-
-  const checkSubscriptionStatus = async () => {
-    if (!clubDetails?.id || !user?.id) return;
-    try {
-      const res = await axios.get(
-        `${BASE_URL}/api/subscriptions/check/${clubDetails.id}?userId=${user.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setIsSubscribed(res.data === true);
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
-      setIsSubscribed(false);
-    }
-  };
-
-  const handleSubscribe = async () => {
-    if (!clubDetails?.id || subscribeLoading || !user?.id) return;
-    
-    setSubscribeLoading(true);
-    try {
-      if (isSubscribed) {
-        await axios.post(`${BASE_URL}/api/subscriptions/unsubscribe`, 
-          { userId: user.id, clubId: clubDetails.id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setIsSubscribed(false);
-        Alert.alert('Success', 'Unsubscribed successfully!');
-      } else {
-        await axios.post(`${BASE_URL}/api/subscriptions/subscribe`, 
-          { userId: user.id, clubId: clubDetails.id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setIsSubscribed(true);
-        Alert.alert('Success', 'Subscribed successfully!');
-      }
-      fetchSubCount();
-    } catch (error) {
-      console.error('Error handling subscription:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-      setSubscribeLoading(false);
-    }
+    // Navigate to login screen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
   };
 
   const fetchSubCount = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSubCount(res.data || 0);
+      const [subCountResponse] = await Promise.all([
+        axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ]);
+      setSubCount(subCountResponse.data || 0);
     } catch (error) {
-      console.error('Error fetching subCount:', error);
+      console.error(`Error fetching subCount:`, error);
+      return { subCount: 0 };
     }
   };
 
@@ -224,14 +150,14 @@ export default function ClubProfileScreen() {
   };
 
   const handleAddComment = async () => {
-    if (!commentText.trim() || !user?.id) return;
+    if (!commentText.trim()) return;
 
     try {
       const commentData = {
         postId: selectedPostId,
         content: commentText.trim(),
         parentCommentId: replyingTo?.id || null,
-        userId: user.id
+        userId: clubDetails.userId
       };
 
       await axios.post(`${BASE_URL}/api/comments`, commentData, {
@@ -242,6 +168,7 @@ export default function ClubProfileScreen() {
       setReplyingTo(null);
       await fetchComments(selectedPostId);
       
+      // Update comment count
       const updatedStats = await fetchPostStats(selectedPostId);
       setPostStats(prev => ({
         ...prev,
@@ -259,27 +186,27 @@ export default function ClubProfileScreen() {
   };
 
   const handleLikeToggle = async (postId) => {
-    if (!user?.id) return;
-    const isLiked = likedPosts[postId];
-    try {
-      if (isLiked) {
-        await axios.delete(`${BASE_URL}/api/posts/${postId}/like`, {
-          params: { userId: user.id },
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } else {
-        await axios.post(`${BASE_URL}/api/posts/${postId}/like`, null, {
-          params: { userId: user.id },
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-      setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
-      const updatedStats = await fetchPostStats(postId);
-      setPostStats(prev => ({ ...prev, [postId]: updatedStats }));
-    } catch (err) {
-      console.error('Error toggling like:', err);
+  const isLiked = likedPosts[postId];
+  try {
+    if (isLiked) {
+      await axios.delete(`${BASE_URL}/api/posts/${postId}/like`, {
+        params: { userId: clubDetails.userId },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } else {
+      await axios.post(`${BASE_URL}/api/posts/${postId}/like`, null, {
+        params: { userId: clubDetails.userId },
+        headers: { Authorization: `Bearer ${token}` }
+      });
     }
-  };
+    setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
+    const updatedStats = await fetchPostStats(postId);
+    setPostStats(prev => ({ ...prev, [postId]: updatedStats }));
+  } catch (err) {
+    console.error('Error toggling like:', err);
+  }
+};
+
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -332,43 +259,34 @@ export default function ClubProfileScreen() {
   };
 
   useEffect(() => {
-    if (!token || !clubDetails?.id) return;
     if (selectedTab === 'posts') fetchPosts();
-    else fetchEvents();
-  }, [selectedTab, token, clubDetails]);
+    else if (selectedTab === 'events') fetchEvents();
+  }, [selectedTab]);
 
   useEffect(() => {
-    if (token && clubDetails?.id) {
+    if (clubDetails?.id) {
       fetchCounts();
       fetchSubCount();
-      checkSubscriptionStatus();
     }
-  }, [clubDetails, token]);
-
+  }, [clubDetails]);
   useEffect(() => {
-    if (clubId && typeof clubId === 'string' && token) {
-      fetchClubDetails(clubId);
+  const fetchLikedPosts = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/posts/likedByUser/${clubDetails.userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const likedIds = res.data;
+      const likedMap = {};
+      likedIds.forEach(id => likedMap[id] = true);
+      setLikedPosts(likedMap);
+    } catch (err) {
+      console.error('Error fetching liked posts:', err);
     }
-  }, [clubId, token]);
+  };
 
-  useEffect(() => {
-    const fetchLikedPosts = async () => {
-      if (!user?.id) return;
-      try {
-        const res = await axios.get(`${BASE_URL}/api/posts/likedByUser/${user.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const likedIds = res.data;
-        const likedMap = {};
-        likedIds.forEach(id => likedMap[id] = true);
-        setLikedPosts(likedMap);
-      } catch (err) {
-        console.error('Error fetching liked posts:', err);
-      }
-    };
+  if (clubDetails?.userId) fetchLikedPosts();
+}, [clubDetails]);
 
-    if (user?.id) fetchLikedPosts();
-  }, [user]);
 
   const currentData = selectedTab === 'posts' ? posts : events;
 
@@ -420,78 +338,78 @@ export default function ClubProfileScreen() {
       >
         <View style={styles.commentsModalBackdrop} />
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.commentsModalContent}>
-            <View style={styles.commentsHeader}>
-              <View style={styles.modalHandle} />
-              <Text style={styles.commentsTitle}>Comments</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowComments(false);
-                  setReplyingTo(null);
-                  setCommentText('');
-                }}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
+        <View style={styles.commentsModalContent}>
+          <View style={styles.commentsHeader}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.commentsTitle}>Comments</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowComments(false);
+                setReplyingTo(null);
+                setCommentText('');
+              }}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {loadingComments ? (
+            <View style={styles.commentsLoading}>
+              <ActivityIndicator size="large" color="#00d4ff" />
             </View>
+          ) : comments.length === 0 ? (
+            <View style={styles.noComments}>
+              <Ionicons name="chatbubble-outline" size={48} color="#666" />
+              <Text style={styles.noCommentsText}>No comments yet</Text>
+              <Text style={styles.noCommentsSubtext}>Be the first to comment!</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={comments}
+              renderItem={renderComment}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.commentsList}
+            />
+          )}
 
-            {loadingComments ? (
-              <View style={styles.commentsLoading}>
-                <ActivityIndicator size="large" color="#00d4ff" />
-              </View>
-            ) : comments.length === 0 ? (
-              <View style={styles.noComments}>
-                <Ionicons name="chatbubble-outline" size={48} color="#666" />
-                <Text style={styles.noCommentsText}>No comments yet</Text>
-                <Text style={styles.noCommentsSubtext}>Be the first to comment!</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={comments}
-                renderItem={renderComment}
-                keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={styles.commentsList}
-              />
-            )}
-
-            <View style={styles.commentInputContainer}>
-              {replyingTo && (
-                <View style={styles.replyingToContainer}>
-                  <Text style={styles.replyingToText}>
-                    Replying to {replyingTo.userName}
-                  </Text>
-                  <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                    <Ionicons name="close-circle" size={20} color="#666" />
-                  </TouchableOpacity>
-                </View>
-              )}
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.commentInput}
-                  placeholder="Add a comment..."
-                  placeholderTextColor="#666"
-                  value={commentText}
-                  onChangeText={setCommentText}
-                  multiline
-                />
-                <TouchableOpacity
-                  onPress={handleAddComment}
-                  disabled={!commentText.trim()}
-                  style={[
-                    styles.sendButton,
-                    !commentText.trim() && styles.sendButtonDisabled
-                  ]}
-                >
-                  <Ionicons
-                    name="send"
-                    size={20}
-                    color={commentText.trim() ? '#00d4ff' : '#666'}
-                  />
+          <View style={styles.commentInputContainer}>
+            {replyingTo && (
+              <View style={styles.replyingToContainer}>
+                <Text style={styles.replyingToText}>
+                  Replying to {replyingTo.userName}
+                </Text>
+                <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                  <Ionicons name="close-circle" size={20} color="#666" />
                 </TouchableOpacity>
               </View>
+            )}
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Add a comment..."
+                placeholderTextColor="#666"
+                value={commentText}
+                onChangeText={setCommentText}
+                multiline
+              />
+              <TouchableOpacity
+                onPress={handleAddComment}
+                disabled={!commentText.trim()}
+                style={[
+                  styles.sendButton,
+                  !commentText.trim() && styles.sendButtonDisabled
+                ]}
+              >
+                <Ionicons
+                  name="send"
+                  size={20}
+                  color={commentText.trim() ? '#00d4ff' : '#666'}
+                />
+              </TouchableOpacity>
             </View>
           </View>
+        </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </Modal>
@@ -553,9 +471,10 @@ export default function ClubProfileScreen() {
     return (
       <View style={styles.detailCard}>
         <View style={styles.detailHeader}>
+          
           <Image
             source={{ 
-              uri: clubDetails.profilePicture?.startsWith('/uploads/') 
+                uri: clubDetails.profilePicture?.startsWith('/uploads/') 
                 ? `${BASE_URL}${clubDetails.profilePicture}` 
                 : `${BASE_URL}/uploads/${clubDetails.profilePicture}` 
             }}
@@ -613,15 +532,16 @@ export default function ClubProfileScreen() {
           <View style={styles.postActions}>
             <View style={styles.actionButtons}>
               <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => handleLikeToggle(item.id)}
-              >
-                <Ionicons 
-                  name={likedPosts[item.id] ? "heart" : "heart-outline"} 
-                  size={26} 
-                  color={likedPosts[item.id] ? "#ff4444" : "#fff"} 
-                />
-              </TouchableOpacity>
+  style={styles.actionButton}
+  onPress={() => handleLikeToggle(item.id)}
+>
+  <Ionicons 
+    name={likedPosts[item.id] ? "heart" : "heart-outline"} 
+    size={26} 
+    color={likedPosts[item.id] ? "#ff4444" : "#fff"} 
+  />
+</TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.actionButton}
                 onPress={() => handleCommentPress(item.id)}
@@ -695,7 +615,62 @@ export default function ClubProfileScreen() {
     );
   };
 
+  const renderSettingsContent = () => (
+    <View style={styles.settingsContent}>
+      <TouchableOpacity 
+        style={styles.menuItem}
+        onPress={() => router.push('/club/profile/profileEdit')}
+      >
+        <View style={styles.menuIconContainer}>
+          <Ionicons name="create-outline" size={22} color="#00d4ff" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={styles.menuTitle}>Edit Profile</Text>
+          <Text style={styles.menuSubtitle}>Customize your club information</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.menuItem}>
+        <View style={styles.menuIconContainer}>
+          <Ionicons name="notifications-outline" size={22} color="#00d4ff" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={styles.menuTitle}>Notifications</Text>
+          <Text style={styles.menuSubtitle}>Manage notification preferences</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.menuItem}>
+        <View style={styles.menuIconContainer}>
+          <Ionicons name="help-circle-outline" size={22} color="#00d4ff" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={styles.menuTitle}>Help & Support</Text>
+          <Text style={styles.menuSubtitle}>Get assistance and FAQs</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleLogout} style={[styles.menuItem, styles.logoutItem]}>
+        <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
+          <Ionicons name="log-out-outline" size={22} color="#ff4444" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={[styles.menuTitle, styles.logoutText]}>Logout</Text>
+          <Text style={styles.menuSubtitle}>Sign out of your account</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderContent = () => {
+    if (selectedTab === 'settings') {
+      return renderSettingsContent();
+    }
+
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
@@ -717,8 +692,8 @@ export default function ClubProfileScreen() {
           <Text style={styles.emptyText}>No {selectedTab} yet</Text>
           <Text style={styles.emptySubtext}>
             {selectedTab === 'posts' 
-              ? 'This club hasn\'t posted anything yet' 
-              : 'No upcoming events'}
+              ? 'Share your first post with subscribers' 
+              : 'Create your first event'}
           </Text>
         </View>
       );
@@ -744,7 +719,7 @@ export default function ClubProfileScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.title}>Club Profile</Text>
         <View style={styles.headerActions} />
       </View>
 
@@ -809,20 +784,6 @@ export default function ClubProfileScreen() {
               <Text style={styles.statLabel}>Subscribers</Text>
             </View>
           </View>
-
-          <TouchableOpacity 
-            style={[styles.subscribeButton, { backgroundColor: isSubscribed ? '#666' : '#00d4ff' }]}
-            onPress={handleSubscribe}
-            disabled={subscribeLoading}
-          >
-            {subscribeLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.subscribeButtonText}>
-                {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-              </Text>
-            )}
-          </TouchableOpacity>
         </View>
 
         <View style={styles.tabContainer}>
@@ -852,6 +813,20 @@ export default function ClubProfileScreen() {
               />
               <Text style={[styles.tabText, selectedTab === 'events' && styles.activeTabText]}>
                 Events
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setSelectedTab('settings')}
+              style={[styles.tabButton, selectedTab === 'settings' && styles.activeTab]}
+            >
+              <Ionicons 
+                name="settings-outline" 
+                size={20} 
+                color={selectedTab === 'settings' ? '#00d4ff' : '#666'} 
+              />
+              <Text style={[styles.tabText, selectedTab === 'settings' && styles.activeTabText]}>
+                Settings
               </Text>
             </TouchableOpacity>
           </View>
@@ -990,7 +965,6 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
   },
   statCard: {
     flex: 1,
@@ -1020,18 +994,6 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 12,
     fontWeight: '500',
-  },
-  subscribeButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  subscribeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   tabContainer: {
     marginTop: 8,
@@ -1070,6 +1032,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 24,
+  },
+  settingsContent: {
+    gap: 12,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1d1f',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#252829',
+  },
+  menuIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  menuTextContainer: {
+    flex: 1,
+  },
+  menuTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  menuSubtitle: {
+    color: '#888',
+    fontSize: 13,
+  },
+  logoutItem: {
+    borderColor: 'rgba(255, 68, 68, 0.2)',
+  },
+  logoutIconContainer: {
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+  },
+  logoutText: {
+    color: '#ff4444',
   },
   gridContainer: {
     paddingBottom: 20,
@@ -1197,6 +1202,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1d1f',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 8,
   },
   imageIndicators: {
     flexDirection: 'row',
