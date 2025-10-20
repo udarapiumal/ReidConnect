@@ -90,18 +90,18 @@ function SearchUser() {
             <strong>Email:</strong>
             <span>{stu.email}</span>
           </div>
-          <div className="detail-item">
+          {/* <div className="detail-item">
             <strong>Faculty:</strong>
             <span>{stu.faculty}</span>
-          </div>
+          </div> */}
           <div className="detail-item">
             <strong>Academic Year:</strong>
             <span>{stu.academicYear}</span>
           </div>
-          <div className="detail-item">
+          {/* <div className="detail-item">
             <strong>Registered Year:</strong>
             <span>{stu.registeredYear}</span>
-          </div>
+          </div> */}
           <div className="detail-item">
             <strong>Contact:</strong>
             <span>{stu.contactNumber}</span>

@@ -1,695 +1,471 @@
-import React, { useEffect, useState } from "react";
-import { Search, X } from 'lucide-react';
+import React, { useState } from "react";
+import axios from 'axios';
 
-function LostItemsList() {
-  const [lostItems, setLostItems] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortOrder, setSortOrder] = useState("desc");
-  const itemsPerPage = 6;
+function LostItemForm() {
+  const [formData, setFormData] = useState({
+    itemName: "",
+    category: "",
+    description: "",
+    location: "",
+    dateLost: "",
+    image: null,
+    posterName: "",
+    contactNumber: "",
+  });
 
-  // Fetch lost items on mount
-  useEffect(() => {
-    fetchLostItems();
-  }, []);
-
-  const fetchLostItems = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/lost/lost-items");
-      const data = await response.json();
-      setLostItems(data);
-    } catch (error) {
-      console.error("Error fetching lost items:", error);
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "image") {
+      setFormData({ ...formData, image: files[0] });
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
   };
 
-  // Filter and sort items
-  let processedItems = lostItems.filter((item) =>
-    item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    const {
+      itemName,
+      category,
+      description,
+      location,
+      dateLost,
+      image,
+      posterName,
+      contactNumber,
+    } = formData;
+  
+    // Validation (image is NOT required)
+    if (
+      !itemName.trim() ||
+      !category.trim() ||
+      !description.trim() ||
+      !location.trim() ||
+      !dateLost ||
+      !posterName.trim() ||
+      !contactNumber.trim()
+    ) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+  
+    if (!/^\d{10}$/.test(contactNumber)) {
+      alert("Please enter a valid 10-digit contact number.");
+      return;
+    }
+  
+    try {
+      const formPayload = new FormData();
+      formPayload.append("itemName", itemName);
+      formPayload.append("category", category);
+      formPayload.append("description", description);
+      formPayload.append("location", location);
+      formPayload.append("dateLost", dateLost);
+  
+      // Only append image if it exists
+      if (image) {
+        formPayload.append("image", image);
+      }
+  
+      formPayload.append("posterName", posterName);
+      formPayload.append("contactNumber", contactNumber);
+  
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:8080/lost/lost-items",
+        formPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+  
+      alert("Lost item post submitted successfully!");
+      console.log(response.data);
+  
+      // Reset form
+      setFormData({
+        itemName: "",
+        category: "",
+        description: "",
+        location: "",
+        dateLost: "",
+        image: null,
+        posterName: "",
+        contactNumber: "",
+      });
+    } catch (error) {
+      console.error("Error posting lost item:", error);
+      alert("Failed to submit the lost item post.");
+    }
+  };
 
-  // Sort by date
-  processedItems = processedItems.sort((a, b) => {
-    const dateA = new Date(a.dateLost);
-    const dateB = new Date(b.dateLost);
-    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-  });
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
-  // Pagination
-  const totalPages = Math.ceil(processedItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const filteredItems = processedItems.slice(startIndex, startIndex + itemsPerPage);
+  const categories = [
+    "Electronics", "Clothing", "Accessories", "Books",
+    "Documents", "Keys", "Bags", "Jewelry",
+    "Sports Equipment", "Other"
+  ];
 
   return (
     <div className="app-container">
-      <header style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        width: "100%",
-        height: "70px",
-        backdropFilter: "blur(20px)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "0 24px",
-        zIndex: 1200,
-        background: "rgba(20, 20, 20, 0.95)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0px",
-        }}>
-          <span style={{
-            fontWeight: 700,
-            fontSize: "22px",
-            color: "white",
-            letterSpacing: "-0.02em",
-          }}>ReidConnect</span>
-          <span style={{
-            fontWeight: 700,
-            fontSize: "22px",
-            color: "#FF0033",
-            background: "linear-gradient(135deg, #FF0033 0%, #ea580c 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            marginLeft: "0px",
-          }}>LostFound</span>
+      <header className="header">
+        <div className="title">ReidConnect <span className="highlight">LostFound</span></div>
+        <div className="user-info">
+          <i className="fa fa-bell" />
+          <i className="fa fa-user" />
+          <span>User</span>
         </div>
       </header>
 
-      <main className="main-content" style={{ marginTop: "70px" }}>
-        <header className="gallery-header">
-          <div className="header-text">
-            <h1>Lost Items</h1>
-            <p>Browse through lost items posted by users</p>
+      <div className="main-content">
+        <div className="form-container">
+          <div className="form-header">
+            <h1>Post Lost Item</h1>
+            <p>Fill in the details below to post about your lost item</p>
           </div>
 
-          <div className="controls">
-            <div className="search-bar">
-              <Search className="search-icon" size={20} />
-              <input
-                type="text"
-                placeholder="Search lost items..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="search-input"
+          <div className="form-content">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="itemName">Item Name *</label>
+                <input
+                  type="text"
+                  id="itemName"
+                  name="itemName"
+                  value={formData.itemName}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Enter the name of your lost item"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="category">Category *</label>
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="description">Description *</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="form-textarea"
+                placeholder="Provide a detailed description of your lost item"
+                rows={4}
               />
             </div>
-            <div className="sort-controls">
-              <label htmlFor="sort" style={{ color: "#a1a1a1", marginRight: "0.5rem" }}>
-                Sort by Date:
-              </label>
-              <select
-                id="sort"
-                value={sortOrder}
-                onChange={(e) => {
-                  setSortOrder(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="sort-select"
-              >
-                <option value="asc">Oldest First</option>
-                <option value="desc">Newest First</option>
-              </select>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="location">Last Seen Location *</label>
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Where did you last see your item?"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="dateLost">Date Lost *</label>
+                <input
+                  type="date"
+                  id="dateLost"
+                  name="dateLost"
+                  value={formData.dateLost}
+                  onChange={handleChange}
+                  className="form-input"
+                  max={getTodayDate()}
+                />
+              </div>
             </div>
-          </div>
-        </header>
 
-        {filteredItems.length === 0 ? (
-          <div className="no-results">
-            <h3>No lost items found</h3>
-            <p>Try changing your search.</p>
-          </div>
-        ) : (
-          <div className="gallery-grid">
-            {filteredItems.map((item) => (
-              <div
-                key={item.id}
-                className="gallery-card"
-                onClick={() => setSelectedItem(item)}
-              >
-                {item.imagePath && (
-                  <img
-                    src={`http://localhost:8080/${item.imagePath}`}
-                    alt={item.itemName}
-                    className="gallery-image"
-                    loading="lazy"
-                  />
-                )}
-                {!item.imagePath && (
-                  <div className="gallery-image-placeholder">
-                    <span>No Image</span>
-                  </div>
-                )}
-                <div className="gallery-info">
-                  <h3>{item.itemName}</h3>
-                  <p className="gallery-date">📅 {item.dateLost}</p>
-                  <p className="gallery-category">{item.category}</p>
-                  <p className="gallery-location">📍 {item.location}</p>
+            <div className="form-group">
+              <label htmlFor="image">Upload Image (Optional)</label>
+              <div className="file-upload-container">
+                <input
+                  type="file"
+                  id="image"
+                  name="image"
+                  accept="image/*"
+                  onChange={handleChange}
+                  className="file-input"
+                />
+                <div className="file-upload-display">
+                  <i className="fa fa-cloud-upload upload-icon" />
+                  <span className="file-text">
+                    {formData.image ? formData.image.name : "Choose an image file"}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </main>
+            </div>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="pagination-container">
-          <button
-            className="pagination-btn"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-          >
-            ← Previous
-          </button>
-          
-          <div className="pagination-info">
-            Page {currentPage} of {totalPages}
-          </div>
-
-          <button
-            className="pagination-btn"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next →
-          </button>
-        </div>
-      )}
-
-      {/* Modal */}
-      {selectedItem && (
-        <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="close-btn"
-              onClick={() => setSelectedItem(null)}
-            >
-              <X size={24} />
-            </button>
-
-            {selectedItem.imagePath && (
-              <img
-                src={`http://localhost:8080/${selectedItem.imagePath}`}
-                alt={selectedItem.itemName}
-                className="modal-image"
-              />
-            )}
-            {!selectedItem.imagePath && (
-              <div className="modal-image-placeholder">
-                <span>No Image Available</span>
-              </div>
-            )}
-
-            <div className="modal-info">
-              <h2>{selectedItem.itemName}</h2>
-              
-              <div className="event-details">
-                <div className="detail-item">
-                  <span className="detail-label">📅 Date Lost:</span>
-                  <span className="detail-value">{selectedItem.dateLost}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">📍 Location:</span>
-                  <span className="detail-value">{selectedItem.location}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">📂 Category:</span>
-                  <span className="category-badge">{selectedItem.category}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">👤 Posted By:</span>
-                  <span className="detail-value">{selectedItem.posterName}</span>
-                </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="posterName">Your Name *</label>
+                <input
+                  type="text"
+                  id="posterName"
+                  name="posterName"
+                  value={formData.posterName}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Enter your full name"
+                />
               </div>
 
-              <div className="description-section">
-                <h3>Description</h3>
-                <p>{selectedItem.description}</p>
+              <div className="form-group">
+                <label htmlFor="contactNumber">Contact Number *</label>
+                <input
+                  type="tel"
+                  id="contactNumber"
+                  name="contactNumber"
+                  value={formData.contactNumber}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Enter your phone number"
+                />
               </div>
+            </div>
 
-              <div className="contact-section">
-                <h3>Contact Information</h3>
-                <p className="contact-detail">
-                  <strong>Name:</strong> {selectedItem.posterName}
-                </p>
-                <p className="contact-detail">
-                  <strong>Phone:</strong> {selectedItem.contactNumber}
-                </p>
-              </div>
+            <div className="form-actions">
+              <button type="button" className="btn-secondary">
+                <i className="fa fa-arrow-left" />
+                Previous Step
+              </button>
+              <button type="button" onClick={handleSubmit} className="btn-primary">
+                <i className="fa fa-paper-plane" />
+                Submit Post
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <style jsx>{`
         .app-container {
-          background-color: #1a1c1e;
+          background-color: #1a1a1a;
           min-height: 100vh;
           color: white;
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .main-content {
-          margin-left: 200px;
-          padding: 2rem;
-          min-height: 100vh;
-          background-color: #1a1c1e;
-          color: #ffffff;
-        }
-
-        .gallery-header {
-          background: #151718;
-          border-radius: 8px;
-          padding: 2rem;
-          margin-bottom: 2rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          border: 1px solid #333;
-        }
-
-        .header-text h1 {
-          font-size: 2rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: #ffffff;
-        }
-
-        .header-text p {
-          color: #a1a1a1;
-          margin-bottom: 2rem;
-        }
-
-        .controls {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .search-bar {
-          position: relative;
-          flex: 1;
-          max-width: 600px;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #a1a1a1;
-          z-index: 2;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.75rem 1rem 0.75rem 3rem;
-          border: 1px solid #333;
-          border-radius: 8px;
-          font-size: 0.95rem;
-          transition: border-color 0.2s ease;
-          background-color: #2a2a2a;
-          color: #ffffff;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-        }
-
-        .no-results {
-          text-align: center;
-          padding: 4rem 2rem;
-          background: #151718;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          border: 1px solid #333;
-        }
-
-        .no-results h3 {
-          font-size: 1.5rem;
-          margin-bottom: 0.5rem;
-          color: #ffffff;
-        }
-
-        .no-results p {
-          color: #a1a1a1;
-        }
-
-        .gallery-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .gallery-card {
-          background-color: #151718;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgb(0 0 0 / 0.25);
-          cursor: pointer;
-          transition: transform 0.2s ease;
-          border: 1px solid #333;
-          overflow: hidden;
           display: flex;
           flex-direction: column;
         }
 
-        .gallery-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 6px 12px rgb(239 68 68 / 0.5);
-        }
-
-        .gallery-image {
-          width: 100%;
-          height: 150px;
-          object-fit: cover;
-          border-bottom: 1px solid #333;
-          flex-shrink: 0;
-        }
-
-        .gallery-image-placeholder {
-          width: 100%;
-          height: 150px;
-          background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
-          border-bottom: 1px solid #333;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #666;
-          font-size: 0.9rem;
-        }
-
-        .gallery-info {
-          padding: 1rem;
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-start;
-        }
-
-        .gallery-info h3 {
-          color: #ffffff;
-          margin: 0 0 0.25rem;
-          font-size: 1.1rem;
-        }
-
-        .gallery-date {
-          color: #888;
-          font-size: 0.85rem;
-          margin: 0.25rem 0;
-        }
-
-        .gallery-location {
-          color: #888;
-          font-size: 0.85rem;
-          margin: 0.25rem 0;
-        }
-
-        .gallery-category {
-          background-color: #ef4444;
-          color: white;
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 500;
-          width: fit-content;
-          text-transform: capitalize;
-          margin-top: 0.5rem;
-        }
-
-        .modal-overlay {
+        .header {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          bottom: 0;
-          background-color: rgba(0, 0, 0, 0.7);
+          height: 64px;
+          background-color: #2a2a2a;
+          border-bottom: 1px solid #333;
           display: flex;
-          justify-content: center;
+          justify-content: space-between;
           align-items: center;
-          z-index: 2000;
-          backdrop-filter: blur(4px);
+          padding: 0 16px;
+          z-index: 1001;
         }
 
-        .modal-content {
-          background-color: #151718;
-          border-radius: 12px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-          max-width: 600px;
-          width: 90%;
-          max-height: 90vh;
-          overflow-y: auto;
-          position: relative;
-          border: 1px solid #333;
-        }
-
-        .close-btn {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          background-color: rgba(0, 0, 0, 0.5);
-          border: none;
-          border-radius: 50%;
+        .title {
+          font-weight: bold;
+          font-size: 20px;
           color: white;
+        }
+
+        .title .highlight {
+          color: #ef4444;
+        }
+
+        .user-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .user-info i {
+          font-size: 20px;
           cursor: pointer;
-          padding: 0.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10;
-          transition: background-color 0.2s ease;
+          color: white;
+          transition: color 0.3s;
         }
 
-        .close-btn:hover {
-          background-color: rgba(0, 0, 0, 0.8);
+        .user-info i:hover {
+          color: #ef4444;
         }
 
-        .modal-image {
-          width: 100%;
-          height: 300px;
-          object-fit: cover;
-          border-bottom: 1px solid #333;
+        .main-content {
+          padding-top: 96px;
+          padding: 2rem;
+          flex: 1;
         }
 
-        .modal-image-placeholder {
-          width: 100%;
-          height: 300px;
-          background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
-          border-bottom: 1px solid #333;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #666;
-          font-size: 1.1rem;
-        }
-
-        .modal-info {
+        .form-container {
+          max-width: 800px;
+          margin: 0 auto;
+          background: #2a2a2a;
+          border: 1px solid #333;
+          border-radius: 12px;
           padding: 2rem;
         }
 
-        .modal-info h2 {
-          font-size: 1.8rem;
+        .form-header h1 {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+          font-size: 14px;
+          color: #d1d5db;
           margin-bottom: 1.5rem;
-          color: #ffffff;
         }
 
-        .event-details {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-          margin-bottom: 2rem;
-          padding-bottom: 2rem;
-          border-bottom: 1px solid #333;
+        .form-group {
+          margin-bottom: 1.5rem;
         }
 
-        .detail-item {
+        .form-row {
           display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
+          gap: 2rem;
+          flex-wrap: wrap;
         }
 
-        .detail-label {
-          color: #a1a1a1;
-          font-size: 0.9rem;
+        .form-group label {
+          display: block;
           font-weight: 500;
+          margin-bottom: 0.5rem;
+          font-size: 14px;
+          color: #d1d5db;
         }
 
-        .detail-value {
-          color: #ffffff;
-          font-size: 0.95rem;
-        }
-
-        .category-badge {
-          background-color: #ef4444;
+        .form-input,
+        .form-textarea,
+        .form-select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #444;
+          background-color: #1f1f1f;
           color: white;
-          padding: 0.35rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 500;
-          width: fit-content;
-          text-transform: capitalize;
-        }
-
-        .description-section {
-          margin-bottom: 2rem;
-        }
-
-        .description-section h3 {
-          color: #ffffff;
-          margin-bottom: 0.75rem;
-          font-size: 1.1rem;
-        }
-
-        .description-section p {
-          color: #a1a1a1;
-          line-height: 1.6;
-          margin: 0;
-        }
-
-        .contact-section {
-          margin-bottom: 2rem;
-          padding: 1.5rem;
-          background: #1f1f1f;
           border-radius: 8px;
-          border: 1px solid #333;
+          font-size: 14px;
         }
 
-        .contact-section h3 {
-          color: #ffffff;
-          margin-bottom: 1rem;
-          font-size: 1.1rem;
-        }
-
-        .contact-detail {
-          color: #a1a1a1;
-          margin: 0.75rem 0;
-          font-size: 0.95rem;
-        }
-
-        .sort-controls {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .sort-controls label {
-          font-weight: 500;
-          font-size: 0.95rem;
-        }
-
-        .sort-select {
-          padding: 0.75rem 1rem;
-          border: 1px solid #333;
-          border-radius: 8px;
-          font-size: 0.95rem;
-          background-color: #2a2a2a;
-          color: #ffffff;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-weight: 500;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a1a1a1' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 0.75rem center;
-          padding-right: 2.5rem;
-        }
-
-        .sort-select:hover {
-          border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
-
-        .sort-select:focus {
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
           outline: none;
           border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
         }
 
-        .pagination-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 2rem;
-          padding: 2rem;
-          background-color: #151718;
-          border-radius: 8px;
-          margin-top: 2rem;
-          border: 1px solid #333;
-          margin-left: 200px;
+        .form-textarea {
+          min-height: 120px;
+          resize: vertical;
         }
 
-        .pagination-btn {
-          padding: 0.75rem 1.5rem;
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
+        .file-upload-container {
+          position: relative;
+        }
+
+        .file-input {
+          opacity: 0;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          z-index: 2;
           cursor: pointer;
-          transition: opacity 0.2s ease;
         }
 
-        .pagination-btn:hover:not(:disabled) {
-          opacity: 0.9;
+        .file-upload-display {
+          padding: 1rem;
+          border: 1px dashed #555;
+          background-color: #1f1f1f;
+          border-radius: 8px;
+          text-align: center;
+          font-size: 14px;
+          color: #9ca3af;
         }
 
-        .pagination-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .form-actions {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-top: 2rem;
         }
 
-        .pagination-info {
-          color: #a1a1a1;
+        .btn-primary,
+        .btn-secondary {
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
           font-weight: 600;
-          font-size: 1rem;
+          font-size: 14px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: none;
+          transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+          background-color: #ef4444;
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background-color: #dc2626;
+        }
+
+        .btn-secondary {
+          background-color: #444;
+          color: white;
+          border: 1px solid #555;
+        }
+
+        .btn-secondary:hover {
+          background-color: #555;
         }
 
         @media (max-width: 768px) {
-          .main-content {
-            margin-left: 0;
-            padding: 1rem;
-          }
-
-          .pagination-container {
-            margin-left: 0;
-          }
-
-          .controls {
+          .form-row {
             flex-direction: column;
-            align-items: stretch;
           }
 
-          .search-bar,
-          .search-input {
+          .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+          }
+
+          .btn-primary,
+          .btn-secondary {
             width: 100%;
-            max-width: none;
-          }
-
-          .gallery-grid {
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          }
-
-          .modal-content {
-            width: 95%;
-            max-height: 95vh;
-          }
-
-          .event-details {
-            grid-template-columns: 1fr;
           }
         }
       `}</style>
@@ -697,4 +473,4 @@ function LostItemsList() {
   );
 }
 
-export default LostItemsList;
+export default LostItemForm;
