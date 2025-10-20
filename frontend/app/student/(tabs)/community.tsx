@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, RefreshControl, FlatList } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, View, RefreshControl, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -10,7 +9,6 @@ import { PostCard, PostData } from '@/components/PostCard';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { BASE_URL } from '@/constants/config';
 import axiosInstance from '../../api/axiosInstance';
-import { jwtDecode } from 'jwt-decode';
 
 // Helper function to format time ago from timestamp
 const formatTimeAgo = (timestamp: string) => {
@@ -33,36 +31,49 @@ const formatTimeAgo = (timestamp: string) => {
   return `${totalMinutes} minute${totalMinutes !== 1 ? 's' : ''} ago`;
 };
 
+const PAGE_SIZE = 10; // Load 10 posts at a time
+
 export default function CommunityPage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const iconColor = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
-  const textColor = useThemeColor({}, 'text');
-  const placeholderColor = useThemeColor({ light: '#888', dark: '#aaa' }, 'text');
   const backgroundColor = useThemeColor({}, 'background');
 
-  const fetchPosts = async (showRefreshIndicator = false) => {
+  const fetchPosts = async (pageNum: number, isRefresh = false) => {
+    // Prevent multiple simultaneous requests
+    if (loadingMore && !isRefresh) return;
+    
+    // Don't load more if we've reached the end
+    if (!hasMore && !isRefresh) return;
+
     try {
-      if (showRefreshIndicator) {
+      if (isRefresh) {
         setRefreshing(true);
-      } else {
+      } else if (pageNum === 1) {
         setLoading(true);
+      } else {
+        setLoadingMore(true);
       }
 
-      // const storedToken = await AsyncStorage.getItem('token');
-      // if (!storedToken) {
-      //   console.warn('No authentication token found');
-      //   return;
-      // }
+      // Backend should support pagination: /api/posts/active?page=1&limit=10
+      const response = await axiosInstance.get('/api/posts/active', {
+        params: {
+          page: pageNum,
+          limit: PAGE_SIZE,
+          // Optional: sortBy: 'createdAt' or 'likes'
+        }
+      });
 
-      // setToken(storedToken);
+      const postsData = response.data.posts || response.data; // Adjust based on your API response
+      const totalPages = response.data.totalPages || Math.ceil(response.data.total / PAGE_SIZE);
 
-      const response = await axiosInstance.get('/api/posts');
-      const postsData = response.data;
+      // Check if there are more posts
+      setHasMore(pageNum < totalPages);
 
       const enrichedPosts = await Promise.all(
         postsData.map(async (post: any) => {
@@ -70,7 +81,6 @@ export default function CommunityPage() {
           let commentsCount = 0;
 
           try {
-            // Fetch club data using clubId
             const clubResponse = await axiosInstance.get(`/api/club/${post.clubId}`);
             profilePicture = clubResponse.data.profilePicture;
           } catch (error) {
@@ -78,7 +88,6 @@ export default function CommunityPage() {
           }
 
           try {
-            // Fetch comment count for each post
             const commentCountResponse = await axiosInstance.get(`/api/comments/post/${post.id}/count`);
             commentsCount = commentCountResponse.data;
           } catch (error) {
@@ -104,72 +113,100 @@ export default function CommunityPage() {
         })
       );
 
-      setPosts(enrichedPosts);
+      if (isRefresh || pageNum === 1) {
+        // Replace all posts on refresh or initial load
+        setPosts(enrichedPosts);
+      } else {
+        // Append new posts for pagination
+        setPosts(prevPosts => [...prevPosts, ...enrichedPosts]);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   };
 
   const onRefresh = () => {
-    fetchPosts(true);
+    setPage(1);
+    setHasMore(true);
+    fetchPosts(1, true);
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchPosts(nextPage);
+    }
   };
 
   useFocusEffect(
     useCallback(() => {
-      fetchPosts();
+      setPage(1);
+      setHasMore(true);
+      fetchPosts(1);
     }, [])
   );
 
+  const renderItem = ({ item }: { item: PostData }) => (
+    <PostCard post={item} />
+  );
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={tint} />
+        <ThemedText style={styles.loadingText}>Loading more posts...</ThemedText>
+      </View>
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={tint}
-            colors={[tint]}
-          />
-        }
-      >
-        <SafeAreaView edges={['top']}>
-          {/* Header */}
-          <ThemedText style={styles.headerTitle}>Community Feed</ThemedText>
+      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+        <ThemedText style={styles.headerTitle}>Community Feed</ThemedText>
 
-          {/* Feed */}
-          <View style={styles.feedContainer}>
-            {loading ? (
+        <FlatList
+          data={posts}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.feedContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={tint}
+              colors={[tint]}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={
+            loading ? (
               <View style={[styles.loadingContainer, { backgroundColor }]}>
-                <ThemedText>Loading posts...</ThemedText>
+                <ActivityIndicator size="large" color={tint} />
+                <ThemedText style={styles.loadingText}>Loading posts...</ThemedText>
               </View>
-            ) : posts.length > 0 ? (
-              posts.map(post => (
-                <PostCard key={post.id} post={post} />
-              ))
             ) : (
               <View style={[styles.emptyContainer, { backgroundColor }]}>
                 <ThemedText>No posts found</ThemedText>
               </View>
-            )}
-          </View>
-
-          {/* Bottom padding */}
-          <View style={styles.bottomPadding} />
-        </SafeAreaView>
-      </ScrollView>
+            )
+          }
+        />
+      </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  scrollView: {
     flex: 1,
   },
   headerTitle: {
@@ -180,18 +217,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   feedContainer: {
-    paddingBottom: 16,
+    paddingBottom: 80,
     paddingHorizontal: 16,
-  },
-  bottomPadding: {
-    height: 80,
   },
   loadingContainer: {
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
+    minHeight: 200,
+    gap: 12,
   },
   emptyContainer: {
     padding: 20,
@@ -199,5 +234,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 200,
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    opacity: 0.7,
   },
 });

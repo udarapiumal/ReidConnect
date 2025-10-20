@@ -204,6 +204,26 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toList());
     }
 
+    //get events by year, faculty and date range
+    //used in student calendar
+    @Override
+    public List<EventResponseDto> getEventsByYearFacultyAndDateRange(Years year, Faculties faculty, LocalDate startDate, LocalDate endDate) {
+        // First get events within the date range (like getEventsByDateRange)
+        List<Event> events = eventRepository.findAllByDateBetween(startDate, endDate);
+        
+        // Then filter by year and faculty (like getEventsByFacultiesAndYears)
+        return events.stream()
+                .filter(event -> event.getTargetYears().stream()
+                        .anyMatch(eventYear -> eventYear.getYear().equals(year)))
+                .filter(event -> event.getTargetFaculties().stream()
+                        .anyMatch(eventFaculty -> eventFaculty.getFaculty().equals(faculty)))
+                .map(event -> {
+                    List<Long> slotIds = getSlotIdsForEvent(event.getId());
+                    return EventMapper.toResponseDto(event, slotIds);
+                })
+                .collect(Collectors.toList());
+    }
+
     @Override
     public boolean doAllSlotsExist(List<Long> slotIds) {
         long count = slotRepository.countByIdIn(slotIds);

@@ -1,6 +1,7 @@
 package reidConnect.backend.service;
 
 import java.util.List;
+import reidConnect.backend.dto.PagedPostResponseDto;
 import reidConnect.backend.dto.PostCreateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.PostUpdateDto;
@@ -36,5 +37,9 @@ public interface PostService {
     long getTotalPostCountByClubId(Long clubId);
 
     long getRecentPostCountByClubId(Long clubId, int days);
+
+    List<PostResponseDto> getActivePosts();
+
+    PagedPostResponseDto getActivePostsPaginated(int page, int limit);
 
 }
