@@ -240,9 +240,9 @@ export function PostCard({ post, onPress }: PostCardProps) {
               {post.time}
             </ThemedText>
           </View>
-          <TouchableOpacity>
+          {/* <TouchableOpacity>
             <Feather name="more-vertical" size={20} color={secondaryTextColor} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <ThemedText style={styles.content}>{post.text}</ThemedText>
@@ -286,9 +286,9 @@ export function PostCard({ post, onPress }: PostCardProps) {
             </ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          {/* <TouchableOpacity style={styles.actionButton}>
             <Feather name="share-2" size={18} color={secondaryTextColor} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ThemedView>
 

@@ -476,9 +476,9 @@ export default function EventDetailPage() {
             <Ionicons name={interestStatus === 'going' ? "checkmark-circle" : "checkmark"} size={20} color={interestStatus === 'going' ? colors.buttonText : (interestStatus === 'interested' ? colors.secondaryButtonText : colors.buttonText)} />
             <ThemedText style={[styles.buttonText, { color: interestStatus === 'going' ? colors.buttonText : (interestStatus === 'interested' ? colors.secondaryButtonText : colors.buttonText) }]}>Going</ThemedText>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.moreOptionsButton, { backgroundColor: colors.secondaryButton }]}>
+          {/* <TouchableOpacity style={[styles.moreOptionsButton, { backgroundColor: colors.secondaryButton }]}>
             <Ionicons name="ellipsis-horizontal" size={20} color={colors.secondaryButtonText} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Event Info Section */}
@@ -494,7 +494,7 @@ export default function EventDetailPage() {
             <ThemedText style={[styles.navTabText, { color: colors.secondaryButtonText }]}>About</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navTab}>
-            <ThemedText style={[styles.navTabText, { color: colors.icon }]}>Posts</ThemedText>
+            {/* <ThemedText style={[styles.navTabText, { color: colors.icon }]}>Posts</ThemedText> */}
           </TouchableOpacity>
         </View>
 
@@ -563,13 +563,12 @@ export default function EventDetailPage() {
         )}
 
         {/* Recent posts Section */}
-        <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
+        {/* <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
           <ThemedText type="subtitle" style={[styles.sectionTitle, {color: colors.text}]}>
             Recent Posts
           </ThemedText>
-          {/* Placeholder for recent posts */}
           <ThemedText style={{ color: colors.text }}>No recent posts available.</ThemedText>
-        </View>
+        </View> */}
       </ScrollView>
     </ThemedView>
   );

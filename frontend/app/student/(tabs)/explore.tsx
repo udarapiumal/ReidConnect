@@ -103,20 +103,20 @@ export default function ExplorePage() {
           <ThemedText style={styles.headerTitle}>Explore</ThemedText>
 
           {/* Search Bar */}
-          <View style={[styles.searchContainer, { backgroundColor: cardColor, borderColor }]}>
+          {/* <View style={[styles.searchContainer, { backgroundColor: cardColor, borderColor }]}>
             <Feather name="search" size={20} color={iconColor} style={styles.searchIcon} />
             <TextInput
                 style={[styles.searchInput, { color: textColor }]}
                 placeholder="Search for events, clubs, or places"
                 placeholderTextColor={iconColor}
             />
-          </View>
+          </View> */}
 
           
 
           {/* Categories */}
           <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>All Categories</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Clubs & Events</ThemedText>
             <FlatList
                 key="categories-grid"
                 data={categories}
