@@ -9,8 +9,6 @@ import java.util.Optional;
 
 public interface AcademicCalendarRepository extends JpaRepository<AcademicCalendar, Long> {
 
-    List<AcademicCalendar> findByAcademicYear(String academicYear);
-
     @Query("SELECT a FROM AcademicCalendar a WHERE :date BETWEEN a.startDate AND a.endDate")
     Optional<AcademicCalendar> findCurrentPeriod(LocalDate date);
 

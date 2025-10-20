@@ -438,7 +438,7 @@ export default function ClubProfileScreen() {
 
             {loadingComments ? (
               <View style={styles.commentsLoading}>
-                <ActivityIndicator size="large" color="#00d4ff" />
+                <ActivityIndicator size="large" color="#ff3b3b" />
               </View>
             ) : comments.length === 0 ? (
               <View style={styles.noComments}>
@@ -486,7 +486,7 @@ export default function ClubProfileScreen() {
                   <Ionicons
                     name="send"
                     size={20}
-                    color={commentText.trim() ? '#00d4ff' : '#666'}
+                    color={commentText.trim() ? '#ff3b3b' : '#666'}
                   />
                 </TouchableOpacity>
               </View>
@@ -569,7 +569,7 @@ export default function ClubProfileScreen() {
         
         {isEvent && (
           <View style={styles.eventVenue}>
-            <Ionicons name="location-outline" size={16} color="#00d4ff" />
+            <Ionicons name="location-outline" size={16} color="#ff3b3b" />
             <Text style={styles.venueText}>
               {item.venueName || item.venue || 'Venue TBA'}
             </Text>
@@ -666,14 +666,14 @@ export default function ClubProfileScreen() {
             <View style={styles.eventDetails}>
               {item.date && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="calendar" size={16} color="#00d4ff" />
+                  <Ionicons name="calendar" size={16} color="#ff3b3b" />
                   <Text style={styles.eventDetailText}>{formatEventDate(item.date)}</Text>
                 </View>
               )}
               
               {item.targetYears && item.targetYears.length > 0 && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="school" size={16} color="#00d4ff" />
+                  <Ionicons name="school" size={16} color="#ff3b3b" />
                   <Text style={styles.eventDetailText}>
                     Target Years: {formatTargets(item.targetYears)}
                   </Text>
@@ -682,7 +682,7 @@ export default function ClubProfileScreen() {
               
               {item.targetFaculties && item.targetFaculties.length > 0 && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="business" size={16} color="#00d4ff" />
+                  <Ionicons name="business" size={16} color="#ff3b3b" />
                   <Text style={styles.eventDetailText}>
                     Faculties: {formatTargets(item.targetFaculties)}
                   </Text>
@@ -711,7 +711,7 @@ export default function ClubProfileScreen() {
             <Ionicons 
               name={selectedTab === 'posts' ? "images-outline" : "calendar-outline"} 
               size={48} 
-              color="#00d4ff" 
+              color="#ff3b3b" 
             />
           </View>
           <Text style={styles.emptyText}>No {selectedTab} yet</Text>
@@ -787,7 +787,7 @@ export default function ClubProfileScreen() {
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
-                <Ionicons name="images-outline" size={20} color="#00d4ff" />
+                <Ionicons name="images-outline" size={20} color="#ff3b3b" />
               </View>
               <Text style={styles.statNumber}>{postCount}</Text>
               <Text style={styles.statLabel}>Posts</Text>
@@ -795,7 +795,7 @@ export default function ClubProfileScreen() {
             
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
-                <Ionicons name="calendar-outline" size={20} color="#00d4ff" />
+                <Ionicons name="calendar-outline" size={20} color="#ff3b3b" />
               </View>
               <Text style={styles.statNumber}>{eventCount}</Text>
               <Text style={styles.statLabel}>Events</Text>
@@ -803,7 +803,7 @@ export default function ClubProfileScreen() {
             
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
-                <Ionicons name="people-outline" size={20} color="#00d4ff" />
+                <Ionicons name="people-outline" size={20} color="#ff3b3b" />
               </View>
               <Text style={styles.statNumber}>{subCount || 0}</Text>
               <Text style={styles.statLabel}>Subscribers</Text>
@@ -811,7 +811,7 @@ export default function ClubProfileScreen() {
           </View>
 
           <TouchableOpacity 
-            style={[styles.subscribeButton, { backgroundColor: isSubscribed ? '#666' : '#00d4ff' }]}
+            style={[styles.subscribeButton, { backgroundColor: isSubscribed ? '#666' : '#ff3b3b' }]}
             onPress={handleSubscribe}
             disabled={subscribeLoading}
           >
@@ -834,7 +834,7 @@ export default function ClubProfileScreen() {
               <Ionicons 
                 name="grid-outline" 
                 size={20} 
-                color={selectedTab === 'posts' ? '#00d4ff' : '#666'} 
+                color={selectedTab === 'posts' ? '#ff3b3b' : '#666'} 
               />
               <Text style={[styles.tabText, selectedTab === 'posts' && styles.activeTabText]}>
                 Posts
@@ -848,7 +848,7 @@ export default function ClubProfileScreen() {
               <Ionicons 
                 name="calendar-outline" 
                 size={20} 
-                color={selectedTab === 'events' ? '#00d4ff' : '#666'} 
+                color={selectedTab === 'events' ? '#ff3b3b' : '#666'} 
               />
               <Text style={[styles.tabText, selectedTab === 'events' && styles.activeTabText]}>
                 Events
@@ -956,8 +956,8 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: '#0a0b0c',
     borderWidth: 4,
-    borderColor: '#00d4ff',
-    shadowColor: '#00d4ff',
+    borderColor: '#ff3b3b',
+    shadowColor: '#ff3b3b',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 20,
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    backgroundColor: 'rgba(255, 59, 59, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -1056,7 +1056,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeTab: {
-    backgroundColor: 'rgba(0, 212, 255, 0.15)',
+    backgroundColor: 'rgba(255, 59, 59, 0.15)',
   },
   tabText: {
     color: '#666',
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeTabText: {
-    color: '#00d4ff',
+    color: '#ff3b3b',
   },
   contentWrapper: {
     paddingHorizontal: 20,
@@ -1118,7 +1118,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    backgroundColor: 'rgba(255, 59, 59, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -1169,7 +1169,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 12,
     borderWidth: 2,
-    borderColor: '#00d4ff',
+    borderColor: '#ff3b3b',
   },
   detailHeaderText: {
     flex: 1,
@@ -1208,7 +1208,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#00d4ff',
+    backgroundColor: '#ff3b3b',
   },
   postActions: {
     paddingHorizontal: 16,
@@ -1259,11 +1259,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    backgroundColor: 'rgba(255, 59, 59, 0.1)',
     marginBottom: 0,
   },
   venueText: {
-    color: '#00d4ff',
+    color: '#ff3b3b',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 6,
@@ -1404,12 +1404,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    backgroundColor: 'rgba(255, 59, 59, 0.1)',
     borderBottomWidth: 1,
     borderBottomColor: '#1a1d1f',
   },
   replyingToText: {
-    color: '#00d4ff',
+    color: '#ff3b3b',
     fontSize: 13,
     fontWeight: '500',
   },

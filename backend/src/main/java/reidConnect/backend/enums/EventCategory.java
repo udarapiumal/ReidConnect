@@ -6,4 +6,5 @@ public enum EventCategory {
     WELLNESS,
     OTHER,
     COMPETITION,
+    LOST
 }

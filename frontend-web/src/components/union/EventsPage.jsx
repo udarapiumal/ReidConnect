@@ -217,7 +217,7 @@ const EventsPage = () => {
             </button>
 
             <img
-              src={selectedEvent.imagePath}
+              src={`http://localhost:8080/${selectedEvent.imagePath}`}
               alt={selectedEvent.name}
               className="modal-image"
             />

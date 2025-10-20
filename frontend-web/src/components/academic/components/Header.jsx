@@ -8,13 +8,6 @@ export default function Header() {
           ReidConnect <span className="academic-text">AcademicAdmin</span>
         </h1>
       </div>
-      <div className="header-right">
-        <div className="header-icons">
-          <i className="fas fa-bell icon"></i>
-          <i className="fas fa-user icon"></i>
-        </div>
-        <span className="admin-text">Admin</span>
-      </div>
     </header>
   );
 }

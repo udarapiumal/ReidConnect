@@ -15,8 +15,6 @@ export default function AcademicCalendar() {
     title: "",
     startDate: "",
     endDate: "",
-    academicYear: "2025/2026",
-    intake: "",
     periodType: "SEMESTER",
   });
 
@@ -65,8 +63,6 @@ export default function AcademicCalendar() {
         title: "",
         startDate: "",
         endDate: "",
-        academicYear: "2025/2026",
-        intake: "",
         periodType: "SEMESTER",
       });
       fetchPeriods();
@@ -174,8 +170,6 @@ const calendarDates = (() => {
                   <th>Start</th>
                   <th>End</th>
                   <th>Type</th>
-                  <th>Intake</th>
-                  <th>Year</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -186,8 +180,6 @@ const calendarDates = (() => {
                     <td>{p.startDate}</td>
                     <td>{p.endDate}</td>
                     <td>{p.periodType}</td>
-                    <td>{p.intake}</td>
-                    <td>{p.academicYear}</td>
                     <td>
                       <button
                         className="edit-btn"
@@ -287,19 +279,13 @@ const calendarDates = (() => {
                   >
                     <option value="SEMESTER">Semester</option>
                     <option value="STUDY_LEAVE">Study Leave</option>
+                    <option value="PROJECT_EVALUATION">Project Evaluation</option>
                     <option value="EXAMINATION">Examination</option>
                     <option value="VACATION">Vacation</option>
                     <option value="ORIENTATION">Orientation</option>
                     <option value="CONFERENCE">Conference</option>
                     <option value="OTHER">Other</option>
                   </select>
-                  <input
-                    type="text"
-                    name="intake"
-                    placeholder="Intake (e.g. 22/23)"
-                    value={formData.intake}
-                    onChange={handleChange}
-                  />
                   <button type="submit" className="save-btn">
                     Save
                   </button>

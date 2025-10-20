@@ -24,8 +24,6 @@ public class AcademicCalendarServiceImpl implements AcademicCalendarService {
                 .title(p.getTitle())
                 .startDate(p.getStartDate())
                 .endDate(p.getEndDate())
-                .academicYear(p.getAcademicYear())
-                .intake(p.getIntake())
                 .periodType(p.getPeriodType())
                 .build();
     }
@@ -36,8 +34,6 @@ public class AcademicCalendarServiceImpl implements AcademicCalendarService {
                 .title(dto.getTitle())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
-                .academicYear(dto.getAcademicYear())
-                .intake(dto.getIntake())
                 .periodType(dto.getPeriodType())
                 .build();
     }
@@ -55,8 +51,6 @@ public class AcademicCalendarServiceImpl implements AcademicCalendarService {
         existing.setTitle(dto.getTitle());
         existing.setStartDate(dto.getStartDate());
         existing.setEndDate(dto.getEndDate());
-        existing.setAcademicYear(dto.getAcademicYear());
-        existing.setIntake(dto.getIntake());
         existing.setPeriodType(dto.getPeriodType());
         return mapToDto(repository.save(existing));
     }

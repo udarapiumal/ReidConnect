@@ -70,6 +70,12 @@ const categories: CategoryData[] = [
     icon: 'menu',
     colors: ['#ffecd2', '#fcb69f'],
   },
+  {
+    id: '10',
+    name: 'Lost & Found',
+    icon: 'search',
+    colors: ['#c79081', '#dfa579'],
+  },
 ];
 
 export default function ExplorePage() {
@@ -83,7 +89,10 @@ export default function ExplorePage() {
   const handleCategoryPress = (category: CategoryData) => {
     if (category.name === 'Clubs') {
       router.push('/student/pages/ClubsPage');
-    } else {
+    } 
+    else if (category.name === "Lost & Found") {
+    router.push("/student/pages/LostFoundPage");
+  }else {
       
       router.push(`/student/pages/CategoryEventPage?category=${category.name}`);
     }
