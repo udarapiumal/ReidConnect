@@ -212,6 +212,17 @@ public class EventController {
         return ResponseEntity.ok(events);
     }
 
+    //get by year, faculty and date range for students
+    @GetMapping("/year-faculty-date-range")
+    public ResponseEntity<List<EventResponseDto>> getEventsByYearFacultyAndDateRange(
+            @RequestParam Years year,
+            @RequestParam Faculties faculty,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        List<EventResponseDto> events = eventService.getEventsByYearFacultyAndDateRange(year, faculty, startDate, endDate);
+        return ResponseEntity.ok(events);
+    }
+
     //get event by category
     @GetMapping("/category")
     public ResponseEntity<List<EventResponseDto>> getEventsByCategory(@RequestParam String category) {

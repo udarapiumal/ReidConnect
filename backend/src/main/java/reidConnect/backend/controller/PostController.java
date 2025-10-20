@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.dto.PagedPostResponseDto;
 import reidConnect.backend.dto.PostCreateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.PostUpdateDto;
@@ -96,6 +97,23 @@ public class PostController {
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
         List<PostResponseDto> posts = postService.getAllPosts();
+        return ResponseEntity.ok(posts);
+    }
+
+    //Get active posts
+    @GetMapping("/active")
+    public ResponseEntity<?> getActivePosts(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit) {
+        
+        // If pagination parameters are provided, use paginated endpoint
+        if (page != null && limit != null) {
+            PagedPostResponseDto pagedPosts = postService.getActivePostsPaginated(page, limit);
+            return ResponseEntity.ok(pagedPosts);
+        }
+        
+        // Otherwise, return all active posts (backward compatibility)
+        List<PostResponseDto> posts = postService.getActivePosts();
         return ResponseEntity.ok(posts);
     }
 

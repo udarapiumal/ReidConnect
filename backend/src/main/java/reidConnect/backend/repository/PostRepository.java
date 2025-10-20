@@ -1,5 +1,7 @@
 package reidConnect.backend.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import reidConnect.backend.entity.Post;
 
@@ -20,5 +22,11 @@ public interface PostRepository extends JpaRepository<Post, Long>
     long countByClub_Id(Long clubId);
 
     long countByClub_IdAndCreatedAtAfter(Long clubId, java.time.LocalDateTime date);
+
+    List<Post> findAllByActiveTrue();
+
+    // Paginated query for active posts
+    Page<Post> findAllByActiveTrue(Pageable pageable);
+
 
 }

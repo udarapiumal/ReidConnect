@@ -307,8 +307,6 @@ export default function HomePage() {
           getPosts()
         ]);
         
-        // Categorize events based on different criteria
-        
         // Your Next Event - events user is going to or interested in
         const next = eventsData
           .filter((event: any) => 
@@ -347,9 +345,13 @@ export default function HomePage() {
           })
           .sort((a: any, b: any) => b.interested - a.interested)
           .slice(0, 5);
+                // TEMPORARY: If no featured events, show first 3 upcoming events
+        const featured = featuredEventsData.length > 0 
+          ? featuredEventsData 
+          : eventsData.slice(0, 3);
 
         // Set state with categorized events and posts
-        setFeaturedEvents(featuredEventsData); // Only show actual featured events from API
+        setFeaturedEvents(featured); // Only show actual featured events from API
         setNextEvents(next); // Show empty if no events with user attendance
         setUpcomingEvents(upcoming);
         setPopularEvents(popular);
@@ -433,7 +435,7 @@ export default function HomePage() {
       if (!a.isUpcoming && b.isUpcoming) return 1;
       
       // Sort by date
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
     
     setFilteredEvents(sortedEvents);
@@ -496,7 +498,7 @@ export default function HomePage() {
                 </ThemedText>
               </View>
               <View style={styles.headerButtons}>
-                <TouchableOpacity 
+                {/* <TouchableOpacity 
                   style={[styles.iconButton, styles.searchButton]}
                   activeOpacity={0.7}
                 >
@@ -505,7 +507,7 @@ export default function HomePage() {
                     style={styles.iconButtonGradient}
                   />
                   <Feather name="search" size={24} color={iconColor} />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
                 <TouchableOpacity 
                   style={[styles.iconButton, styles.notificationButton]}
                   activeOpacity={0.7}
@@ -562,22 +564,22 @@ export default function HomePage() {
           )}
 
           {/* Your Next Event */}
-          {nextEvents.length > 0 && (
-            <Animated.View 
-              style={[
-                styles.section, 
-                { 
-                  opacity: fadeAnim,
-                  transform: [{ scale: scaleAnim }] 
-                }
-              ]}
-            >
-              <View style={styles.sectionTitleContainer}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>
-                  Your Next Event
-                </ThemedText>
-                <View style={[styles.sectionTitleAccent, { backgroundColor: '#FF6B6B' }]} />
-              </View>
+          <Animated.View 
+            style={[
+              styles.section, 
+              { 
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }] 
+              }
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Your Next Events
+              </ThemedText>
+              <View style={[styles.sectionTitleAccent, { backgroundColor: '#FF6B6B' }]} />
+            </View>
+            {nextEvents.length > 0 ? (
               <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -591,8 +593,12 @@ export default function HomePage() {
                       />
                 ))}
               </ScrollView>
-            </Animated.View>
-          )}
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <ThemedText style={styles.emptyStateText}>📅 No upcoming events registered</ThemedText>
+              </View>
+            )}
+          </Animated.View>
 
           {/* Upcoming Event */}
           <Animated.View 
@@ -606,23 +612,29 @@ export default function HomePage() {
           >
             <View style={styles.sectionTitleContainer}>
               <ThemedText type="subtitle" style={styles.sectionTitle}>
-                Upcoming Events
+                This week Events
               </ThemedText>
               <View style={[styles.sectionTitleAccent, { backgroundColor: '#4ECDC4' }]} />
             </View>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredEventsContainer}>
-              {upcomingEvents.map(event => (
-                    <EventCard 
-                      key={event.id} 
-                      event={event} 
-                      size="large" 
-                      onPress={() => handleEventPress(event.id)}
-                    />
-                ))}
-            </ScrollView>
+            {upcomingEvents.length > 0 ? (
+              <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredEventsContainer}>
+                {upcomingEvents.map(event => (
+                      <EventCard 
+                        key={event.id} 
+                        event={event} 
+                        size="large" 
+                        onPress={() => handleEventPress(event.id)}
+                      />
+                  ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <ThemedText style={styles.emptyStateText}>🔥 No events happening soon</ThemedText>
+              </View>
+            )}
           </Animated.View>
 
           {/* Popular Event */}
@@ -641,19 +653,25 @@ export default function HomePage() {
               </ThemedText>
               <View style={[styles.sectionTitleAccent, { backgroundColor: '#FF9F43' }]} />
             </View>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredEventsContainer}>
-              {popularEvents.map(event => (
-                      <EventCard 
-                        key={event.id} 
-                        event={event} 
-                        size="large" 
-                        onPress={() => handleEventPress(event.id)}
-                      />
-              ))}
-            </ScrollView>
+            {popularEvents.length > 0 ? (
+              <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.featuredEventsContainer}>
+                {popularEvents.map(event => (
+                        <EventCard 
+                          key={event.id} 
+                          event={event} 
+                          size="large" 
+                          onPress={() => handleEventPress(event.id)}
+                        />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <ThemedText style={styles.emptyStateText}>⭐ No popular events at the moment</ThemedText>
+              </View>
+            )}
           </Animated.View>
 
           {/* Community Feed */}
@@ -979,6 +997,24 @@ const styles = StyleSheet.create({
   noEventsText: {
     fontSize: 16,
     opacity: 0.6,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    marginTop: 16,
+    marginHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 122, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.1)',
+    borderStyle: 'dashed',
+  },
+  emptyStateText: {
+    fontSize: 15,
+    opacity: 0.6,
+    textAlign: 'center',
   },
   bottomPadding: {
     height: 40,

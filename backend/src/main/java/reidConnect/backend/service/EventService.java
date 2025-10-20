@@ -43,5 +43,5 @@ public interface EventService {
 
     List<EventResponseDto> getEventsByDateRange(LocalDate startDate, LocalDate endDate);
     List<EventResponseDto> getEventsByCategory(String category);
-
+    List<EventResponseDto> getEventsByYearFacultyAndDateRange(Years year, Faculties faculty, LocalDate startDate, LocalDate endDate);
 }
