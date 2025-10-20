@@ -1,18 +1,23 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,14 +26,13 @@ import { useThemeColor } from '../../../hooks/useThemeColor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const GRID_SPACING = 12;
+const imageSize = (screenWidth - 40 - (GRID_SPACING * 2)) / 3;
+const imageHeight = imageSize * (4/3);
 
-const { width: screenWidth } = Dimensions.get('window');
-const imageSize = (screenWidth - 4) / 3; // 3 columns with 2px gaps
-const router = useRouter();
-
-const formatTimeAgo = (timestamp: string) => {
+const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const createdAt = new Date(timestamp);
   const diffMs = now.getTime() - createdAt.getTime();
@@ -45,7 +49,7 @@ const formatTimeAgo = (timestamp: string) => {
 };
 
 export default function ClubProfileScreen() {
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState(null);
   const { clubId } = useLocalSearchParams();
   const [selectedTab, setSelectedTab] = useState('posts');
   const [posts, setPosts] = useState([]);
@@ -56,112 +60,99 @@ export default function ClubProfileScreen() {
   const [eventCount, setEventCount] = useState(0);
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [postStats, setPostStats] = useState({}); // Store like/comment counts for posts
+  const [postStats, setPostStats] = useState({});
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [clubDetails, setClubDetails] = useState<any>(null);
+  const [clubDetails, setClubDetails] = useState(null);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState(null);
+  const [showComments, setShowComments] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [likedPosts, setLikedPosts] = useState({});
+  const router = useRouter();
 
   // Get theme colors
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const buttonColor = useThemeColor({}, 'button');
   const buttonTextColor = useThemeColor({}, 'buttonText');
-  const cardColor = useThemeColor({}, 'card');
-  const borderColor = useThemeColor({}, 'border');
 
   useFocusEffect(
-  useCallback(() => {
-    const loadToken = async () => {
-  try {
-    const storedToken = await AsyncStorage.getItem('token');
-    if (!storedToken) {
-      console.warn('No token found');
-      return;
-    }
+    useCallback(() => {
+      const loadToken = async () => {
+        try {
+          const storedToken = await AsyncStorage.getItem('token');
+          if (!storedToken) {
+            console.warn('No token found');
+            return;
+          }
 
-    setToken(storedToken);
+          setToken(storedToken);
 
-    try {
-      const decoded: any = jwtDecode(storedToken);
-      console.log('Decoded token:', decoded);
-      setUser(decoded); // ✅ SET USER HERE
-    } catch (decodeErr) {
-      console.error('Token decode error:', decodeErr);
-    }
+          try {
+            const decoded = jwtDecode(storedToken);
+            setUser(decoded);
+          } catch (decodeErr) {
+            console.error('Token decode error:', decodeErr);
+          }
+        } catch (err) {
+          console.error('Error loading token:', err);
+        }
+      };
 
-  } catch (err) {
-    console.error('Error loading token:', err);
-  }
-};
+      loadToken();
+    }, [])
+  );
 
-
-    loadToken();
-  }, [])
-);
-
-
-  // Function to fetch club details (should be passed as props or from route params)
-  const fetchClubDetails = async (clubId: string) => {
+  const fetchClubDetails = async (clubId) => {
     try {
       const res = await axios.get(`${BASE_URL}/api/club/${clubId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log(res.data);
       setClubDetails(res.data);
     } catch (error) {
       console.error('Error fetching club details:', error);
     }
   };
 
-  // Function to check subscription status
   const checkSubscriptionStatus = async () => {
-  if (!clubDetails?.id || !user?.id) return;
-  try {
-    const res = await axios.get(
-      `${BASE_URL}/api/subscriptions/check/${clubDetails.id}?userId=${user.id}`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
-    setIsSubscribed(res.data === true);
-  } catch (error) {
-    console.error('Error checking subscription status:', error);
-    setIsSubscribed(false);
-  }
-};
+    if (!clubDetails?.id || !user?.id) return;
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/subscriptions/check/${clubDetails.id}?userId=${user.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsSubscribed(res.data === true);
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      setIsSubscribed(false);
+    }
+  };
 
-
-  // Function to handle subscription
   const handleSubscribe = async () => {
     if (!clubDetails?.id || subscribeLoading || !user?.id) return;
     
     setSubscribeLoading(true);
     try {
       if (isSubscribed) {
-        // Unsubscribe
         await axios.post(`${BASE_URL}/api/subscriptions/unsubscribe`, 
-          { 
-            userId: user.id,
-            clubId: clubDetails.id 
-          },
+          { userId: user.id, clubId: clubDetails.id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsSubscribed(false);
         Alert.alert('Success', 'Unsubscribed successfully!');
       } else {
-        // Subscribe
         await axios.post(`${BASE_URL}/api/subscriptions/subscribe`, 
-          { 
-            userId: user.id,
-            clubId: clubDetails.id 
-          },
+          { userId: user.id, clubId: clubDetails.id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsSubscribed(true);
         Alert.alert('Success', 'Subscribed successfully!');
       }
-      fetchSubCount(); // Refresh subscriber count
+      fetchSubCount();
     } catch (error) {
       console.error('Error handling subscription:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
@@ -172,26 +163,21 @@ export default function ClubProfileScreen() {
 
   const fetchSubCount = async () => {
     try {
-      const [subCountResponse] = await Promise.all([
-        axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-      ]);
-      console.log(subCountResponse.data);
-      setSubCount(subCountResponse.data || 0);
+      const res = await axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSubCount(res.data || 0);
     } catch (error) {
-      console.error(`Error fetching subCount:`, error);
-      return { subCount: 0 };
+      console.error('Error fetching subCount:', error);
     }
   };
 
-  const fetchPostStats = async (postId: number) => {
+  const fetchPostStats = async (postId) => {
     try {
       const [likeCountRes, commentCountRes] = await Promise.all([
         axios.get(`${BASE_URL}/api/posts/${postId}/likes/count`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
- 
         axios.get(`${BASE_URL}/api/comments/post/${postId}/count`, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -207,19 +193,91 @@ export default function ClubProfileScreen() {
     }
   };
 
-  const fetchAllPostStats = async (postsData: any[]) => {
+  const fetchAllPostStats = async (postsData) => {
     try {
-      const statsPromises = postsData.map((post: any) => fetchPostStats(post.id));
+      const statsPromises = postsData.map(post => fetchPostStats(post.id));
       const statsResults = await Promise.all(statsPromises);
       
-      const statsMap: any = {};
-      postsData.forEach((post: any, index: number) => {
+      const statsMap = {};
+      postsData.forEach((post, index) => {
         statsMap[post.id] = statsResults[index];
       });
       
       setPostStats(statsMap);
     } catch (error) {
       console.error('Error fetching all post stats:', error);
+    }
+  };
+
+  const fetchComments = async (postId) => {
+    setLoadingComments(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/comments/post/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setComments(res.data || []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !user?.id) return;
+
+    try {
+      const commentData = {
+        postId: selectedPostId,
+        content: commentText.trim(),
+        parentCommentId: replyingTo?.id || null,
+        userId: user.id
+      };
+
+      await axios.post(`${BASE_URL}/api/comments`, commentData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setCommentText('');
+      setReplyingTo(null);
+      await fetchComments(selectedPostId);
+      
+      const updatedStats = await fetchPostStats(selectedPostId);
+      setPostStats(prev => ({
+        ...prev,
+        [selectedPostId]: updatedStats
+      }));
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const handleCommentPress = (postId) => {
+    setSelectedPostId(postId);
+    setShowComments(true);
+    fetchComments(postId);
+  };
+
+  const handleLikeToggle = async (postId) => {
+    if (!user?.id) return;
+    const isLiked = likedPosts[postId];
+    try {
+      if (isLiked) {
+        await axios.delete(`${BASE_URL}/api/posts/${postId}/like`, {
+          params: { userId: user.id },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        await axios.post(`${BASE_URL}/api/posts/${postId}/like`, null, {
+          params: { userId: user.id },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
+      const updatedStats = await fetchPostStats(postId);
+      setPostStats(prev => ({ ...prev, [postId]: updatedStats }));
+    } catch (err) {
+      console.error('Error toggling like:', err);
     }
   };
 
@@ -232,7 +290,6 @@ export default function ClubProfileScreen() {
       const postsData = res.data || [];
       setPosts(postsData);
       
-      // Fetch stats for all posts
       if (postsData.length > 0) {
         await fetchAllPostStats(postsData);
       }
@@ -275,55 +332,185 @@ export default function ClubProfileScreen() {
   };
 
   useEffect(() => {
-  if (!token || !clubDetails?.id) return;
-  if (selectedTab === 'posts') fetchPosts();
-  else fetchEvents();
-}, [selectedTab, token, clubDetails]);
-
+    if (!token || !clubDetails?.id) return;
+    if (selectedTab === 'posts') fetchPosts();
+    else fetchEvents();
+  }, [selectedTab, token, clubDetails]);
 
   useEffect(() => {
-  if (token && clubDetails?.id) {
-    fetchCounts();
-    fetchSubCount();
-    checkSubscriptionStatus();
-  }
-}, [clubDetails, token]);
+    if (token && clubDetails?.id) {
+      fetchCounts();
+      fetchSubCount();
+      checkSubscriptionStatus();
+    }
+  }, [clubDetails, token]);
 
-
-  // Initialize club details from route params
   useEffect(() => {
-  if (clubId && typeof clubId === 'string' && token) {
-    fetchClubDetails(clubId);
-  }
-}, [clubId, token]);
+    if (clubId && typeof clubId === 'string' && token) {
+      fetchClubDetails(clubId);
+    }
+  }, [clubId, token]);
 
+  useEffect(() => {
+    const fetchLikedPosts = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await axios.get(`${BASE_URL}/api/posts/likedByUser/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const likedIds = res.data;
+        const likedMap = {};
+        likedIds.forEach(id => likedMap[id] = true);
+        setLikedPosts(likedMap);
+      } catch (err) {
+        console.error('Error fetching liked posts:', err);
+      }
+    };
+
+    if (user?.id) fetchLikedPosts();
+  }, [user]);
 
   const currentData = selectedTab === 'posts' ? posts : events;
 
-  const handleItemPress = (index: number) => {
+  const handleItemPress = (index) => {
     setSelectedIndex(index);
     setShowDetailView(true);
   };
 
-  const renderGridItem = ({ item, index }: { item: any; index: number }) => {
-    // Handle different image path structures for posts vs events
+  const renderComment = ({ item, depth = 0 }) => (
+    <View style={[styles.commentItem, { marginLeft: depth * 32 }]}>
+      <Image
+        source={{ uri: `${BASE_URL}${item.profilePictureUrl}` }}
+        style={styles.commentAvatar}
+      />
+      <View style={styles.commentContent}>
+        <Text style={styles.commentUsername}>{item.userName || 'User'}</Text>
+        <Text style={styles.commentText}>{item.content}</Text>
+        <View style={styles.commentActions}>
+          <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt)}</Text>
+          <TouchableOpacity onPress={() => setReplyingTo(item)}>
+            <Text style={styles.replyButton}>Reply</Text>
+          </TouchableOpacity>
+        </View>
+        {item.replies && item.replies.length > 0 && (
+          <FlatList
+            data={item.replies}
+            renderItem={({ item: reply }) => renderComment({ item: reply, depth: depth + 1 })}
+            keyExtractor={(reply) => reply.id.toString()}
+          />
+        )}
+      </View>
+    </View>
+  );
+
+  const CommentsModal = () => (
+    <Modal
+      visible={showComments}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => {
+        setShowComments(false);
+        setReplyingTo(null);
+        setCommentText('');
+      }}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.commentsModalContainer}
+      >
+        <View style={styles.commentsModalBackdrop} />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.commentsModalContent}>
+            <View style={styles.commentsHeader}>
+              <View style={styles.modalHandle} />
+              <Text style={styles.commentsTitle}>Comments</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowComments(false);
+                  setReplyingTo(null);
+                  setCommentText('');
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {loadingComments ? (
+              <View style={styles.commentsLoading}>
+                <ActivityIndicator size="large" color="#00d4ff" />
+              </View>
+            ) : comments.length === 0 ? (
+              <View style={styles.noComments}>
+                <Ionicons name="chatbubble-outline" size={48} color="#666" />
+                <Text style={styles.noCommentsText}>No comments yet</Text>
+                <Text style={styles.noCommentsSubtext}>Be the first to comment!</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={comments}
+                renderItem={renderComment}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={styles.commentsList}
+              />
+            )}
+
+            <View style={styles.commentInputContainer}>
+              {replyingTo && (
+                <View style={styles.replyingToContainer}>
+                  <Text style={styles.replyingToText}>
+                    Replying to {replyingTo.userName}
+                  </Text>
+                  <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                    <Ionicons name="close-circle" size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              )}
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Add a comment..."
+                  placeholderTextColor="#666"
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  multiline
+                />
+                <TouchableOpacity
+                  onPress={handleAddComment}
+                  disabled={!commentText.trim()}
+                  style={[
+                    styles.sendButton,
+                    !commentText.trim() && styles.sendButtonDisabled
+                  ]}
+                >
+                  <Ionicons
+                    name="send"
+                    size={20}
+                    color={commentText.trim() ? '#00d4ff' : '#666'}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+
+  const renderGridItem = ({ item, index }) => {
     const imageUri = selectedTab === 'posts' 
       ? (item.mediaPaths?.[0] ? `${BASE_URL}/${item.mediaPaths[0]}` : null)
       : (item.imagePath ? `${BASE_URL}/${item.imagePath}` : null);
     
+    const itemHeight = selectedTab === 'events' ? imageHeight : imageSize;
+    
     return (
       <TouchableOpacity 
-        style={styles.gridItem} 
+        style={[styles.gridItem, { height: itemHeight }]} 
         onPress={() => handleItemPress(index)}
       >
         {imageUri ? (
-          <Image
-            source={{ uri: imageUri }}
-            style={styles.gridImage}
-            onError={(error) => {
-              console.log('Image load error:', error.nativeEvent.error);
-            }}
-          />
+          <Image source={{ uri: imageUri }} style={styles.gridImage} />
         ) : (
           <View style={styles.placeholderContainer}>
             <Ionicons 
@@ -333,7 +520,6 @@ export default function ClubProfileScreen() {
             />
           </View>
         )}
-        {/* Multiple images indicator - only for posts */}
         {selectedTab === 'posts' && item.mediaPaths && item.mediaPaths.length > 1 && (
           <View style={styles.multipleImagesIndicator}>
             <Ionicons name="copy-outline" size={16} color="#fff" />
@@ -343,21 +529,17 @@ export default function ClubProfileScreen() {
     );
   };
 
-  const renderDetailItem = ({ item, index }: { item: any; index: number }) => {
+  const renderDetailItem = ({ item }) => {
     const isEvent = selectedTab === 'events';
     const images = isEvent ? (item.imagePath ? [item.imagePath] : []) : (item.mediaPaths || []);
+    const stats = !isEvent ? postStats[item.id] || { likeCount: 0, commentCount: 0 } : null;
     
-    // Get post stats for this item (only for posts)
-    const stats = !isEvent ? (postStats as any)[item.id] || { likeCount: 0, commentCount: 0 } : null;
-    
-    // Format target years and faculties for events
-    const formatTargets = (targets: string[]) => {
+    const formatTargets = (targets) => {
       if (!targets || targets.length === 0) return '';
-      return targets.map((target: string) => target.replace('_', ' ')).join(', ');
+      return targets.map(target => target.replace('_', ' ')).join(', ');
     };
 
-    // Format date for events
-    const formatEventDate = (dateString: string) => {
+    const formatEventDate = (dateString) => {
       if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', { 
@@ -373,22 +555,21 @@ export default function ClubProfileScreen() {
         <View style={styles.detailHeader}>
           <Image
             source={{ 
-                uri: clubDetails.imagePath?.startsWith('uploads/') 
-                ? `${BASE_URL}/${clubDetails.imagePath}` 
-                : `${BASE_URL}/uploads/${clubDetails.imagePath}` 
+              uri: clubDetails.profilePicture?.startsWith('/uploads/') 
+                ? `${BASE_URL}${clubDetails.profilePicture}` 
+                : `${BASE_URL}/uploads/${clubDetails.profilePicture}` 
             }}
             style={styles.detailAvatar}
           />
           <View style={styles.detailHeaderText}>
-            <Text style={[styles.detailClubName, { color: textColor }]}>{clubDetails?.clubName || "Club Name"}</Text>
+            <Text style={styles.detailClubName}>{clubDetails?.clubName || "Club Name"}</Text>
             <Text style={styles.detailTime}>{formatTimeAgo(item.createdAt)}</Text>
           </View>
         </View>
         
-        {/* Event venue header - only for events */}
         {isEvent && (
           <View style={styles.eventVenue}>
-            <Ionicons name="location-outline" size={16} color="#0095f6" />
+            <Ionicons name="location-outline" size={16} color="#00d4ff" />
             <Text style={styles.venueText}>
               {item.venueName || item.venue || 'Venue TBA'}
             </Text>
@@ -402,14 +583,11 @@ export default function ClubProfileScreen() {
           style={styles.imageContainer}
         >
           {images.length > 0 ? (
-            images.map((path: string, idx: number) => (
+            images.map((path, idx) => (
               <Image
                 key={idx}
                 source={{ uri: `${BASE_URL}/${path}` }}
                 style={styles.detailImage}
-                onError={(error) => {
-                  console.log('Detail image load error:', error.nativeEvent.error);
-                }}
               />
             ))
           ) : (
@@ -419,50 +597,55 @@ export default function ClubProfileScreen() {
                 size={64} 
                 color="#666" 
               />
-              <Text style={styles.placeholderText}>
-                {isEvent ? 'Event image' : 'No image available'}
-              </Text>
             </View>
           )}
         </ScrollView>
         
         {images.length > 1 && (
           <View style={styles.imageIndicators}>
-            {images.map((_: any, idx: number) => (
+            {images.map((_, idx) => (
               <View key={idx} style={styles.indicator} />
             ))}
           </View>
         )}
 
-        {/* Post Actions and Stats - only for posts */}
         {!isEvent && (
           <View style={styles.postActions}>
-            <View style={styles.postActionButtons}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="heart-outline" size={24} color={textColor} />
+            <View style={styles.actionButtons}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleLikeToggle(item.id)}
+              >
+                <Ionicons 
+                  name={likedPosts[item.id] ? "heart" : "heart-outline"} 
+                  size={26} 
+                  color={likedPosts[item.id] ? "#ff4444" : "#fff"} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleCommentPress(item.id)}
+              >
+                <Ionicons name="chatbubble-outline" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="chatbubble-outline" size={24} color={textColor} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="paper-plane-outline" size={24} color={textColor} />
+                <Ionicons name="paper-plane-outline" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Like and Comment Count - only for posts */}
         {!isEvent && stats && (
           <View style={styles.postStats}>
             {stats.likeCount > 0 && (
-              <Text style={[styles.likesText, { color: textColor }]}>
-                {stats.likeCount === 1 ? '1 like' : `${stats.likeCount} likes`}
+              <Text style={styles.likesText}>
+                {stats.likeCount.toLocaleString()} {stats.likeCount === 1 ? 'like' : 'likes'}
               </Text>
             )}
             {stats.commentCount > 0 && (
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => handleCommentPress(item.id)}>
                 <Text style={styles.commentsText}>
-                  View {stats.commentCount === 1 ? '1 comment' : `all ${stats.commentCount} comments`}
+                  View all {stats.commentCount.toLocaleString()} {stats.commentCount === 1 ? 'comment' : 'comments'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -470,28 +653,27 @@ export default function ClubProfileScreen() {
         )}
         
         <View style={styles.detailContent}>
-          {/* Event name - highlighted for events */}
           {isEvent && (
-            <Text style={[styles.eventName, { color: textColor }]}>{item.name}</Text>
+            <Text style={styles.eventName}>{item.name}</Text>
           )}
           
-          <Text style={[styles.detailDescription, { color: textColor }]}>
+          <Text style={styles.detailDescription}>
+            <Text style={styles.descriptionUsername}>{clubDetails?.clubName || "Club"} </Text>
             {item.description || 'No description'}
           </Text>
           
-          {/* Event specific details */}
           {isEvent && (
             <View style={styles.eventDetails}>
               {item.date && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="calendar" size={16} color="#0095f6" />
+                  <Ionicons name="calendar" size={16} color="#00d4ff" />
                   <Text style={styles.eventDetailText}>{formatEventDate(item.date)}</Text>
                 </View>
               )}
               
               {item.targetYears && item.targetYears.length > 0 && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="school" size={16} color="#0095f6" />
+                  <Ionicons name="school" size={16} color="#00d4ff" />
                   <Text style={styles.eventDetailText}>
                     Target Years: {formatTargets(item.targetYears)}
                   </Text>
@@ -500,7 +682,7 @@ export default function ClubProfileScreen() {
               
               {item.targetFaculties && item.targetFaculties.length > 0 && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="business" size={16} color="#0095f6" />
+                  <Ionicons name="business" size={16} color="#00d4ff" />
                   <Text style={styles.eventDetailText}>
                     Faculties: {formatTargets(item.targetFaculties)}
                   </Text>
@@ -513,142 +695,187 @@ export default function ClubProfileScreen() {
     );
   };
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00d4ff" />
+        </View>
+      );
+    }
+
+    if (currentData.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconContainer}>
+            <Ionicons 
+              name={selectedTab === 'posts' ? "images-outline" : "calendar-outline"} 
+              size={48} 
+              color="#00d4ff" 
+            />
+          </View>
+          <Text style={styles.emptyText}>No {selectedTab} yet</Text>
+          <Text style={styles.emptySubtext}>
+            {selectedTab === 'posts' 
+              ? 'This club hasn\'t posted anything yet' 
+              : 'No upcoming events'}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={currentData}
+        renderItem={renderGridItem}
+        numColumns={3}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.gridContainer}
+        scrollEnabled={false}
+        ItemSeparatorComponent={() => <View style={{ height: 3 }} />}
+        columnWrapperStyle={styles.columnWrapper}
+      />
+    );
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <View style={[styles.header, { backgroundColor, borderBottomColor: borderColor }]}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                   <Ionicons name="arrow-back" size={24} color={textColor} />
-                </TouchableOpacity>
-                
-                  <Text style={[styles.title, { color: textColor }]}>Profile</Text>
-                
-                <View style={styles.headerActions}>
-                </View>
-              </View>
-      {/* Header */}
-      <View style={[styles.profileHeader, { backgroundColor }]}>
-        <View style={styles.profileTopRow}>
-          {clubDetails?.profilePicture ? (
-              <Image
-          source={{
-              uri: `${BASE_URL}${clubDetails.profilePicture}`
-          }}
-          style={styles.avatar}
-          />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Profile</Text>
+        <View style={styles.headerActions} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.coverSection}>
+          {clubDetails?.coverPicture ? (
+            <Image
+              source={{ uri: `${BASE_URL}${clubDetails.coverPicture}` }}
+              style={styles.coverImage}
+            />
           ) : (
-              <Image
-              source={require('../../../assets/images/default-profile.png')} // fallback image
-              style={styles.avatar}
-              />
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="image-outline" size={48} color="#666" />
+            </View>
           )}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: textColor }]}>{postCount}</Text>
-              <Text style={[styles.statLabel, { color: textColor }]}>posts</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: textColor }]}>{eventCount}</Text>
-              <Text style={[styles.statLabel, { color: textColor }]}>events</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: textColor }]}>{subCount || 0}</Text>
-              <Text style={[styles.statLabel, { color: textColor }]}>subscribers</Text>
+          
+          <View style={styles.floatingAvatarContainer}>
+            <View style={styles.avatarGlow}>
+              {clubDetails?.profilePicture ? (
+                <Image
+                  source={{ uri: `${BASE_URL}${clubDetails.profilePicture}` }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <Image
+                  source={require('../../../assets/images/default-profile.png')}
+                  style={styles.avatar}
+                />
+              )}
             </View>
           </View>
         </View>
-        
-        <View style={styles.profileInfo}>
-          <Text style={[styles.clubName, { color: textColor }]}>{clubDetails?.clubName || "Club Name"}</Text>
-          <Text style={[styles.clubBio, { color: textColor }]}>
-            {clubDetails?.bio || "Club Name"}
-          </Text>
-        </View>
 
-        <View style={styles.actionButtons}>
+        <View style={styles.infoSection}>
+          <Text style={styles.clubName}>{clubDetails?.clubName || "Club Name"}</Text>
+          <Text style={styles.clubBio}>
+            {clubDetails?.bio || "Welcome to our club"}
+          </Text>
+
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="images-outline" size={20} color="#00d4ff" />
+              </View>
+              <Text style={styles.statNumber}>{postCount}</Text>
+              <Text style={styles.statLabel}>Posts</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="calendar-outline" size={20} color="#00d4ff" />
+              </View>
+              <Text style={styles.statNumber}>{eventCount}</Text>
+              <Text style={styles.statLabel}>Events</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="people-outline" size={20} color="#00d4ff" />
+              </View>
+              <Text style={styles.statNumber}>{subCount || 0}</Text>
+              <Text style={styles.statLabel}>Subscribers</Text>
+            </View>
+          </View>
+
           <TouchableOpacity 
-            style={[styles.subscribeButton, { backgroundColor: isSubscribed ? '#666' : buttonColor }]}
+            style={[styles.subscribeButton, { backgroundColor: isSubscribed ? '#666' : '#00d4ff' }]}
             onPress={handleSubscribe}
             disabled={subscribeLoading}
           >
             {subscribeLoading ? (
-              <ActivityIndicator size="small" color={buttonTextColor} />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={[styles.subscribeButtonText, { color: buttonTextColor }]}>
+              <Text style={styles.subscribeButtonText}>
                 {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
               </Text>
             )}
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Tab Switcher */}
-      <View style={[styles.tabSwitcher, { borderTopColor: borderColor }]}>
-        <TouchableOpacity
-          onPress={() => setSelectedTab('posts')}
-          style={[styles.tabButton, selectedTab === 'posts' && { borderBottomColor: textColor }]}
-        >
-          <Ionicons 
-            name="grid-outline" 
-            size={24} 
-            color={selectedTab === 'posts' ? textColor : '#666'} 
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setSelectedTab('events')}
-          style={[styles.tabButton, selectedTab === 'events' && { borderBottomColor: textColor }]}
-        >
-          <Ionicons 
-            name="calendar-outline" 
-            size={24} 
-            color={selectedTab === 'events' ? textColor : '#666'} 
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Grid Content */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : (
-        <FlatList
-          data={currentData}
-          renderItem={renderGridItem}
-          numColumns={3}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.gridContainer}
-          ItemSeparatorComponent={() => <View style={{ height: 2 }} />}
-          columnWrapperStyle={{ justifyContent: 'space-between' }}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Feather 
-                name={selectedTab === 'posts' ? "image" : "calendar"} 
-                size={48} 
-                color="#666" 
+        <View style={styles.tabContainer}>
+          <View style={styles.tabSwitcher}>
+            <TouchableOpacity
+              onPress={() => setSelectedTab('posts')}
+              style={[styles.tabButton, selectedTab === 'posts' && styles.activeTab]}
+            >
+              <Ionicons 
+                name="grid-outline" 
+                size={20} 
+                color={selectedTab === 'posts' ? '#00d4ff' : '#666'} 
               />
-              <Text style={[styles.emptyText, { color: textColor }]}>
-                No {selectedTab} yet
+              <Text style={[styles.tabText, selectedTab === 'posts' && styles.activeTabText]}>
+                Posts
               </Text>
-            </View>
-          )}
-        />
-      )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => setSelectedTab('events')}
+              style={[styles.tabButton, selectedTab === 'events' && styles.activeTab]}
+            >
+              <Ionicons 
+                name="calendar-outline" 
+                size={20} 
+                color={selectedTab === 'events' ? '#00d4ff' : '#666'} 
+              />
+              <Text style={[styles.tabText, selectedTab === 'events' && styles.activeTabText]}>
+                Events
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {/* Detail View Modal */}
+        <View style={styles.contentWrapper}>
+          {renderContent()}
+        </View>
+      </ScrollView>
+
       <Modal
         visible={showDetailView}
         animationType="slide"
         onRequestClose={() => setShowDetailView(false)}
       >
-        <SafeAreaView style={[styles.detailContainer, { backgroundColor }]}>
-          <View style={[styles.detailTopBar, { borderBottomColor: borderColor }]}>
+        <SafeAreaView style={styles.detailContainer}>
+          <View style={styles.detailTopBar}>
             <TouchableOpacity 
               onPress={() => setShowDetailView(false)}
               style={styles.backButton}
             >
-              <Ionicons name="arrow-back" size={24} color={textColor} />
+              <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text style={[styles.detailTitle, { color: textColor }]}>
+            <Text style={styles.detailTitle}>
               {selectedTab === 'posts' ? 'Posts' : 'Events'}
             </Text>
             <View style={{ width: 24 }} />
@@ -660,14 +887,17 @@ export default function ClubProfileScreen() {
             keyExtractor={(item) => item.id.toString()}
             initialScrollIndex={selectedIndex}
             getItemLayout={(data, index) => ({
-              length: screenWidth + 200, // Approximate item height
-              offset: (screenWidth + 200) * index,
+              length: screenHeight * 0.9,
+              offset: screenHeight * 0.9 * index,
               index,
             })}
             showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#1a1d1f' }} />}
           />
         </SafeAreaView>
       </Modal>
+
+      <CommentsModal />
     </SafeAreaView>
   );
 }
@@ -675,6 +905,7 @@ export default function ClubProfileScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
+    backgroundColor: '#0a0b0c' 
   },
   header: {
     flexDirection: 'row',
@@ -682,157 +913,177 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: '#151718',
     borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
   },
   title: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  searchContainer: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  searchInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: 'white',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+  backButton: {
+    padding: 4,
   },
   headerActions: {
-    flexDirection: 'row',
-    gap: 12,
+    width: 28,
   },
-  addButton: {
-    width: 44,
-    height: 24,
-    borderRadius: 8,
+  coverSection: {
+    position: 'relative',
+    height: 200,
+    backgroundColor: '#151718',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1a1d1f',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
   },
-  searchButton: {
-    width: 44,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+  floatingAvatarContainer: {
+    position: 'absolute',
+    bottom: -50,
+    left: 20,
+    zIndex: 10,
   },
-  searchButtonActive: {
-    backgroundColor: '#007aff',
-    borderColor: '#007aff',
-  },
-  
-  // Profile Header
-  profileHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  profileTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+  avatarGlow: {
+    padding: 4,
+    borderRadius: 60,
+    backgroundColor: '#0a0b0c',
+    borderWidth: 4,
+    borderColor: '#00d4ff',
+    shadowColor: '#00d4ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 15,
   },
   avatar: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    marginRight: 24,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
-  statsContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  profileInfo: {
-    marginBottom: 16,
+  infoSection: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#151718',
   },
   clubName: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   clubBio: {
+    color: '#aaa',
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
+    marginBottom: 24,
   },
-  actionButtons: {
-    marginTop: 16,
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#1a1d1f',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#252829',
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statNumber: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  statLabel: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '500',
   },
   subscribeButton: {
     width: '100%',
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   subscribeButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  followButton: {
-    flex: 1,
-    backgroundColor: '#0095f6',
-    paddingVertical: 8,
-    borderRadius: 4,
-    alignItems: 'center',
+  tabContainer: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: '#151718',
   },
-  followButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  messageButton: {
-    flex: 1,
-    backgroundColor: '#262626',
-    paddingVertical: 8,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  messageButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  // Tab Switcher
   tabSwitcher: {
     flexDirection: 'row',
-    borderTopWidth: 0.5,
+    backgroundColor: '#1a1d1f',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
   },
   tabButton: {
     flex: 1,
+    flexDirection: 'row',
     paddingVertical: 12,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
+    borderRadius: 10,
+    gap: 6,
   },
   activeTab: {
-    borderBottomColor: '#fff',
+    backgroundColor: 'rgba(0, 212, 255, 0.15)',
   },
-
-  // Grid
+  tabText: {
+    color: '#666',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#00d4ff',
+  },
+  contentWrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
   gridContainer: {
-    paddingTop: 2,
+    paddingBottom: 20,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    gap: GRID_SPACING,
   },
   gridItem: {
     width: imageSize,
-    height: imageSize,
     position: 'relative',
-    backgroundColor: '#1a1a1a', // Keep this as fallback
+    backgroundColor: '#1a1d1f',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   gridImage: {
     width: '100%',
@@ -841,7 +1092,7 @@ const styles = StyleSheet.create({
   placeholderContainer: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#1a1a1a', // Keep this as fallback
+    backgroundColor: '#1a1d1f',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -849,27 +1100,43 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 6,
+    padding: 4,
   },
   loadingContainer: {
-    flex: 1,
+    paddingVertical: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyContainer: {
-    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 60,
+    marginBottom: 16,
   },
   emptyText: {
-    color: '#666',
+    color: '#fff',
     fontSize: 18,
-    marginTop: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
-
-  // Detail View
+  emptySubtext: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
   detailContainer: {
     flex: 1,
+    backgroundColor: '#0a0b0c',
   },
   detailTopBar: {
     flexDirection: 'row',
@@ -877,41 +1144,45 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 0.5,
-  },
-  backButton: {
-    padding: 4,
+    backgroundColor: '#151718',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
   },
   detailTitle: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   detailCard: {
-    marginBottom: 24,
+    backgroundColor: '#0a0b0c',
+    paddingBottom: 24,
   },
   detailHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   detailAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#00d4ff',
   },
   detailHeaderText: {
     flex: 1,
   },
   detailClubName: {
-    fontSize: 14,
+    color: '#fff',
+    fontSize: 15,
     fontWeight: '600',
   },
   detailTime: {
     color: '#999',
     fontSize: 12,
-    marginTop: 1,
+    marginTop: 2,
   },
   imageContainer: {
     height: screenWidth,
@@ -923,84 +1194,83 @@ const styles = StyleSheet.create({
   detailPlaceholder: {
     width: screenWidth,
     height: screenWidth,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1a1d1f',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  placeholderText: {
-    color: '#666',
-    fontSize: 14,
-    marginTop: 8,
   },
   imageIndicators: {
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
     gap: 6,
   },
   indicator: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#0095f6',
+    backgroundColor: '#00d4ff',
   },
-  
-  // Post Actions and Stats (new styles)
   postActions: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
-  postActionButtons: {
+  actionButtons: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 18,
   },
   actionButton: {
     padding: 4,
   },
   postStats: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
+    gap: 6,
   },
   likesText: {
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: 4,
   },
   commentsText: {
     color: '#999',
     fontSize: 14,
   },
-  
   detailContent: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
   },
   eventName: {
-    fontSize: 16,
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   detailDescription: {
+    color: '#fff',
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
+  },
+  descriptionUsername: {
+    fontWeight: '600',
+    color: '#fff',
   },
   eventVenue: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#111',
-    marginBottom: 2,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    marginBottom: 0,
   },
   venueText: {
-    color: '#0095f6',
+    color: '#00d4ff',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 6,
   },
   eventDetails: {
-    marginTop: 12,
-    gap: 8,
+    marginTop: 16,
+    gap: 10,
   },
   eventDetailRow: {
     flexDirection: 'row',
@@ -1011,5 +1281,161 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 8,
     flex: 1,
+  },
+  
+  // Comments Modal Styles
+  commentsModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  commentsModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  commentsModalContent: {
+    backgroundColor: '#151718',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: screenHeight * 0.85,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
+  },
+  commentsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
+  },
+  modalHandle: {
+    position: 'absolute',
+    top: 8,
+    left: '50%',
+    marginLeft: -20,
+    width: 40,
+    height: 4,
+    backgroundColor: '#666',
+    borderRadius: 2,
+  },
+  commentsTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  commentsLoading: {
+    paddingVertical: 80,
+    alignItems: 'center',
+  },
+  noComments: {
+    paddingVertical: 80,
+    alignItems: 'center',
+  },
+  noCommentsText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  noCommentsSubtext: {
+    color: '#888',
+    fontSize: 14,
+  },
+  commentsList: {
+    paddingVertical: 16,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  commentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+    backgroundColor: '#1a1d1f',
+  },
+  commentContent: {
+    flex: 1,
+  },
+  commentUsername: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  commentText: {
+    color: '#ddd',
+    fontSize: 14,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  commentTime: {
+    color: '#888',
+    fontSize: 12,
+  },
+  replyButton: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  commentInputContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#1a1d1f',
+    backgroundColor: '#151718',
+  },
+  replyingToContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
+  },
+  replyingToText: {
+    color: '#00d4ff',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: '#1a1d1f',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 14,
+    maxHeight: 100,
+  },
+  sendButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
 });
