@@ -83,6 +83,8 @@ export default function CommunityPage() {
           try {
             const clubResponse = await axiosInstance.get(`/api/club/${post.clubId}`);
             profilePicture = clubResponse.data.profilePicture;
+            // log profilePicture;
+            console.log(`Profile picture for club ${post.clubId}: ${profilePicture}`);
           } catch (error) {
             console.warn(`Error fetching club for post ${post.id}:`, error);
           }

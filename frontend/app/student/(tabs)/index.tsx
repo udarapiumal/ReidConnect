@@ -464,7 +464,7 @@ export default function HomePage() {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
     
-    setFilteredEvents(sortedEvents);
+    setFilteredEvents(sortedEvents as EventData[]);
   };
 
   const handleEventPress = (eventId: number) => {
@@ -780,7 +780,7 @@ export default function HomePage() {
     
                   // Check if previous event was upcoming
                   const prevEvent = index > 0 ? filteredEvents[index - 1] : null;
-                  const prevIsUpcoming = prevEvent ? prevEvent.isUpcoming : false;
+                  const prevIsUpcoming = prevEvent ? (prevEvent as any).isUpcoming : false;
                   const shouldShowOtherEventsHeader = index > 0 && prevIsUpcoming && !isUpcoming;
     
                   return (

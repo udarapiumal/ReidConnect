@@ -48,7 +48,7 @@ const defaultUserData = {
   username: '@loading',
   email: 'loading@ucsc.cmb.ac.lk',
   academicYear: 'N/A',
-  faculty: 'N/A',
+  faculty: 'UCSC',
   contactNumber: 'N/A',
   bio: '',
   avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1780&auto=format&fit=crop',
@@ -161,12 +161,12 @@ const settingsOptions = [
       { id: '1b', title: 'Change Password', icon: 'key' },
     ]
   },
-  { 
-    id: '2', 
-    title: 'Notifications', 
-    icon: 'bell',
-  },
-  { id: '4', title: 'Help & Support', icon: 'help-circle' },
+  // { 
+  //   id: '2', 
+  //   title: 'Notifications', 
+  //   icon: 'bell',
+  // },
+  // { id: '4', title: 'Help & Support', icon: 'help-circle' },
   { id: '5', title: 'Log Out', icon: 'log-out' },
 ];
 
@@ -196,9 +196,11 @@ function ClubCard({ club, onPress }: ClubCardProps) {
       onPress={onPress}
       activeOpacity={0.8}
     >
+      {/* log profilePicture */}
+
       <View style={styles.clubImageWrapper}>
         <Image 
-          source={{ uri: `${BASE_URL}/${club.profilePicture}` }}
+          source={{ uri: `${BASE_URL}${club.profilePicture}` }}
           style={styles.clubImage}
         />
       </View>
@@ -358,7 +360,7 @@ export default function ProfilePage() {
           username: `@${currentUser.username}`,
           email: currentUser.email,
           academicYear: currentUser.academicYear || 'N/A',
-          faculty: currentUser.faculty || 'N/A',
+          faculty: currentUser.faculty || 'UCSC',
           contactNumber: currentUser.contactNumber || 'N/A',
           bio: currentUser.bio || '',
           avatar: currentUser.profilePictureUrl || defaultUserData.avatar,
@@ -441,27 +443,6 @@ export default function ProfilePage() {
                 No clubs joined yet
               </ThemedText>
             )}
-          </View>
-        );
-      case 'Notifications':
-        return (
-          <View>
-            <ThemedText style={styles.sectionTitle}>Recent Notifications</ThemedText>
-            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
-              <Feather name="heart" size={20} color="#FF6B6B" />
-              <ThemedText style={styles.NotificationsText}>Liked Tech Conference 2025</ThemedText>
-              <ThemedText style={styles.NotificationsTime}>2 hours ago</ThemedText>
-            </View>
-            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
-              <Feather name="user-plus" size={20} color="#4ECDC4" />
-              <ThemedText style={styles.NotificationsText}>Joined Music Society</ThemedText>
-              <ThemedText style={styles.NotificationsTime}>1 day ago</ThemedText>
-            </View>
-            <View style={[styles.NotificationsItem, { backgroundColor: cardColor }]}>
-              <Feather name="check-circle" size={20} color="#45B7D1" />
-              <ThemedText style={styles.NotificationsText}>Attended Career Fair 2025</ThemedText>
-              <ThemedText style={styles.NotificationsTime}>2 weeks ago</ThemedText>
-            </View>
           </View>
         );
       case 'Settings':
@@ -587,7 +568,7 @@ export default function ProfilePage() {
 
         {/* Tab Navigation */}
         <View style={[styles.tabContainer, { borderBottomColor: borderColor }]}>
-          {(['Events', 'Clubs', 'Notifications', 'Settings'] as TabName[]).map(tab => (
+          {(['Events', 'Clubs', 'Settings'] as TabName[]).map(tab => (
             <TouchableOpacity
               key={tab}
               style={[

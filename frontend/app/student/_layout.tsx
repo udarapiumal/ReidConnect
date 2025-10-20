@@ -26,6 +26,7 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="pages/ClubsPage" options={{ headerShown: false }} />
+            <Stack.Screen name="pages/Notification" options={{ headerShown: false }} />
             <Stack.Screen name="pages/ClubPage" options={{ headerShown: false }} />
             <Stack.Screen name="profile/profileEdit" options={{ headerShown: false }} />
             <Stack.Screen name="profile/changePassword" options={{ headerShown: false }} />
