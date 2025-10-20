@@ -522,7 +522,7 @@ export default function ProfilePage() {
         <View style={styles.userInfoContainer}>
           <Image 
             // source={{ uri: userData.avatar }}
-            source={{ uri: `${BASE_URL}/${userData.avatar}` }}
+            source={{ uri: `${BASE_URL}${userData.avatar}` }}
             style={styles.avatar}
             contentFit="cover"
           />

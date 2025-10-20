@@ -417,82 +417,15 @@ const generateUniqueImageName = () => {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Select Venue</Text>
-        <View style={styles.toggleButtons}>
-          <TouchableOpacity
-            style={[styles.toggleButton, venueMode === 'dropdown' && styles.selectedToggle]}
-            onPress={() => setVenueMode('dropdown')}
-          >
-            <Text style={styles.toggleText}>Select From Faculty</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleButton, venueMode === 'manual' && styles.selectedToggle]}
-            onPress={() => {
-              setVenueMode('manual');
-              setSelectedVenueId(null);
-              setSelectedFaculty('');
-              setVenueName('');
-            }}
-          >
-            <Text style={styles.toggleText}>Enter Custom Venue</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.label}>Venue</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Venue"
+          placeholderTextColor="#999"
+          value={venueName}
+          onChangeText={setVenueName}
+        />
       </View>
-
-      {venueMode === 'dropdown' ? (
-        <>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Select Faculty</Text>
-            <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedFaculty}
-              onValueChange={setSelectedFaculty}
-              style={styles.picker}
-            >
-              <Picker.Item label="-- Select Faculty --" value="" />
-              {FACULTIES.map(f => (
-                <Picker.Item key={f} label={f} value={f} />
-              ))}
-            </Picker>
-            </View>
-          </View>
-
-          {filteredVenues.length > 0 && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Select Venue</Text>
-              <View style={styles.pickerWrapper}>
-              
-                <Picker
-                  selectedValue={selectedVenueId}
-                  onValueChange={(value) => {
-                    setSelectedVenueId(value);
-                    const selected = filteredVenues.find(v => v.id === value);
-                    setVenueName(selected?.name || '');
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="-- Select Venue --" value={null} />
-                  {filteredVenues.map(v => (
-                    <Picker.Item key={v.id} label={`${v.name} (Cap: ${v.capacity})`} value={v.id} />
-                  ))}
-                </Picker>
-                </View>
-              </View>
-
-          )}
-        </>
-      ) : (
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Enter Venue Name</Text>
-          <TextInput
-            placeholder="e.g. Custom Hall"
-            placeholderTextColor="#666"
-            style={styles.input}
-            value={venueName}
-            onChangeText={setVenueName}
-          />
-        </View>
-      )}
       <View style={styles.inputContainer}>
   <Text style={styles.label}>Select Category *</Text>
   <View style={styles.pickerWrapper}>
