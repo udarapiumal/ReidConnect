@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.SubscriptionDto;
 import reidConnect.backend.entity.Club;
+import reidConnect.backend.repository.ClubRepository;
 import reidConnect.backend.service.NotificationService;
 import reidConnect.backend.service.SubscriptionService;
 
@@ -17,14 +18,15 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
     private final NotificationService notificationService;
+    private final ClubRepository clubRepository;
     @PostMapping("/subscribe")
     public ResponseEntity<String> subscribe(@RequestBody SubscriptionDto dto) {
         subscriptionService.subscribe(dto);
 
         //notification creation
         String userId=String.valueOf(dto.getUserId());
-        String title="subscription";
-        String message="you have subscribed to x club";
+        String title="club subscription";
+        String message="You have subscribed to " + clubRepository.findClubNameById(dto.getClubId()) + " club";
         String type="INDIVIDUAL";
         notificationService.createIndividual(userId, title, message, type);
 
