@@ -49,7 +49,39 @@ export default function ClubDashboardTab() {
     const [subCount, setSubCount] = useState(0);
     const router = useRouter();
     const { notifications, unreadCount, reload } = useNotifications(String(clubDetails?.userId));
+    const [latestComments, setLatestComments] = useState([]);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [analytics, setAnalytics] = useState({
+        newSubscribers: 0,
+        recentEvents: 0,
+        recentPosts: 0
+    });
 
+    const fetchAnalytics = async () => {
+        if (!clubDetails?.id || !token) return;
+
+        try {
+            const [subsRes, eventsRes, postsRes] = await Promise.all([
+                axios.get(`${BASE_URL}/api/subscriptions/club/${clubDetails.id}/count/last-month`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                axios.get(`${BASE_URL}/api/events/count/recent/${clubDetails.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                axios.get(`${BASE_URL}/api/posts/club/${clubDetails.id}/count/recent`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            ]);
+
+            setAnalytics({
+                newSubscribers: subsRes.data || 0,
+                recentEvents: eventsRes.data || 0,
+                recentPosts: postsRes.data || 0
+            });
+        } catch (error) {
+            console.error("Error fetching analytics:", error);
+        }
+    };
 
     const fetchPostStats = async (postId) => {
         try {
@@ -87,6 +119,31 @@ export default function ClubDashboardTab() {
             return { subCount: 0 };
         }
     };
+
+    const fetchLatestComments = async () => {
+        if (!clubDetails?.id || !token) {
+            console.warn("Missing clubDetails or token");
+            return;
+        }
+
+        setCommentsLoading(true);
+        try {
+            const response = await axios.get(
+                `${BASE_URL}/api/comments/club/${clubDetails.id}/latest`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            console.log("Latest comments API response:", response.data);
+            setLatestComments(response.data || []);
+        } catch (error) {
+            console.error("Error fetching latest comments:", error);
+        } finally {
+            setCommentsLoading(false);
+        }
+    };
+
 
     const fetchLatestPostsWithStats = async () => {
         if (!clubDetails?.id || !token) {
@@ -126,18 +183,18 @@ export default function ClubDashboardTab() {
 
     const renderAnalyticsCards = () => (
         <View style={styles.analyticsContainer}>
-            <View style={styles.analyticsCard}>
-                <Text style={styles.analyticsLabel}>New Subscribers</Text>
-                <Text style={styles.analyticsValue}>15</Text>
-            </View>
-            <View style={styles.analyticsCard}>
-                <Text style={styles.analyticsLabel}>Events created</Text>
-                <Text style={styles.analyticsValue}>3</Text>
-            </View>
-            <View style={styles.analyticsCard}>
-                <Text style={styles.analyticsLabel}>Posts published</Text>
-                <Text style={styles.analyticsValue}>{latestPosts.length}</Text>
-            </View>
+           <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsLabel}>New Subscribers</Text>
+            <Text style={styles.analyticsValue}>{analytics.newSubscribers}</Text>
+        </View>
+        <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsLabel}>Events created</Text>
+            <Text style={styles.analyticsValue}>{analytics.recentEvents}</Text>
+        </View>
+        <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsLabel}>Posts published</Text>
+            <Text style={styles.analyticsValue}>{analytics.recentPosts}</Text>
+        </View>
         </View>
     );
 
@@ -165,32 +222,43 @@ export default function ClubDashboardTab() {
         </View>
     );
 
-    const renderCommentItem = ({ thumbnail, title, commenterPic, commenterName, commentTime, commentText }) => (
-        <View style={styles.commentItem}>
+    const renderCommentItem = ({
+        thumbnail,
+        title,
+        commenterPic,
+        commenterName,
+        commentTime,
+        commentText,
+        onPress
+        }) => (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.commentItem}>
             <View style={styles.commentHeader}>
-                <View style={styles.commentThumbnail}>
-                    <Image source={thumbnail} style={styles.commentThumbnailImage} />
-                </View>
-                <View style={styles.commentContent}>
-                    <Text style={styles.commentTitle} numberOfLines={1}>{title}</Text>
-                    <View style={styles.commentMeta}>
-                        <View style={styles.commenterAvatar}>
-                            <Image source={commenterPic} style={styles.commenterAvatarImage} />
-                        </View>
-                        <Text style={styles.commenterName}>@{commenterName}</Text>
-                        <Text style={styles.commentTime}>• {commentTime}</Text>
-                    </View>
-                    <Text style={styles.commentText}>{commentText}</Text>
-                </View>
+            <View style={styles.commentThumbnail}>
+                <Image source={thumbnail} style={styles.commentThumbnailImage} />
             </View>
-        </View>
+            <View style={styles.commentContent}>
+                <Text style={styles.commentTitle} numberOfLines={1}>{title}</Text>
+                <View style={styles.commentMeta}>
+                <View style={styles.commenterAvatar}>
+                    <Image source={commenterPic} style={styles.commenterAvatarImage} />
+                </View>
+                <Text style={styles.commenterName}>@{commenterName}</Text>
+                <Text style={styles.commentTime}>• {commentTime}</Text>
+                </View>
+                <Text style={styles.commentText}>{commentText}</Text>
+            </View>
+            </View>
+        </TouchableOpacity>
     );
+
 
     useFocusEffect(
         useCallback(() => {
             if (loading) return;
             fetchLatestPostsWithStats();
+            fetchLatestComments();
             fetchSubCount();
+            fetchAnalytics();
             reload();
         }, [loading, clubDetails, user, token])
         
@@ -332,26 +400,53 @@ export default function ClubDashboardTab() {
                 <View style={styles.contentSection}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Latest comments</Text>
+                        {commentsLoading && <ActivityIndicator size="small" color="#007AFF" />}
                     </View>
 
-                    {renderCommentItem({
-                        thumbnail: require("../../../assets/clubImages/postImages/3.jpg"),
-                        commenterPic: require("../../../assets/clubImages/postImages/5.png"),
-                        title: "Unveiling the Visionaries! ✨ Meet the Executive Committee of the Rotaract Club of UCSC",
-                        commenterName: "Chathura354",
-                        commentTime: "2 days ago",
-                        commentText: "Congratulations everyone!"
-                    })}
+                    {commentsLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#007AFF" />
+                            <Text style={styles.loadingText}>Loading comments...</Text>
+                        </View>
+                    ) : latestComments.length > 0 ? (
+                        latestComments.map((item, index) => (
+                        <View key={index}>
+                            {renderCommentItem({
+                            thumbnail: {
+                                uri: item.postImageUrl
+                                ? item.postImageUrl.startsWith("uploads/")
+                                    ? `${BASE_URL}/${item.postImageUrl}`
+                                    : `${BASE_URL}/uploads/${item.postImageUrl}`
+                                : `${BASE_URL}/uploads/placeholder.jpg`,
+                            },
+                            title: item.postDescription || "No description",
+                            commenterPic: {
+                                uri: item.comment?.profilePictureUrl
+                                ? `${BASE_URL}${item.comment.profilePictureUrl}`
+                                : `${BASE_URL}/uploads/default-profile.png`,
+                            },
+                            commenterName: item.comment?.userName || "Unknown",
+                            commentTime: formatTimeAgo(item.comment?.createdAt),
+                            commentText: item.comment?.content || "",
+                            onPress: () => router.push({
+                                pathname: `/club/post/${item.postId}`,
+                                params: { commentId: item.comment?.id } // 🔥 Pass commentId to scroll later
+                            })
+                            })}
+                        </View>
+                        ))
 
-                    {renderCommentItem({
-                        thumbnail: require("../../../assets/clubImages/postImages/1.jpg"),
-                        commenterPic: require("../../../assets/clubImages/postImages/6.png"),
-                        title: "More than a Club— a call to lead,serve and grow! 📢🙌",
-                        commenterName: "ShenalRD",
-                        commentTime: "4 hours ago",
-                        commentText: "Can't wait "
-                    })}
+                    ) : (
+                        <View style={styles.noPostsContainer}>
+                            <Feather name="message-square" size={48} color="#6B7280" />
+                            <Text style={styles.noPostsText}>No comments yet</Text>
+                            <Text style={styles.noPostsSubtext}>
+                                Be the first to comment on your club’s posts!
+                            </Text>
+                        </View>
+                    )}
                 </View>
+
             </ScrollView>
         </SafeAreaView>
     );

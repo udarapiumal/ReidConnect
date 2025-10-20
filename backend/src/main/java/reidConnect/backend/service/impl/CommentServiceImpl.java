@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reidConnect.backend.dto.CommentRequestDto;
 import reidConnect.backend.dto.CommentResponseDto;
+import reidConnect.backend.dto.LatestCommentWithPostDto;
 import reidConnect.backend.entity.*;
 import reidConnect.backend.repository.*;
 import reidConnect.backend.service.CommentService;
@@ -18,6 +19,8 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final PostMediaRepository postMediaRepository;
+
     @Autowired
     private StudentRepository studentRepository;
 
@@ -88,6 +91,30 @@ public class CommentServiceImpl implements CommentService {
                 replyDtos
         );
     }
+    @Override
+    public List<LatestCommentWithPostDto> getLatest3CommentsByClub(Long clubId) {
+        // Step 1: Get latest 3 posts by the club
+        List<Post> recentPosts = postRepository.findTop3ByClub_IdOrderByCreatedAtDesc(clubId);
+
+        return recentPosts.stream().map(post -> {
+                    // Step 2: Fetch the first image of the post
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    String firstImageUrl = mediaList.isEmpty() ? null : mediaList.get(0).getMedia_path();
+
+                    // Step 3: Fetch the latest 3 comments for this post
+                    List<Comment> latestComments = commentRepository
+                            .findTop3ByPostOrderByCreatedAtDesc(post);
+
+                    // Step 4: Map each comment to response DTO
+                    return latestComments.stream().map(comment -> {
+                        CommentResponseDto dto = mapToDto(comment);
+                        return new LatestCommentWithPostDto(dto, firstImageUrl, post.getDescription(), post.getId());
+                    }).toList();
+                }).flatMap(List::stream)
+                .limit(3) // optional: only keep 3 across all posts
+                .toList();
+    }
+
 
 }
 

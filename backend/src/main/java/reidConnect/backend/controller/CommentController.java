@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.CommentRequestDto;
 import reidConnect.backend.dto.CommentResponseDto;
+import reidConnect.backend.dto.LatestCommentWithPostDto;
 import reidConnect.backend.service.CommentService;
 
 import java.util.List;
@@ -35,6 +36,13 @@ public class CommentController {
         long count = commentService.countCommentsForPost(postId);
         return ResponseEntity.ok(count);
     }
+
+    @GetMapping("/club/{clubId}/latest")
+    public ResponseEntity<List<LatestCommentWithPostDto>> getLatest3CommentsByClub(@PathVariable Long clubId) {
+        List<LatestCommentWithPostDto> latestComments = commentService.getLatest3CommentsByClub(clubId);
+        return ResponseEntity.ok(latestComments);
+    }
+
 
 }
 

@@ -75,6 +75,11 @@ public class SubscriptionController {
         boolean isSubscribed = subscriptionService.isUserSubscribedToClub(userId, clubId);
         return ResponseEntity.ok(isSubscribed);
     }
+    // Get last month's subscriber count for a club
+    @GetMapping("/club/{clubId}/count/last-month")
+    public ResponseEntity<Long> getClubSubscriptionCountLastMonth(@PathVariable Long clubId) {
+        return ResponseEntity.ok(subscriptionService.countLastMonthSubscriptionsForClub(clubId));
+    }
 
 
 }

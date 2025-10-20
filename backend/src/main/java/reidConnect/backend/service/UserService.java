@@ -50,7 +50,6 @@ public class UserService {
                 student != null ? student.getProfilePictureUrl() : null,
                 student != null ? student.getAcademicYear() : null,
                 student != null ? student.getContactNumber() : null,
-                student != null ? student.getRegisteredYear() : 0,
                 student != null ? student.getFaculty() : null,
                 student != null ? student.getStudentName() : null
         );
