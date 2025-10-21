@@ -37,18 +37,25 @@ public class UserService {
         User user = userRepository.findByRegNumberPrefix(regNumber)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + regNumber));
 
-        // Fetch student profile picture
-        Optional<Student> student = studentRepository.findByUserId(user.getId());
-        String profilePicUrl = student.map(Student::getProfilePictureUrl).orElse(null);
+        // Fetch student profile and other details
+        Optional<Student> studentOpt = studentRepository.findByUserId(user.getId());
+
+        Student student = studentOpt.orElse(null);
 
         return new UserWithProfileDto(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
-                profilePicUrl
+                student != null ? student.getProfilePictureUrl() : null,
+                student != null ? student.getAcademicYear() : null,
+                student != null ? student.getContactNumber() : null,
+                student != null ? student.getRegisteredYear() : 0,
+                student != null ? student.getFaculty() : null,
+                student != null ? student.getStudentName() : null
         );
     }
+
 
     public void changePassword(String email, PasswordChangeRequest request) {
         // Input validation

@@ -1,21 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, User } from 'lucide-react';
+import { Search, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../../components/academic/styles/TimeTable.css';
 
 function SearchUser() {
   const [email, setEmail] = useState('');
   const [user, setUser] = useState(null);
+  const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 6; // number of cards per page
 
-  const extractRegNumber = (email) => {
-    return email.split('@')[0];
-  };
+  const token = localStorage.getItem("token");
+  const extractRegNumber = (email) => email.split('@')[0];
+
+  // Fetch all students with full details
+  useEffect(() => {
+    const fetchAllStudents = async () => {
+      if (!token) return;
+
+      try {
+        const response = await axios.get('http://localhost:8080/student/', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const studentsWithDetails = await Promise.all(
+          response.data.map(async (stu) => {
+            const res = await axios.get(`http://localhost:8080/users/search`, {
+              params: { regNumber: extractRegNumber(stu.email) },
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.data;
+          })
+        );
+
+        setStudents(studentsWithDetails);
+        setError('');
+      } catch (err) {
+        console.error(err);
+        setError('Failed to fetch students');
+      }
+    };
+
+    fetchAllStudents();
+  }, [token]);
 
   const handleSearch = async () => {
     const regNumber = extractRegNumber(email.trim());
-    const token = localStorage.getItem("token");
-
     if (!token) {
       alert("Please log in first");
       return;
@@ -24,89 +55,114 @@ function SearchUser() {
     try {
       const response = await axios.get(`http://localhost:8080/users/search`, {
         params: { regNumber },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setUser(response.data);
+      setStudents([]);
       setError('');
+      setCurrentPage(1);
     } catch (err) {
       setUser(null);
+      setStudents([]);
       setError('User not found or error occurred');
     }
   };
 
-  const headerStyles = {
-    headerBar: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      width: '100%',
-      height: '70px',
-      backdropFilter: 'blur(20px)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '0 24px',
-      zIndex: 1200,
-      background: 'rgba(20, 20, 20, 0.95)',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-    },
-    headerLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0px',
-    },
-    reidConnect: {
-      fontWeight: 700,
-      fontSize: '22px',
-      color: 'white',
-      letterSpacing: '-0.02em',
-    },
-    highlight: {
-      fontWeight: 700,
-      fontSize: '22px',
-      color: '#FF0033',
-      background: 'linear-gradient(135deg, #FF0033 0%, #ea580c 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
-      marginLeft: '0px',
-    },
-    adminInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '20px',
-      color: 'rgba(255,255,255,0.8)',
-    },
-    headerIcon: {
-      fontSize: '18px',
-      cursor: 'pointer',
-      padding: '8px',
-      borderRadius: '8px',
-      transition: 'color 0.3s',
-      color: '#fff',
-    },
+  const renderStudentCard = (stu) => (
+    <div className="gallery-card" key={stu.id}>
+      <img
+        src={
+          stu.profilePicUrl
+            ? `http://localhost:8080${stu.profilePicUrl}`
+            : 'https://via.placeholder.com/100x100.png?text=No+Image'
+        }
+        alt="Profile"
+        className="gallery-image round-image"
+        loading="lazy"
+      />
+      <div className="gallery-info">
+        <div className="info-header">
+          <h3>{stu.studentName || stu.name || stu.username}</h3>
+        </div>
+
+        <div className="user-details">
+          <div className="detail-item">
+            <strong>Email:</strong>
+            <span>{stu.email}</span>
+          </div>
+          <div className="detail-item">
+            <strong>Faculty:</strong>
+            <span>{stu.faculty}</span>
+          </div>
+          <div className="detail-item">
+            <strong>Academic Year:</strong>
+            <span>{stu.academicYear}</span>
+          </div>
+          <div className="detail-item">
+            <strong>Registered Year:</strong>
+            <span>{stu.registeredYear}</span>
+          </div>
+          <div className="detail-item">
+            <strong>Contact:</strong>
+            <span>{stu.contactNumber}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Pagination calculations
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = students.slice(indexOfFirstStudent, indexOfLastStudent);
+  const totalPages = Math.ceil(students.length / studentsPerPage);
+
+  const goToPage = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
   };
 
   return (
     <div className="app-container">
-      <header style={headerStyles.headerBar}>
-        <div style={headerStyles.headerLeft}>
-          <span style={headerStyles.reidConnect}>ReidConnect</span>
-          <span style={headerStyles.highlight}>UnionAdmin</span>
-        </div>
-        <div style={headerStyles.adminInfo}>
-          
+      {/* Header */}
+      <header style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: '70px',
+        backdropFilter: 'blur(20px)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0 24px',
+        zIndex: 1200,
+        background: 'rgba(20, 20, 20, 0.95)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0px' }}>
+          <span style={{ fontWeight: 700, fontSize: '22px', color: 'white', letterSpacing: '-0.02em' }}>ReidConnect</span>
+          <span style={{
+            fontWeight: 700,
+            fontSize: '22px',
+            color: '#FF0033',
+            background: 'linear-gradient(135deg, #FF0033 0%, #ea580c 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            marginLeft: '0px'
+          }}>UnionAdmin</span>
         </div>
       </header>
+
+      {/* Main Content */}
       <main className="main-content">
         <header className="gallery-header">
           <div className="header-text">
-            <h1>Search Student</h1>
-            <p>Enter a registration number to find a student</p>
+            <h1>Search Students</h1>
+            <p>Search by registration number or view all registered students</p>
           </div>
 
           <div className="controls">
@@ -135,47 +191,40 @@ function SearchUser() {
           </div>
         )}
 
-        {user && (
-          <div className="gallery-grid">
-            <div className="gallery-card">
-              <img
-                src={
-                  user.profilePicUrl
-                    ? `http://localhost:8080${user.profilePicUrl}`
-                    : user.profile_picture_url
-                    ? `http://localhost:8080${user.profile_picture_url}`
-                    : user.profilePictureUrl
-                    ? `http://localhost:8080${user.profilePictureUrl}`
-                    : 'https://via.placeholder.com/100x100.png?text=No+Image'
-                }
-                alt="Profile"
-                className="gallery-image round-image" // Add round-image or square-image class
-                loading="lazy"
-              />
-              <div className="gallery-info">
-                <div className="info-header">
-                  <h3>{user.username}</h3>
-                  <span className="gallery-category">{user.role}</span>
-                </div>
-                
-                <div className="user-details">
-                  <div className="detail-item">
-                    <strong>ID:</strong>
-                    <span>{user.id}</span>
-                  </div>
-                  <div className="detail-item">
-                    <strong>Email:</strong>
-                    <span>{user.email}</span>
-                  </div>
-                </div>
-              </div>
+        {/* Show single user */}
+        {user && <div className="gallery-grid">{renderStudentCard(user)}</div>}
+
+        {/* Show all students with pagination */}
+        {!user && currentStudents.length > 0 && (
+          <>
+            <div className="gallery-grid">
+              {currentStudents.map((stu) => renderStudentCard(stu))}
             </div>
+            {/* Pagination Controls */}
+            <div className="pagination">
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                <ChevronLeft size={18} /> Prev
+              </button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next <ChevronRight size={18} />
+              </button>
+            </div>
+          </>
+        )}
+
+        {!user && students.length === 0 && !error && (
+          <div className="no-results">
+            <h3>Loading...</h3>
+            <p>Please wait while we fetch all students.</p>
           </div>
         )}
       </main>
 
+      {/* ===== INLINE CSS ===== */}
       <style jsx>{`
-        /* Main content - Dark Theme */
         .main-content {
           margin-left: 200px;
           padding: 6rem;
@@ -186,7 +235,6 @@ function SearchUser() {
           color: #ffffff;
         }
 
-        /* Gallery header */
         .gallery-header {
           background: #151718;
           border-radius: 8px;
@@ -262,13 +310,12 @@ function SearchUser() {
           background: #dc2626;
         }
 
-        /* Gallery grid and card */
         .gallery-grid {
           display: grid;
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 1.5rem;
           padding: 1rem;
-          max-width: 800px;
+          max-width: 1200px;
           margin: 0 auto;
         }
 
@@ -280,8 +327,6 @@ function SearchUser() {
           overflow: hidden;
           transition: all 0.3s ease;
           padding: 1rem;
-          max-width: 500px;
-          margin: 0 auto;
         }
 
         .gallery-card:hover {
@@ -299,14 +344,8 @@ function SearchUser() {
           transition: all 0.3s ease;
         }
 
-        /* Round Image Style */
         .round-image {
           border-radius: 50%;
-        }
-
-        /* Square Image Style */
-        .square-image {
-          border-radius: 15px;
         }
 
         .gallery-card:hover .gallery-image {
@@ -321,7 +360,7 @@ function SearchUser() {
 
         .info-header {
           display: flex;
-          justify-content: space-between;
+          justify-content: center; /* center header since no badge */
           align-items: center;
           margin-bottom: 1.5rem;
         }
@@ -331,17 +370,6 @@ function SearchUser() {
           margin: 0;
           font-size: 1.25rem;
           font-weight: 600;
-        }
-
-        .gallery-category {
-          background-color: #ef4444;
-          color: white;
-          padding: 0.35rem 1rem;
-          border-radius: 20px;
-          font-size: 0.875rem;
-          font-weight: 500;
-          text-transform: capitalize;
-          margin: 0;
         }
 
         .user-details {
@@ -386,6 +414,32 @@ function SearchUser() {
 
         .no-results p {
           color: #a1a1a1;
+        }
+
+        .pagination {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 1rem;
+          margin: 2rem 0;
+          font-size: 0.95rem;
+        }
+
+        .pagination button {
+          background: #ef4444;
+          border: none;
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .pagination button:disabled {
+          background: #555;
+          cursor: not-allowed;
         }
 
         @media (max-width: 768px) {
