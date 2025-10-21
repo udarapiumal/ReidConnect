@@ -16,6 +16,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
 import { useClub } from "../../context/ClubContext";
+import { useNotifications } from '../../api/useNotifications';
+
 
 const { width } = Dimensions.get('window');
 
@@ -46,6 +48,8 @@ export default function ClubDashboardTab() {
     const [postsLoading, setPostsLoading] = useState(false);
     const [subCount, setSubCount] = useState(0);
     const router = useRouter();
+    const { notifications, unreadCount, reload } = useNotifications(String(clubDetails?.userId));
+
 
     const fetchPostStats = async (postId) => {
         try {
@@ -187,6 +191,7 @@ export default function ClubDashboardTab() {
             if (loading) return;
             fetchLatestPostsWithStats();
             fetchSubCount();
+            reload();
         }, [loading, clubDetails, user, token])
         
     );
@@ -202,15 +207,23 @@ export default function ClubDashboardTab() {
                     </View>
                     <View style={styles.headerRight}>
 
-                        <TouchableOpacity style={styles.bellButton}>
+                        <TouchableOpacity 
+                            style={styles.bellButton}
+                            onPress={() => router.push('/club/notifications')}
+                        >
                             <Image
                                 source={require('../../../assets/images/bell-icon.png')}
                                 style={styles.bellIcon}
                             />
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>9+</Text>
-                            </View>
+                            {unreadCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
+
 
                         <TouchableOpacity style={styles.profileButton}>
                             {clubDetails?.profilePicture ? (

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Dimensions,
@@ -19,7 +20,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
+import { TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useClub } from "../../context/ClubContext";
+import { useNavigation } from '@react-navigation/native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const GRID_SPACING = 12;
@@ -29,6 +32,7 @@ const imageHeight = imageSize * (4/3);
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const createdAt = new Date(timestamp);
+  
   const diffMs = now - createdAt;
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const totalHours = Math.floor(totalMinutes / 60);
@@ -41,6 +45,9 @@ const formatTimeAgo = (timestamp) => {
   if (minutes > 0 || (!days && !hours)) result += `${minutes}m `;
   return result.trim() + ' ago';
 };
+
+
+
 
 export default function ClubProfileScreen() {
   const router = useRouter();
@@ -61,6 +68,20 @@ export default function ClubProfileScreen() {
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [likedPosts, setLikedPosts] = useState({});
+  const navigation = useNavigation();
+  
+const handleLogout = async () => {
+    // Remove stored JWT / user info
+    await AsyncStorage.removeItem('token'); 
+    await AsyncStorage.removeItem('userId'); // if you store user info
+
+    // Navigate to login screen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   const fetchSubCount = async () => {
     try {
@@ -163,6 +184,29 @@ export default function ClubProfileScreen() {
     fetchComments(postId);
   };
 
+  const handleLikeToggle = async (postId) => {
+  const isLiked = likedPosts[postId];
+  try {
+    if (isLiked) {
+      await axios.delete(`${BASE_URL}/api/posts/${postId}/like`, {
+        params: { userId: clubDetails.userId },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } else {
+      await axios.post(`${BASE_URL}/api/posts/${postId}/like`, null, {
+        params: { userId: clubDetails.userId },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }
+    setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
+    const updatedStats = await fetchPostStats(postId);
+    setPostStats(prev => ({ ...prev, [postId]: updatedStats }));
+  } catch (err) {
+    console.error('Error toggling like:', err);
+  }
+};
+
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
@@ -224,6 +268,24 @@ export default function ClubProfileScreen() {
       fetchSubCount();
     }
   }, [clubDetails]);
+  useEffect(() => {
+  const fetchLikedPosts = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/posts/likedByUser/${clubDetails.userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const likedIds = res.data;
+      const likedMap = {};
+      likedIds.forEach(id => likedMap[id] = true);
+      setLikedPosts(likedMap);
+    } catch (err) {
+      console.error('Error fetching liked posts:', err);
+    }
+  };
+
+  if (clubDetails?.userId) fetchLikedPosts();
+}, [clubDetails]);
+
 
   const currentData = selectedTab === 'posts' ? posts : events;
 
@@ -273,15 +335,8 @@ export default function ClubProfileScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.commentsModalContainer}
       >
-        <TouchableOpacity
-          style={styles.commentsModalBackdrop}
-          activeOpacity={1}
-          onPress={() => {
-            setShowComments(false);
-            setReplyingTo(null);
-            setCommentText('');
-          }}
-        />
+        <View style={styles.commentsModalBackdrop} />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.commentsModalContent}>
           <View style={styles.commentsHeader}>
             <View style={styles.modalHandle} />
@@ -354,6 +409,7 @@ export default function ClubProfileScreen() {
             </View>
           </View>
         </View>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -474,9 +530,17 @@ export default function ClubProfileScreen() {
         {!isEvent && (
           <View style={styles.postActions}>
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="heart-outline" size={26} color="#fff" />
-              </TouchableOpacity>
+              <TouchableOpacity 
+  style={styles.actionButton}
+  onPress={() => handleLikeToggle(item.id)}
+>
+  <Ionicons 
+    name={likedPosts[item.id] ? "heart" : "heart-outline"} 
+    size={26} 
+    color={likedPosts[item.id] ? "#ff4444" : "#fff"} 
+  />
+</TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.actionButton}
                 onPress={() => handleCommentPress(item.id)}
@@ -588,7 +652,7 @@ export default function ClubProfileScreen() {
         <Ionicons name="chevron-forward" size={20} color="#666" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.menuItem, styles.logoutItem]}>
+      <TouchableOpacity onPress={handleLogout} style={[styles.menuItem, styles.logoutItem]}>
         <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
           <Ionicons name="log-out-outline" size={22} color="#ff4444" />
         </View>

@@ -80,4 +80,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         return subscriptionRepository.findByUserAndClub(user, club).isPresent();
     }
+
+    public Club getClubById(Long clubId) {
+        return clubRepository.findById(clubId)
+                .orElseThrow(() -> new RuntimeException("Club not found"));
+    }
+
 }

@@ -12,6 +12,8 @@ import reidConnect.backend.repository.*;
 import reidConnect.backend.service.PostService;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -140,6 +142,15 @@ public class PostServiceImpl implements PostService {
         return PostLikeRepository.countByPost(post);
     }
 
+    @Override
+    public Set<Long> getLikedPostIdsByUser(Long userId) {
+        User user = UserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return PostLikeRepository.findAllByUser(user).stream()
+                .map(like -> like.getPost().getId())
+                .collect(Collectors.toSet());
+    }
 
 
     @Override

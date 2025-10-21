@@ -11,5 +11,5 @@ public interface SubscriptionService {
     List<Club> getSubscribedClubs(Long userId);
     long countSubscriptionsForClub(Long clubId);
     boolean isUserSubscribedToClub(Long userId, Long clubId);
-
+    Club getClubById(Long clubId);
 }

@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Set;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
@@ -173,6 +174,13 @@ public class PostController {
         postService.unlikePost(postId, userId);
         return ResponseEntity.ok("Post unliked successfully.");
     }
+
+    @GetMapping("/likedByUser/{userId}")
+    public ResponseEntity<Set<Long>> getLikedPostIds(@PathVariable Long userId) {
+        Set<Long> likedPostIds = postService.getLikedPostIdsByUser(userId);
+        return ResponseEntity.ok(likedPostIds);
+    }
+
 
     // Get total like count for a post
     @GetMapping("/{postId}/likes/count")
