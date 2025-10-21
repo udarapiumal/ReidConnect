@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, RefreshControl, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,19 +53,19 @@ export default function CommunityPage() {
         setLoading(true);
       }
 
-      const storedToken = await AsyncStorage.getItem('token');
-      if (!storedToken) {
-        console.warn('No authentication token found');
-        return;
-      }
+      // const storedToken = await AsyncStorage.getItem('token');
+      // if (!storedToken) {
+      //   console.warn('No authentication token found');
+      //   return;
+      // }
 
-      setToken(storedToken);
+      // setToken(storedToken);
 
       const response = await axiosInstance.get('/api/posts');
       const postsData = response.data;
 
       const enrichedPosts = await Promise.all(
-        postsData.map(async post => {
+        postsData.map(async (post: any) => {
           let profilePicture = null;
           let commentsCount = 0;
 

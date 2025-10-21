@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.LostandFoundDto;
 import reidConnect.backend.dto.LostandFoundResponseDto;
-import reidConnect.backend.entity.LostandFound;
 import reidConnect.backend.service.LostandFoundService;
 
 import java.util.List;

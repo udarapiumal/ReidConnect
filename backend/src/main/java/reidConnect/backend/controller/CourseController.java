@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.course.CourseRequestDto;
 import reidConnect.backend.dto.course.CourseResponseDto;
-import reidConnect.backend.entity.Course;
 import reidConnect.backend.enums.Degree;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.service.CourseService;

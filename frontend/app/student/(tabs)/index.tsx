@@ -312,16 +312,19 @@ export default function HomePage() {
         // Your Next Event - events user is going to or interested in
         const next = eventsData
           .filter((event: any) => 
-            event.statusOfUser === 'going' || event.statusOfUser === 'interested'
+            (event.statusOfUser === 'going' || event.statusOfUser === 'interested') && new Date(event.date) > new Date()
           )
           .sort((a: any, b: any) => {
             // Prioritize 'going' events over 'interested'
             if (a.statusOfUser === 'going' && b.statusOfUser === 'interested') return -1;
             if (a.statusOfUser === 'interested' && b.statusOfUser === 'going') return 1;
-            // Then sort by date
-            return new Date(a.date).getTime() - new Date(b.date).getTime();
-          })
-          .slice(0, 5);
+            
+            // Then sort by date (earliest first)
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            
+            return dateA - dateB;
+          });
         
         // Upcoming Events - events happening soon (sorted by date)
         const upcoming = eventsData
@@ -413,31 +416,24 @@ export default function HomePage() {
         event.category?.toUpperCase() === category
       );
     }
+
+    const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
-    // Sort events to show upcoming events first, then by engagement
-    const sortedEvents = eventsToFilter.sort((a: any, b: any) => {
-      const eventDateA = new Date(a.date);
-      const eventDateB = new Date(b.date);
-      const now = new Date();
-      const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      
-      // Check if events are upcoming (within next week)
-      const aIsUpcoming = eventDateA > now && eventDateA < oneWeekFromNow;
-      const bIsUpcoming = eventDateB > now && eventDateB < oneWeekFromNow;
-      
+    // Add isUpcoming flag during sort
+    const sortedEvents = eventsToFilter.map((event: any) => {
+      const eventDate = new Date(event.date);
+      return {
+        ...event,
+        isUpcoming: eventDate > now && eventDate < oneWeekFromNow
+      };
+    }).sort((a: any, b: any) => {
       // Prioritize upcoming events
-      if (aIsUpcoming && !bIsUpcoming) return -1;
-      if (!aIsUpcoming && bIsUpcoming) return 1;
+      if (a.isUpcoming && !b.isUpcoming) return -1;
+      if (!a.isUpcoming && b.isUpcoming) return 1;
       
-      // If both are upcoming or both are not upcoming, sort by date
-      if (aIsUpcoming && bIsUpcoming) {
-        return eventDateA.getTime() - eventDateB.getTime();
-      }
-      
-      // For non-upcoming events, sort by engagement (interested + going)
-      const engagementA = (a.interested || 0) + (a.going || 0);
-      const engagementB = (b.interested || 0) + (b.going || 0);
-      return engagementB - engagementA;
+      // Sort by date
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
     
     setFilteredEvents(sortedEvents);
@@ -734,19 +730,15 @@ export default function HomePage() {
             {/* Filtered Events */}
             <View style={styles.eventsGrid}>
               {filteredEvents.length > 0 ? (
-                filteredEvents.map((event, index) => {
-                  // Check if this is the first non-upcoming event after upcoming events
-                  const eventDate = new Date(event.date);
-                  const now = new Date();
-                  const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-                  const isUpcoming = eventDate > now && eventDate < oneWeekFromNow;
-                  
-                  // Check if previous event was upcoming and this one isn't
+                filteredEvents.map((event:any, index) => {
+                  // Use pre-calculated isUpcoming flag
+                  const isUpcoming = event.isUpcoming;
+    
+                  // Check if previous event was upcoming
                   const prevEvent = index > 0 ? filteredEvents[index - 1] : null;
-                  const prevEventDate = prevEvent ? new Date(prevEvent.date) : null;
-                  const prevIsUpcoming = prevEventDate ? (prevEventDate > now && prevEventDate < oneWeekFromNow) : false;
+                  const prevIsUpcoming = prevEvent ? prevEvent.isUpcoming : false;
                   const shouldShowOtherEventsHeader = index > 0 && prevIsUpcoming && !isUpcoming;
-                  
+    
                   return (
                     <View key={event.id}>
                       {index === 0 && isUpcoming && (
