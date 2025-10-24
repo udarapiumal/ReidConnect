@@ -364,10 +364,6 @@ export default function PostDetailScreen() {
               <Ionicons name="chatbubble-outline" size={22} color="#3B82F6" />
               <Text style={styles.statText}>{commentCount}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.statItem}>
-              <Ionicons name="share-outline" size={22} color="#10B981" />
-              <Text style={styles.statText}>Share</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Post metadata */}

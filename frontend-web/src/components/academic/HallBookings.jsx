@@ -347,7 +347,7 @@ const HallBookings = () => {
                 <th class="header-cell">Date</th>
                 <th class="header-cell">Time</th>
                 <th class="header-cell">Reason and approval<br>given if any</th>
-                <th class="header-cell" colspan="2">Availability YES/NO<br>(Certified by booking Clerk<br>at APW)</th>
+                <th class="header-cell" colspan="2">Availability YES/NO<br>(Certified by ReidConnect<br>at APW)</th>
               </tr>
               <tr>
                 <th class="header-cell2" style="border-top: none;"></th>
@@ -385,7 +385,7 @@ const HallBookings = () => {
             <div class="applicant-section">
               <div class="applicant-left">
                 <div>Name of Applicant: <span class="signature-line">${selectedItem.clubName}</span></div>
-                <div style="margin-top: 15px;">Registration Number: <span class="signature-line"></span></div>
+                <div style="margin-top: 15px;">Registration Number: <span class="signature-line">${selectedItem.registrationNumber}</span></div>
                 <div style="margin-top: 15px;">Contact Number (Phone): <span class="signature-line">${selectedItem.contactNumber}</span></div>
               </div>
               <div class="applicant-right">
@@ -418,18 +418,7 @@ const HallBookings = () => {
                       </div>
                     </div>
                     
-                    <div class="assignment" style="margin-top: 40px;">
-                      <strong>3. Assignment of Lecture Hall</strong>
-                      <div style="margin-top: 15px;">
-                        <span class="signature-line" style="width: 200px;"></span><br>
-                        <small>Date: .................</small>
-                      </div>
-                      <div style="margin-top: 15px;">
-                        <span class="signature-line" style="width: 150px;"></span><br>
-                        <small>DR. SAR AR</small><br>
-                        <small>Academic and Publications</small>
-                      </div>
-                    </div>
+                    
                   </td>
                   
                   <td class="approval-right">
@@ -443,18 +432,7 @@ const HallBookings = () => {
                       <small>Director/Deputy Director/Head &nbsp;&nbsp; Date: .................</small>
                     </div>
                     
-                    <div style="margin-top: 40px;">
-                      <strong>Assigning caretaker</strong>
-                      <div style="margin-top: 15px;">
-                        <span class="signature-line" style="width: 200px;"></span><br>
-                        <small>Date: .................</small>
-                      </div>
-                      <div style="margin-top: 15px;">
-                        <span class="signature-line" style="width: 150px;"></span><br>
-                        <small>DR. SAR AR</small><br>
-                        <small>General Administration</small>
-                      </div>
-                    </div>
+                    
                   </td>
                 </tr>
               </table>

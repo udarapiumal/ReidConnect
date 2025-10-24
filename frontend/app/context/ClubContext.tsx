@@ -33,7 +33,7 @@ export const ClubProvider = ({ children }: ClubProviderProps) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await AsyncStorage.getItem("token");
+        const token = await AsyncStorage.getItem('token');
         if (!token) throw new Error("No token");
 
         const decoded = jwtDecode<UserType>(token);

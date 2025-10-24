@@ -152,12 +152,17 @@ const EventDetailsScreen = () => {
   };
 
   const formatTime = (time24) => {
-    const [hour, minute] = time24.split(':');
-    const h = parseInt(hour, 10);
-    const suffix = h >= 12 ? 'PM' : 'AM';
-    const hour12 = h % 12 === 0 ? 12 : h % 12;
-    return `${hour12}:${minute} ${suffix}`;
-  };
+  if (!time24 || typeof time24 !== 'string') {
+    return 'N/A'; // or return an empty string
+  }
+
+  const [hour, minute] = time24.split(':');
+  const h = parseInt(hour, 10);
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${minute} ${suffix}`;
+};
+
 
 
 

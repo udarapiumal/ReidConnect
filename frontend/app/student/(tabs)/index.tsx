@@ -520,7 +520,7 @@ export default function HomePage() {
                   ReidConnect
                 </ThemedText>
                 <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
-                  Good afternoon, Shenal 👋
+                  Good afternoon, 👋
                 </ThemedText>
               </View>
               <View style={styles.headerButtons}>
