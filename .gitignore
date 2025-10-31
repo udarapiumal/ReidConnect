@@ -17,6 +17,7 @@ frontend/web-build/
 frontend/dist/
 frontend/coverage/
 frontend/.vscode/
+frontend/.env/
 
 # === Node (frontend-web) ===
 frontend-web/node_modules/
@@ -29,6 +30,7 @@ backend/.classpath
 backend/.project
 backend/.settings/
 backend/.vscode/
+backend/.env/
 *.iml
 
 # === IntelliJ IDEA ===

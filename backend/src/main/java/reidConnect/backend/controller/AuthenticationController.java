@@ -16,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.util.KeyUtil;
 
-import java.io.IOException;
 import java.security.KeyPair;
 import java.util.Collection;
 

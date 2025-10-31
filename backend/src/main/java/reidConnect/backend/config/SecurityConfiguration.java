@@ -84,24 +84,29 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200",
-                "http://localhost:3000",
-                "http://localhost:3001",
-                "http://localhost:8080",
-                "http://localhost:8081",
-                "http://localhost:8082",
-                "http://10.149.164.83:8081",
-                "exp://192.168.1.5:8081",
-                "exp://192.168.1.6:8081",
-                "exp://192.168.1.4:8081",
-                "exp://10.149.164.83:8081",
-                "http://localhost:5091/",
-                "http://localhost:11449/",
-                "http://localhost:4338/",
-                "http://localhost:5081/",
-                "http://localhost:11883/"
-        ));
+        String frontendUrls = System.getenv("FRONTEND_URL");
+        if (frontendUrls != null && !frontendUrls.isEmpty()) {
+            configuration.setAllowedOrigins(List.of(frontendUrls.split(",")));
+        } else {
+            configuration.setAllowedOrigins(List.of(
+                    "http://localhost:4200",
+                    "http://localhost:3000",
+                    "http://localhost:3001",
+                    "http://localhost:8080",
+                    "http://localhost:8081",
+                    "http://localhost:8082",
+                    "http://10.149.164.83:8081",
+                    "exp://192.168.1.5:8081",
+                    "exp://192.168.1.6:8081",
+                    "exp://192.168.1.4:8081",
+                    "exp://10.149.164.83:8081",
+                    "http://localhost:5091/",
+                    "http://localhost:11449/",
+                    "http://localhost:4338/",
+                    "http://localhost:5081/",
+                    "http://localhost:11883/"
+            ));
+        }
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         configuration.setAllowedHeaders(List.of("*")); // Allow all headers
         configuration.setAllowCredentials(true); // Important for file uploads
