@@ -21,6 +21,7 @@ import reidConnect.backend.service.VenueBookingService;
 import reidConnect.backend.util.KeyUtil;
 
 import java.security.*;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
 
@@ -417,6 +418,14 @@ public class VenueBookingServiceImpl implements VenueBookingService {
                 .pendingBookings(pendingBookings)
                 .rejectedBookings(0) // You can add logic for rejected bookings if you have that status
                 .build();
+    }
+
+    @Override
+    public List<VenueBookingSummaryDto> getBookingsByDateRange(LocalDate startDate, LocalDate endDate) {
+        return bookingRepository.findBookingsByDateRange(startDate, endDate)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
     }
 
 }

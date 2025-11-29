@@ -36,7 +36,6 @@ export const PRIVILEGES = {
 export const FEATURE_MAP = {
   TIMETABLE_VIEW: { route: "/academic/timetable", label: "Time Table", icon: "fa-solid fa-chart-bar", element: "TimeTable" },
   BOOKING_SIGN: { route: "/academic/bookings", label: "Hall Bookings", icon: "fa-solid fa-building", element: "HallBookings" },
-  BOOKING_REQUEST: null, // Need to implement this feature
   EVENT_MANAGE: { route: "/academic/events", label: "Events", icon: "fa-solid fa-calendar-days", element: "EventSchedule" },
   PROFILE_MANAGE: { route: "/union/Profilemanagement", label: "Profile Management", icon: "fa-solid fa-id-badge", element: "SearchUser" },
   ACADEMIC_CALENDAR_VIEW: { route: "/academic/calendar", label: "Academic Calendar", icon: "fa-solid fa-calendar", element: "AcademicCalendar" }

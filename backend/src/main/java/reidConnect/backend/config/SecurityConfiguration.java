@@ -44,6 +44,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/ws-notifications/**").permitAll()
                         // Allow CORS preflight requests globally
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/posts/uploads/**").permitAll() // Allow direct access to uploaded images
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll() // Allow public access to GET events
                         .requestMatchers("/api/subscriptions/**").authenticated()

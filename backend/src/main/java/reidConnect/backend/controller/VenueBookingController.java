@@ -11,6 +11,7 @@ import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
 import reidConnect.backend.enums.BookingStatus;
 import reidConnect.backend.service.VenueBookingService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -130,5 +131,16 @@ public class VenueBookingController {
     public ResponseEntity<DashboardStatsDto> getDashboardStats() {
         DashboardStatsDto stats = bookingService.getDashboardStats();
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/date-range")
+    public ResponseEntity<List<VenueBookingSummaryDto>> getBookingsByDateRange(
+            @RequestParam String startDate,
+            @RequestParam String endDate
+    ) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+        List<VenueBookingSummaryDto> responses = bookingService.getBookingsByDateRange(start, end);
+        return ResponseEntity.ok(responses);
     }
 }

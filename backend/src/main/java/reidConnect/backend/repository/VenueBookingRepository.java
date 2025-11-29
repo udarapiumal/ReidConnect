@@ -4,9 +4,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import reidConnect.backend.entity.VenueBooking;
 import reidConnect.backend.enums.BookingStatus;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface VenueBookingRepository extends JpaRepository<VenueBooking, Long> {
@@ -31,5 +33,20 @@ public interface VenueBookingRepository extends JpaRepository<VenueBooking, Long
     // Count approved bookings
     @Query("SELECT COUNT(vb) FROM VenueBooking vb WHERE vb.status = 'APPROVED'")
     long countApprovedBookings();
+
+    // Add these methods to your existing repository
+
+    @Query("SELECT vb FROM VenueBooking vb WHERE vb.date >= :startDate AND vb.date <= :endDate ORDER BY vb.date ASC")
+    List<VenueBooking> findBookingsByDateRange(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("SELECT vb FROM VenueBooking vb WHERE vb.date >= :startDate AND vb.date <= :endDate ORDER BY vb.date ASC")
+    Page<VenueBooking> findBookingsByDateRange(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable
+    );
 
 }

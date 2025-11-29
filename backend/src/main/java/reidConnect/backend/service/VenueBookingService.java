@@ -7,6 +7,7 @@ import reidConnect.backend.dto.venue.VenueBookingResponseDto;
 import reidConnect.backend.dto.venue.VenueBookingSummaryDto;
 import reidConnect.backend.enums.BookingStatus;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface VenueBookingService {
@@ -37,4 +38,5 @@ public interface VenueBookingService {
     List<VenueBookingResponseDto> getFullyApprovedBookings();
     DashboardStatsDto getDashboardStats();
 
+    List<VenueBookingSummaryDto> getBookingsByDateRange(LocalDate startDate, LocalDate endDate);
 }

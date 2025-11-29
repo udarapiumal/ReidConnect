@@ -8,6 +8,8 @@ import reidConnect.backend.dto.*;
 import reidConnect.backend.entity.Club;
 import reidConnect.backend.entity.KeyStoreEntity;
 import reidConnect.backend.entity.User;
+import reidConnect.backend.enums.Academic_Admin_Rank;
+import reidConnect.backend.enums.Academic_Admin_Role;
 import reidConnect.backend.repository.KeyStoreRepository;
 import reidConnect.backend.responses.LoginResponse;
 import reidConnect.backend.service.AuthenticationService;
@@ -196,6 +198,50 @@ public class AuthenticationController {
         RegisterClubDto savedClub = authenticationService.saveClub(club);
         return ResponseEntity.ok(savedClub);
     }
+
+    @PostMapping("/register-academic-admin")
+    public ResponseEntity<RegisterAcademicAdminDto> registerAcademicAdmin(
+            @RequestBody RegisterAcademicAdminDto dto) {
+
+        // ---- Create and save User ----
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(dto.getPassword()));
+        user.setRole(dto.getRole().name());
+        user.setEnabled(true);
+        user.setVerificationCode(null);
+        user.setVerificationExpiration(null);
+
+        User savedUser = authenticationService.saveUser(user);
+
+        // ---- Generate a key pair and store in keystore ----
+        try {
+            KeyPair pair = KeyUtil.generateKeyPair();
+            String pubKey = KeyUtil.publicKeyToBase64(pair.getPublic());
+            String privKeyEnc = KeyUtil.encryptPrivateKey(pair.getPrivate());
+
+            KeyStoreEntity keyStoreEntity = new KeyStoreEntity();
+            keyStoreEntity.setUser(savedUser);
+            keyStoreEntity.setPublicKey(pubKey);
+            keyStoreEntity.setPrivateKey(privKeyEnc);
+            keyStoreRepository.save(keyStoreEntity);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating keypair: " + e.getMessage(), e);
+        }
+
+        // ---- Create response DTO ----
+        RegisterAcademicAdminDto responseDto = new RegisterAcademicAdminDto();
+        responseDto.setUsername(savedUser.getUsername());
+        responseDto.setEmail(savedUser.getEmail());
+        responseDto.setUserId(savedUser.getId());
+        responseDto.setRole(Academic_Admin_Role.valueOf(savedUser.getRole()));
+
+        return ResponseEntity.ok(responseDto);
+    }
+
+
 
 
 }
