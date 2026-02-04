@@ -90,57 +90,57 @@ export default function AcademicCalendar() {
     }
   };
   // Calendar logic
-const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
 
-const monthList = (() => {
-  if (periods.length === 0) return [];
-  const start = new Date(Math.min(...periods.map(p => new Date(p.startDate).getTime())));
-  const end = new Date(Math.max(...periods.map(p => new Date(p.endDate).getTime())));
-  const months = [];
-  const temp = new Date(start);
-  temp.setDate(1);
-  while (temp <= end) {
-    months.push(new Date(temp));
-    temp.setMonth(temp.getMonth() + 1);
-  }
-  return months;
-})();
-
-const getColor = (date) => {
-  for (const p of periods) {
-    const s = new Date(p.startDate);
-    const e = new Date(p.endDate);
-    if (date >= s && date <= e) {
-      if (p.periodType === "EXAMINATION") return "#ef4444";
-      if (p.periodType === "VACATION") return "#22c55e";
-      if (p.periodType === "SEMESTER") return "#3b82f6";
-      if (p.periodType === "STUDY_LEAVE") return "#f59e0b";
-      if (p.periodType === "ORIENTATION") return "#8b5cf6";
+  const monthList = (() => {
+    if (periods.length === 0) return [];
+    const start = new Date(Math.min(...periods.map(p => new Date(p.startDate).getTime())));
+    const end = new Date(Math.max(...periods.map(p => new Date(p.endDate).getTime())));
+    const months = [];
+    const temp = new Date(start);
+    temp.setDate(1);
+    while (temp <= end) {
+      months.push(new Date(temp));
+      temp.setMonth(temp.getMonth() + 1);
     }
-  }
-  return "transparent";
-};
+    return months;
+  })();
 
-const calendarDates = (() => {
-  if (monthList.length === 0) return [];
-  const monthDate = monthList[currentMonthIndex];
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const days = [];
-  const startDay = firstDay.getDay();
-  for (let i = 0; i < startDay; i++) days.push(null);
-  for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
-  return days;
-})();
+  const getColor = (date) => {
+    for (const p of periods) {
+      const s = new Date(p.startDate);
+      const e = new Date(p.endDate);
+      if (date >= s && date <= e) {
+        if (p.periodType === "EXAMINATION") return "#ef4444";
+        if (p.periodType === "VACATION") return "#22c55e";
+        if (p.periodType === "SEMESTER") return "#3b82f6";
+        if (p.periodType === "STUDY_LEAVE") return "#f59e0b";
+        if (p.periodType === "ORIENTATION") return "#8b5cf6";
+      }
+    }
+    return "transparent";
+  };
+
+  const calendarDates = (() => {
+    if (monthList.length === 0) return [];
+    const monthDate = monthList[currentMonthIndex];
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const days = [];
+    const startDay = firstDay.getDay();
+    for (let i = 0; i < startDay; i++) days.push(null);
+    for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
+    return days;
+  })();
 
 
   return (
     <div className="dashboard-container">
       <Header />
       <div className="dashboard-content">
-        <AcademicSidebar activeItem="Timetable" isDarkMode={true} />
+        <AcademicSidebar activeItem="Academic Calendar" isDarkMode={true} />
 
         <main className="dashboard-main">
           <h2 className="page-title">Academic Timetable - 2025/2026</h2>
@@ -208,48 +208,48 @@ const calendarDates = (() => {
             </table>
           </div>
           {/* Full Calendar View with Navigation */}
-<div className="full-calendar-section">
-  <h3>Academic Calendar Overview</h3>
+          <div className="full-calendar-section">
+            <h3>Academic Calendar Overview</h3>
 
-  {/* Color Legend */}
-  <div className="calendar-legend">
-    <span><span className="legend-color" style={{background:'#3b82f6'}}></span> Semester</span>
-    <span><span className="legend-color" style={{background:'#ef4444'}}></span> Examination</span>
-    <span><span className="legend-color" style={{background:'#22c55e'}}></span> Vacation</span>
-    <span><span className="legend-color" style={{background:'#f59e0b'}}></span> Study Leave</span>
-    <span><span className="legend-color" style={{background:'#8b5cf6'}}></span> Orientation</span>
-  </div>
+            {/* Color Legend */}
+            <div className="calendar-legend">
+              <span><span className="legend-color" style={{ background: '#3b82f6' }}></span> Semester</span>
+              <span><span className="legend-color" style={{ background: '#ef4444' }}></span> Examination</span>
+              <span><span className="legend-color" style={{ background: '#22c55e' }}></span> Vacation</span>
+              <span><span className="legend-color" style={{ background: '#f59e0b' }}></span> Study Leave</span>
+              <span><span className="legend-color" style={{ background: '#8b5cf6' }}></span> Orientation</span>
+            </div>
 
-  {/* Month Navigation */}
-  <div className="calendar-nav">
-    <button onClick={() => setCurrentMonthIndex((i) => Math.max(0, i - 1))}>← Previous</button>
-    <h4>{monthList[currentMonthIndex]?.toLocaleString("default", { month: "long", year: "numeric" })}</h4>
-    <button onClick={() => setCurrentMonthIndex((i) => Math.min(monthList.length - 1, i + 1))}>Next →</button>
-  </div>
+            {/* Month Navigation */}
+            <div className="calendar-nav">
+              <button onClick={() => setCurrentMonthIndex((i) => Math.max(0, i - 1))}>← Previous</button>
+              <h4>{monthList[currentMonthIndex]?.toLocaleString("default", { month: "long", year: "numeric" })}</h4>
+              <button onClick={() => setCurrentMonthIndex((i) => Math.min(monthList.length - 1, i + 1))}>Next →</button>
+            </div>
 
-  {/* Month Grid */}
-  <div className="month-calendar">
-    <div className="calendar-grid">
-      {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-        <div key={d} className="calendar-header">{d}</div>
-      ))}
-      {calendarDates.map((date, idx) =>
-        date ? (
-          <div
-            key={idx}
-            className="calendar-cell"
-            style={{ backgroundColor: getColor(date) }}
-            title={date.toDateString()}
-          >
-            {date.getDate()}
+            {/* Month Grid */}
+            <div className="month-calendar">
+              <div className="calendar-grid">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div key={d} className="calendar-header">{d}</div>
+                ))}
+                {calendarDates.map((date, idx) =>
+                  date ? (
+                    <div
+                      key={idx}
+                      className="calendar-cell"
+                      style={{ backgroundColor: getColor(date) }}
+                      title={date.toDateString()}
+                    >
+                      {date.getDate()}
+                    </div>
+                  ) : (
+                    <div key={idx} className="calendar-cell empty"></div>
+                  )
+                )}
+              </div>
+            </div>
           </div>
-        ) : (
-          <div key={idx} className="calendar-cell empty"></div>
-        )
-      )}
-    </div>
-  </div>
-</div>
 
 
           {/* Modal Form */}
@@ -321,30 +321,112 @@ const calendarDates = (() => {
       <style>{`
         .dashboard-container {
           min-height: 100vh;
-          font-family: 'Inter', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           flex-direction: column;
+          letter-spacing: -0.01em;
+          transition: all 0.3s ease;
           background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
           color: white;
+        }
+        .header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 70px;
+          backdrop-filter: blur(20px);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 24px;
+          z-index: 1001;
+          transition: all 0.3s ease;
+          background: rgba(20, 20, 20, 0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .title {
+          font-weight: 700;
+          font-size: 22px;
+          letter-spacing: -0.02em;
+          transition: color 0.3s ease;
+          color: white;
+        }
+
+        .title .highlight {
+          color: #FF453A;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .header-left {
+          display: flex;
+          align-items: center;
+        }
+        .app-title {
+          font-weight: 700;
+          color: white;
+          margin: 0;
+        }
+        .academic-text {
+          color: #FF453A;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .header-icons {
+          display: flex;
+          gap: 12px;
+        }
+        .header-icons .icon {
+          font-size: 18px;
+          color: rgba(255, 255, 255, 0.7);
+          cursor: pointer;
+          transition: color 0.3s ease;
+        }
+        .header-icons .icon:hover {
+          color: white;
+        }
+        .admin-text {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 14px;
+          font-weight: 500;
         }
         .dashboard-content {
           display: flex;
           padding-top: 70px;
           flex: 1;
+          min-height: calc(100vh - 70px);
         }
         main.dashboard-main {
           flex: 1;
           padding: 40px;
+          background: transparent;
           margin-left: 200px;
           overflow-y: auto;
+          min-height: calc(100vh - 70px);
+          max-width: calc(100vw - 240px);
         }
         .page-title {
-          font-size: 28px;
+          font-size: 32px;
           font-weight: 800;
-          margin-bottom: 24px;
-          background: linear-gradient(135deg, #ffffff, #e5e5e5);
+          margin-bottom: 32px;
+          letter-spacing: -0.03em;
+          transition: all 0.3s ease;
+          color: white;
+          background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
         .current-period-banner {
           background: rgba(255, 255, 255, 0.1);
