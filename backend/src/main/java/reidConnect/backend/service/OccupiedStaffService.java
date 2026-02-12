@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface OccupiedStaffService {
     void addOccupiedStaff(List<OccupiedStaffDto> dtos);
-    boolean hasStaffClash(Long staffId, String day, List<Long> slotIds);
+
+    boolean hasStaffClash(Long staffId, String day, List<Long> slotIds, Long academicCalendarId);
 }

@@ -17,9 +17,10 @@ public class OccupiedVenueController {
 
     @PostMapping("/check")
     public ResponseEntity<Boolean> checkVenueClash(@RequestParam Long venueId,
-                                                   @RequestParam String day,
-                                                   @RequestBody List<Long> slotIds) {
-        boolean clash = occupiedVenueService.hasVenueClash(venueId, day, slotIds);
+            @RequestParam String day,
+            @RequestParam Long academicCalendarId,
+            @RequestBody List<Long> slotIds) {
+        boolean clash = occupiedVenueService.hasVenueClash(venueId, day, slotIds, academicCalendarId);
         return ResponseEntity.ok(clash);
     }
 

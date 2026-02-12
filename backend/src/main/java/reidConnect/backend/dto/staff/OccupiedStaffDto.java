@@ -1,4 +1,5 @@
 package reidConnect.backend.dto.staff;
+
 import lombok.Data;
 
 @Data
@@ -7,4 +8,5 @@ public class OccupiedStaffDto {
     private String day;
     private Long slotId;
     private Long timeTableId;
+    private Long academicCalendarId;
 }

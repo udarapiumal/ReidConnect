@@ -20,11 +20,16 @@ public interface TimeTableRepository extends JpaRepository<TimeTable, Long> {
             "JOIN FETCH t.slots ts " +
             "JOIN FETCH ts.slot " +
             "WHERE c.degree = :degree AND c.year = :year " +
+            "AND t.academicCalendar.id = :academicCalendarId " +
             "ORDER BY t.day, t.id")
-    List<TimeTable> findByYearAndDegreeWithDetails(@Param("degree") Degree degree, @Param("year") Years year);
+    List<TimeTable> findByYearAndDegreeAndAcademicCalendarWithDetails(
+            @Param("degree") Degree degree,
+            @Param("year") Years year,
+            @Param("academicCalendarId") Long academicCalendarId);
 
-    List<TimeTable> findByDayIgnoreCase(String day);
+    List<TimeTable> findByDayIgnoreCaseAndAcademicCalendar_Id(String day, Long academicCalendarId);
 
-    long countByDay(String day);
+    long countByDayAndAcademicCalendar_Id(String day, Long academicCalendarId);
 
+    List<TimeTable> findByAcademicCalendar_Id(Long academicCalendarId);
 }

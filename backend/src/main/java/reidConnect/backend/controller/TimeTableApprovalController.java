@@ -22,32 +22,31 @@ public class TimeTableApprovalController {
         return ResponseEntity.ok(approvalService.approveTimeTable(requestDto));
     }
 
-    @GetMapping("/{type}")
-    public ResponseEntity<List<TimeTableApprovalResponseDto>> getApprovalsByType(@PathVariable String type) {
-        return ResponseEntity.ok(approvalService.getApprovalsByType(type));
+    @GetMapping("/{academicCalendarId}")
+    public ResponseEntity<List<TimeTableApprovalResponseDto>> getApprovalsByAcademicCalendar(
+            @PathVariable Long academicCalendarId) {
+        return ResponseEntity.ok(approvalService.getApprovalsByAcademicCalendar(academicCalendarId));
     }
 
-    @GetMapping("/status/{type}")
-    public ResponseEntity<?> getApprovalStatus(@PathVariable String type) {
-        var approvals = approvalService.getApprovalsByType(type);
+    @GetMapping("/status/{academicCalendarId}")
+    public ResponseEntity<?> getApprovalStatus(@PathVariable Long academicCalendarId) {
+        var approvals = approvalService.getApprovalsByAcademicCalendar(academicCalendarId);
 
         // Aggregate latest decisions by role (SAR, HOD)
         var statusMap = approvals.stream()
                 .collect(Collectors.toMap(
-                        dto -> dto.getReviewerRole(),    // role as key
-                        dto -> dto.getDecision(),        // decision as value
+                        dto -> dto.getReviewerRole(), // role as key
+                        dto -> dto.getDecision(), // decision as value
                         (existing, replacement) -> replacement // if multiple, take the latest
                 ));
 
         return ResponseEntity.ok(statusMap); // returns JSON like { "SAR": "RECOMMENDED", "HOD": "APPROVED" }
     }
 
-    @GetMapping("/latest/{type}/{role}")
+    @GetMapping("/latest/{academicCalendarId}/{role}")
     public ResponseEntity<TimeTableApprovalResponseDto> getLatestDecision(
-            @PathVariable String type, @PathVariable String role) {
-        return ResponseEntity.ok(approvalService.getLatestDecision(type, role));
+            @PathVariable Long academicCalendarId, @PathVariable String role) {
+        return ResponseEntity.ok(approvalService.getLatestDecision(academicCalendarId, role));
     }
-
-
 
 }

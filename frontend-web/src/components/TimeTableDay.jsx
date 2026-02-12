@@ -32,11 +32,11 @@ const timeSlotConfig = {
 
   convertSlotsToTime(slotIds) {
     if (!slotIds || slotIds.length === 0) return null;
-    
+
     const sortedSlots = [...slotIds].sort((a, b) => a - b);
     const startTime = this.slotToTime[sortedSlots[0]]?.start;
     const endTime = this.slotToTime[sortedSlots[sortedSlots.length - 1]]?.end;
-    
+
     return { startTime, endTime };
   }
 };
@@ -54,49 +54,61 @@ export default function TimetableView() {
   }, []);
 
   // Fetch lectures from API
+  // Fetch lectures from API
   useEffect(() => {
     const fetchLectures = async () => {
       try {
-        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-        const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}`);
-        if (!response.ok) throw new Error('Failed to fetch lectures');
-        const data = await response.json();
-        setLectures(data);
+        // 1. Fetch current academic calendar first
+        const calendarRes = await fetch('http://localhost:8080/api/academic-calendar/current');
+        if (!calendarRes.ok) throw new Error('Failed to fetch period');
+        const period = await calendarRes.json();
+
+        // 2. Only fetch timetable if we have a valid semester
+        if (period && period.periodType === 'SEMESTER') {
+          const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+          const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}&academicCalendarId=${period.id}`);
+          if (!response.ok) throw new Error('Failed to fetch lectures');
+          const data = await response.json();
+          setLectures(data);
+        } else {
+          console.log("No active semester, skipping timetable fetch.");
+          setLectures([]);
+        }
       } catch (err) {
         console.error(err);
       }
     };
-    
+
     fetchLectures();
   }, []);
-  
+
   useEffect(() => {
-  const topScrollbar = document.querySelector(".top-scrollbar");
-  const bottomScrollbar = document.querySelector(".time-table-day-main-content");
-  const tableWrapper = document.querySelector(".time-table-day-timetable-wrapper");
-  const scrollbarContent = document.querySelector(".scrollbar-content");
+    const topScrollbar = document.querySelector(".top-scrollbar");
+    const bottomScrollbar = document.querySelector(".time-table-day-main-content");
+    const tableWrapper = document.querySelector(".time-table-day-timetable-wrapper");
+    const scrollbarContent = document.querySelector(".scrollbar-content");
 
-  if (topScrollbar && bottomScrollbar && tableWrapper && scrollbarContent) {
-    // Match width
-    scrollbarContent.style.width = tableWrapper.scrollWidth + "px";
+    if (topScrollbar && bottomScrollbar && tableWrapper && scrollbarContent) {
+      // Match width
+      scrollbarContent.style.width = tableWrapper.scrollWidth + "px";
 
-    // Show top scrollbar only if horizontal scroll exists
-    if (tableWrapper.scrollWidth > bottomScrollbar.clientWidth) {
-      topScrollbar.style.display = "block";
-    } else {
-      topScrollbar.style.display = "none";
+      // Show top scrollbar only if horizontal scroll exists
+      if (tableWrapper.scrollWidth > bottomScrollbar.clientWidth) {
+        topScrollbar.style.display = "block";
+      } else {
+        topScrollbar.style.display = "none";
+      }
+
+      // Sync scrolls
+      const syncScroll = (source, target) => {
+        source.addEventListener("scroll", () => {
+          target.scrollLeft = source.scrollLeft;
+        });
+      };
+      syncScroll(topScrollbar, bottomScrollbar);
+      syncScroll(bottomScrollbar, topScrollbar);
     }
-
-    // Sync scrolls
-    const syncScroll = (source, target) => {
-      source.addEventListener("scroll", () => {
-        target.scrollLeft = source.scrollLeft;
-      });
-    };
-    syncScroll(topScrollbar, bottomScrollbar);
-    syncScroll(bottomScrollbar, topScrollbar);
-  }
-}, []);
+  }, []);
 
 
   // Generate time slots from 8:00 AM to 7:00 PM
@@ -121,10 +133,10 @@ export default function TimetableView() {
   const getLectureStatus = (slotIds) => {
     const now = new Date();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-    
+
     const timeRange = timeSlotConfig.convertSlotsToTime(slotIds);
     if (!timeRange) return 'upcoming';
-    
+
     if (currentTimeStr >= timeRange.startTime && currentTimeStr <= timeRange.endTime) {
       return 'active';
     } else if (currentTimeStr > timeRange.endTime) {
@@ -137,7 +149,7 @@ export default function TimetableView() {
   const getCurrentTimeSlot = () => {
     const now = new Date();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-    
+
     for (let i = 1; i <= 22; i++) {
       const slot = timeSlotConfig.slotToTime[i];
       if (slot && currentTimeStr >= slot.start && currentTimeStr < slot.end) {
@@ -151,9 +163,9 @@ export default function TimetableView() {
 
   // Get lectures for a specific time slot, year, and degree
   const getLecturesForCell = (slotId, year, degree) => {
-    return lectures.filter(lecture => 
-      lecture.slotIds.includes(slotId) && 
-      lecture.year === year && 
+    return lectures.filter(lecture =>
+      lecture.slotIds.includes(slotId) &&
+      lecture.year === year &&
       lecture.degree === degree
     );
   };
@@ -163,7 +175,7 @@ export default function TimetableView() {
     const sortedSlots = [...lecture.slotIds].sort((a, b) => a - b);
     const startSlot = sortedSlots[0];
     const endSlot = sortedSlots[sortedSlots.length - 1];
-    
+
     if (currentSlotId === startSlot) {
       return endSlot - startSlot + 1;
     }
@@ -199,11 +211,11 @@ export default function TimetableView() {
             {lecture.courseType.substring(0, 3)}
           </div>
         </div>
-        
+
         <div className="time-table-day-course-name">
           {lecture.courseName}
         </div>
-        
+
         <div className="time-table-day-lecture-details">
           <div className="time-table-day-detail-item">
             <Clock size={10} />
@@ -629,7 +641,7 @@ export default function TimetableView() {
       {/* Timetable Header */}
       <div className="time-table-day-timetable-header">
         <h2 className="time-table-day-timetable-title">
-          Daily Timetable - {currentTime.toLocaleDateString('en-US', { 
+          Daily Timetable - {currentTime.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
             day: 'numeric',

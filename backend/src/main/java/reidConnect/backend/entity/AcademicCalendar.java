@@ -24,7 +24,7 @@ public class AcademicCalendar {
     private LocalDate endDate;
 
     private String academicYear; // e.g., "2025/2026"
-    private String intake;       // e.g., "20/21", "21/22"
+    private String intake; // e.g., "20/21", "21/22"
 
     @Enumerated(EnumType.STRING)
     private PeriodType periodType; // SEMESTER, STUDY_LEAVE, VACATION, EXAMINATION, ORIENTATION, etc.

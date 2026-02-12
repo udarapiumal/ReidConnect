@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import reidConnect.backend.enums.TimeTableApprovalDecision;
-import reidConnect.backend.enums.TimeTableType;
 
 import java.time.LocalDateTime;
 
@@ -18,13 +17,13 @@ public class TimeTableApproval {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TimeTableType type; // e.g. ACADEMIC_TIME_TABLE
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_calendar_id", nullable = false)
+    private AcademicCalendar academicCalendar;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewer_id", nullable = false)
-    private User reviewer;  // SAR / HOD / etc.
+    private User reviewer; // SAR / HOD / etc.
 
     @Column(nullable = false)
     private String role; // e.g. SAR, HOD

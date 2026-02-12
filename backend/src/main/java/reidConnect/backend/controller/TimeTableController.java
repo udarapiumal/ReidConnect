@@ -5,14 +5,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.timetable.TimeTableRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableResponseDto;
-import reidConnect.backend.entity.TimeTable;
 import reidConnect.backend.enums.Degree;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.mapper.TimeTableMapper;
 import reidConnect.backend.service.TimeTableService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/timetable")
@@ -51,25 +49,29 @@ public class TimeTableController {
     @GetMapping("/byYearAndDegree")
     public ResponseEntity<List<TimeTableResponseDto>> getByYearAndDegree(
             @RequestParam Degree degree,
-            @RequestParam Years year) {
-        return ResponseEntity.ok(timeTableService.getByYearAndDegree(degree, year));
+            @RequestParam Years year,
+            @RequestParam Long academicCalendarId) {
+        return ResponseEntity.ok(timeTableService.getByYearAndDegree(degree, year, academicCalendarId));
     }
 
     @GetMapping("/byDay")
-    public ResponseEntity<List<TimeTableResponseDto>> getByDay(@RequestParam String day) {
-        return ResponseEntity.ok(timeTableService.getByDay(day));
+    public ResponseEntity<List<TimeTableResponseDto>> getByDay(
+            @RequestParam String day,
+            @RequestParam Long academicCalendarId) {
+        return ResponseEntity.ok(timeTableService.getByDay(day, academicCalendarId));
     }
 
     @GetMapping("/count/today")
-    public ResponseEntity<Long> countSessionsToday() {
-        return ResponseEntity.ok(timeTableService.countSessionsToday());
+    public ResponseEntity<Long> countSessionsToday(@RequestParam Long academicCalendarId) {
+        return ResponseEntity.ok(timeTableService.countSessionsToday(academicCalendarId));
     }
 
     @GetMapping("/byYearAndDegreeApproved")
     public ResponseEntity<List<TimeTableResponseDto>> getByYearAndDegreeApproved(
             @RequestParam Degree degree,
-            @RequestParam Years year) {
-        return ResponseEntity.ok(timeTableService.getByYearAndDegreeApproved(degree, year));
+            @RequestParam Years year,
+            @RequestParam Long academicCalendarId) {
+        return ResponseEntity.ok(timeTableService.getByYearAndDegreeApproved(degree, year, academicCalendarId));
     }
 
 }

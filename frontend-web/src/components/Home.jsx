@@ -46,10 +46,24 @@ export default function LectureDashboard() {
   const [currentPeriod, setCurrentPeriod] = useState(null);
 
   useEffect(() => {
-    const fetchLectures = async () => {
+    const fetchCurrentPeriod = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/academic-calendar/current');
+        if (!res.ok) throw new Error('Failed to fetch period');
+        const period = await res.json();
+        setCurrentPeriod(period);
+        return period;
+      } catch (err) {
+        console.error(err);
+        return null;
+      }
+    };
+
+    const fetchLectures = async (periodId) => {
+      if (!periodId) return;
       try {
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-        const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}`);
+        const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}&academicCalendarId=${periodId}`);
         if (!response.ok) throw new Error('Failed to fetch lectures');
         const data = await response.json();
         setLectures(data);
@@ -58,19 +72,14 @@ export default function LectureDashboard() {
       }
     };
 
-    const fetchCurrentPeriod = async () => {
-      try {
-        const res = await fetch('http://localhost:8080/api/academic-calendar/current');
-        if (!res.ok) throw new Error('Failed to fetch period');
-        const period = await res.json();
-        setCurrentPeriod(period);
-      } catch (err) {
-        console.error(err);
+    const init = async () => {
+      const period = await fetchCurrentPeriod();
+      if (period && period.periodType === 'SEMESTER') {
+        fetchLectures(period.id);
       }
     };
 
-    fetchLectures();
-    fetchCurrentPeriod();
+    init();
   }, []);
 
   const getCurrentHourPeriod = () => {
@@ -101,7 +110,7 @@ export default function LectureDashboard() {
           <div className={styles["header-content"]}>
             <div className={styles["logo-section"]}>
               <div className={styles["logo-icon"]}>
-                <img src={reidConnectLogo} alt="ReidConnect" className={styles.logoImage}/>
+                <img src={reidConnectLogo} alt="ReidConnect" className={styles.logoImage} />
               </div>
               <div className={styles["logo-text"]}><h1>ReidConnect</h1></div>
             </div>
@@ -127,7 +136,7 @@ export default function LectureDashboard() {
             <div className={styles["no-classes"]}>
               <div className={styles["no-classes-content"]}>
                 <div className={styles["no-classes-icon"]}>
-                  <Clock size={32}/>
+                  <Clock size={32} />
                 </div>
                 <h3>Day Over</h3>
                 <p>Will be refreshed at 08.00am</p>
@@ -185,7 +194,7 @@ export default function LectureDashboard() {
       return (
         <div key={`${degree}-year-${year}`} className={`${styles["lecture-card"]} ${styles.empty}`} tabIndex="0">
           <span className={styles["empty-text"]}>
-            <CalendarMinus className={styles["calendar-icon"]}/> No session - Year {year}
+            <CalendarMinus className={styles["calendar-icon"]} /> No session - Year {year}
           </span>
         </div>
       );
@@ -208,7 +217,7 @@ export default function LectureDashboard() {
         <div>
           <div className={styles["card-header"]}>
             <div className={`${styles["course-type-badge"]} ${styles[lecture.courseType.toLowerCase()]}`}>
-              <TypeIcon size={12}/>
+              <TypeIcon size={12} />
               {lecture.courseType}
             </div>
             <div className={styles["year-badge"]}>
@@ -226,21 +235,21 @@ export default function LectureDashboard() {
           </div>
 
           <div className={styles["info-item"]}>
-            <Clock className={styles["info-icon"]}/>
+            <Clock className={styles["info-icon"]} />
             <span className={styles["info-text"]}>{formatTimeRange(lecture.slotIds)}</span>
           </div>
         </div>
 
         <div>
           <div className={styles["info-item"]}>
-            <User className={styles["info-icon"]}/>
+            <User className={styles["info-icon"]} />
             <span className={styles["info-text"]} title={lecture.lecturerNames}>
               {lecture.lecturerNames}
             </span>
           </div>
 
           <div className={styles["info-item"]}>
-            <MapPin className={styles["info-icon"]}/>
+            <MapPin className={styles["info-icon"]} />
             <span className={styles["info-text"]}>{lecture.venue}</span>
           </div>
         </div>
@@ -258,7 +267,7 @@ export default function LectureDashboard() {
           <div className={styles["header-content"]}>
             <div className={styles["logo-section"]}>
               <div className={styles["logo-icon"]}>
-                <img src={reidConnectLogo} alt="ReidConnect" className={styles.logoImage}/>
+                <img src={reidConnectLogo} alt="ReidConnect" className={styles.logoImage} />
               </div>
               <div className={styles["logo-text"]}><h1>ReidConnect</h1></div>
             </div>
@@ -292,7 +301,7 @@ export default function LectureDashboard() {
         <div className={styles["header-content"]}>
           <div className={styles["logo-section"]}>
             <div className={styles["logo-icon"]}>
-              <img src={reidConnectLogo} alt="ReidConnect" className={styles.logoImage}/>
+              <img src={reidConnectLogo} alt="ReidConnect" className={styles.logoImage} />
             </div>
             <div className={styles["logo-text"]}><h1>ReidConnect</h1></div>
           </div>
@@ -317,7 +326,7 @@ export default function LectureDashboard() {
         <div className={styles["degree-sections"]}>
           <div className={styles["degree-section"]}>
             <div className={styles["degree-header"]}>
-              <h2 className={`${styles["degree-title"]} ${styles.is}`}><Cpu/> Computer Science</h2>
+              <h2 className={`${styles["degree-title"]} ${styles.is}`}><Cpu /> Computer Science</h2>
               <p className={styles["degree-subtitle"]}>CS Degree Programme</p>
             </div>
             <div className={styles["year-grid"]}>
@@ -327,7 +336,7 @@ export default function LectureDashboard() {
 
           <div className={styles["degree-section"]}>
             <div className={styles["degree-header"]}>
-              <h2 className={`${styles["degree-title"]} ${styles.cs}`}><MemoryStick/> Information Systems</h2>
+              <h2 className={`${styles["degree-title"]} ${styles.cs}`}><MemoryStick /> Information Systems</h2>
               <p className={styles["degree-subtitle"]}>IS Degree Programme</p>
             </div>
             <div className={styles["year-grid"]}>

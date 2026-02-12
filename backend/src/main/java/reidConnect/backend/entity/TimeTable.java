@@ -34,6 +34,10 @@ public class TimeTable {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
+    @ManyToOne
+    @JoinColumn(name = "academic_calendar_id", nullable = false)
+    private AcademicCalendar academicCalendar;
+
     @OneToMany(mappedBy = "timeTable", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TimeTableSlot> slots;
 

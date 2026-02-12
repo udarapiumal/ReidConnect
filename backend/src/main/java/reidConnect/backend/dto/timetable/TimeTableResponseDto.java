@@ -25,4 +25,6 @@ public class TimeTableResponseDto {
     private Years year;
     private Integer lectureCredits;
     private Integer practicalCredits;
+    private Long academicCalendarId;
+    private String academicCalendarTitle;
 }
