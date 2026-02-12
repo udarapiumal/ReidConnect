@@ -5,10 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.timetable.TimeTableApprovalRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableApprovalResponseDto;
+import reidConnect.backend.enums.TimetableStatus;
 import reidConnect.backend.service.TimeTableApprovalService;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/timetable-approvals")
@@ -28,19 +29,14 @@ public class TimeTableApprovalController {
         return ResponseEntity.ok(approvalService.getApprovalsByAcademicCalendar(academicCalendarId));
     }
 
+    /**
+     * Returns the current FSM status as a simple JSON object.
+     * e.g. { "status": "DRAFT" }
+     */
     @GetMapping("/status/{academicCalendarId}")
-    public ResponseEntity<?> getApprovalStatus(@PathVariable Long academicCalendarId) {
-        var approvals = approvalService.getApprovalsByAcademicCalendar(academicCalendarId);
-
-        // Aggregate latest decisions by role (SAR, HOD)
-        var statusMap = approvals.stream()
-                .collect(Collectors.toMap(
-                        dto -> dto.getReviewerRole(), // role as key
-                        dto -> dto.getDecision(), // decision as value
-                        (existing, replacement) -> replacement // if multiple, take the latest
-                ));
-
-        return ResponseEntity.ok(statusMap); // returns JSON like { "SAR": "RECOMMENDED", "HOD": "APPROVED" }
+    public ResponseEntity<Map<String, String>> getApprovalStatus(@PathVariable Long academicCalendarId) {
+        TimetableStatus status = approvalService.getCurrentStatus(academicCalendarId);
+        return ResponseEntity.ok(Map.of("status", status.name()));
     }
 
     @GetMapping("/latest/{academicCalendarId}/{role}")

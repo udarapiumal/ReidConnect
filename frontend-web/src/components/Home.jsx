@@ -75,7 +75,20 @@ export default function LectureDashboard() {
     const init = async () => {
       const period = await fetchCurrentPeriod();
       if (period && period.periodType === 'SEMESTER') {
-        fetchLectures(period.id);
+        // Only show timetable on public page if APPROVED
+        try {
+          const statusRes = await fetch(`http://localhost:8080/api/timetable-approvals/status/${period.id}`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (statusData.status === 'APPROVED') {
+              fetchLectures(period.id);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Error checking approval status:', err);
+        }
+        setLectures([]);
       }
     };
 

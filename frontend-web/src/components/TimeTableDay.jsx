@@ -54,7 +54,6 @@ export default function TimetableView() {
   }, []);
 
   // Fetch lectures from API
-  // Fetch lectures from API
   useEffect(() => {
     const fetchLectures = async () => {
       try {
@@ -65,11 +64,21 @@ export default function TimetableView() {
 
         // 2. Only fetch timetable if we have a valid semester
         if (period && period.periodType === 'SEMESTER') {
-          const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-          const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}&academicCalendarId=${period.id}`);
-          if (!response.ok) throw new Error('Failed to fetch lectures');
-          const data = await response.json();
-          setLectures(data);
+          // 3. Check if timetable is APPROVED before showing to public
+          const statusRes = await fetch(`http://localhost:8080/api/timetable-approvals/status/${period.id}`);
+          if (!statusRes.ok) throw new Error('Failed to fetch approval status');
+          const statusData = await statusRes.json();
+
+          if (statusData.status === 'APPROVED') {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}&academicCalendarId=${period.id}`);
+            if (!response.ok) throw new Error('Failed to fetch lectures');
+            const data = await response.json();
+            setLectures(data);
+          } else {
+            console.log("Timetable not yet approved, skipping public fetch.");
+            setLectures([]);
+          }
         } else {
           console.log("No active semester, skipping timetable fetch.");
           setLectures([]);

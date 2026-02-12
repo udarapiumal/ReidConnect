@@ -2,6 +2,7 @@ package reidConnect.backend.service;
 
 import reidConnect.backend.dto.timetable.TimeTableApprovalRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableApprovalResponseDto;
+import reidConnect.backend.enums.TimetableStatus;
 
 import java.util.List;
 
@@ -13,4 +14,6 @@ public interface TimeTableApprovalService {
     TimeTableApprovalResponseDto getLatestDecision(Long academicCalendarId, String role);
 
     boolean hasApprovedDecision(Long academicCalendarId);
+
+    TimetableStatus getCurrentStatus(Long academicCalendarId);
 }

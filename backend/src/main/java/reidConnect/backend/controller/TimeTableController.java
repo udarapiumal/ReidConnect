@@ -6,11 +6,14 @@ import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.timetable.TimeTableRequestDto;
 import reidConnect.backend.dto.timetable.TimeTableResponseDto;
 import reidConnect.backend.enums.Degree;
+import reidConnect.backend.enums.TimetableStatus;
 import reidConnect.backend.enums.Years;
 import reidConnect.backend.mapper.TimeTableMapper;
+import reidConnect.backend.service.TimeTableApprovalService;
 import reidConnect.backend.service.TimeTableService;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/timetable")
@@ -19,9 +22,26 @@ public class TimeTableController {
 
     private final TimeTableService timeTableService;
     private final TimeTableMapper timeTableMapper;
+    private final TimeTableApprovalService approvalService;
+
+    // Statuses in which timetable editing is allowed
+    private static final Set<TimetableStatus> EDITABLE_STATUSES = Set.of(
+            TimetableStatus.DRAFT,
+            TimetableStatus.NOT_RECOMMENDED,
+            TimetableStatus.REJECTED);
+
+    private void validateEditable(Long academicCalendarId) {
+        TimetableStatus status = approvalService.getCurrentStatus(academicCalendarId);
+        if (!EDITABLE_STATUSES.contains(status)) {
+            throw new IllegalStateException(
+                    "Timetable cannot be modified in status: " + status +
+                            ". Only editable in DRAFT, NOT_RECOMMENDED, or REJECTED states.");
+        }
+    }
 
     @PostMapping
     public ResponseEntity<TimeTableResponseDto> create(@RequestBody TimeTableRequestDto dto) {
+        validateEditable(dto.getAcademicCalendarId());
         return ResponseEntity.ok(timeTableService.create(dto));
     }
 
@@ -37,11 +57,15 @@ public class TimeTableController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TimeTableResponseDto> update(@PathVariable Long id, @RequestBody TimeTableRequestDto dto) {
+        validateEditable(dto.getAcademicCalendarId());
         return ResponseEntity.ok(timeTableService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        // For delete, we need to look up the timetable to get the calendar ID
+        TimeTableResponseDto existing = timeTableService.getById(id);
+        validateEditable(existing.getAcademicCalendarId());
         timeTableService.delete(id);
         return ResponseEntity.noContent().build();
     }
