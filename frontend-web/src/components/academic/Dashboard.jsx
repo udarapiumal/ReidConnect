@@ -15,9 +15,10 @@ const CURRENT_PERIOD_URL = 'http://localhost:8080/api/academic-calendar/current'
 export default function Dashboard() {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
-    const [currentMonth, setCurrentMonth] = useState("July 2025");
+    const [currentMonth, setCurrentMonth] = useState("");
     const [activeNavItem, setActiveNavItem] = useState("Dashboard");
     const [showProfile, setShowProfile] = useState(false);
+
 
     const [currentPeriod, setCurrentPeriod] = useState(null);
     const [lectureCount, setLectureCount] = useState(0);
@@ -65,7 +66,7 @@ export default function Dashboard() {
 
     return (
         <div className={`dashboard-container`}>
-            <Header />
+            <Header onProfileClick={() => setShowProfile(true)} />
 
             <div className="dashboard-content">
                 <AcademicSidebar
@@ -80,7 +81,7 @@ export default function Dashboard() {
                     <div className="dashboard-stats">
                         <div className="stat-card">
                             <i className="fas fa-graduation-cap"></i>
-                            <h3>{lectureCount}+</h3>
+                            <h3>{lectureCount}</h3>
                             <p>Sessions Today</p>
                         </div>
                         <div className="stat-card">
@@ -112,6 +113,10 @@ export default function Dashboard() {
                     </div>
                 </main>
             </div>
+
+            {showProfile && (
+                <UserProfile onClose={() => setShowProfile(false)} />
+            )}
 
             {/* Embedded CSS */}
             <style>{`

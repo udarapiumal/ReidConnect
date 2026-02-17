@@ -10,6 +10,7 @@ export const PRIVILEGES = {
   ],
   ACADEMIC_SAR: [
     "TIMETABLE_VIEW",
+    "TIMETABLE_DELETE",
     "BOOKING_SIGN",
     "BOOKING_REQUEST",
     "EVENT_MANAGE",

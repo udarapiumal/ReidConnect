@@ -2,14 +2,26 @@ import React, { useState, useEffect } from "react";
 import axios from "../../api/axiosInstance";
 import AcademicSidebar from "./AcademicSidebar";
 import Header from "./components/Header";
+import UserProfile from './UserProfile';
+import { PRIVILEGES } from '../../api/rolePrivileges';
+import { getCurrentUserRole } from '../../utils/auth';
 
-const API_URL = "http://localhost:8080/api/academic-calendar";
+const API_URL = "/api/academic-calendar";
 
 export default function AcademicCalendar() {
   const [periods, setPeriods] = useState([]);
   const [currentPeriod, setCurrentPeriod] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editPeriod, setEditPeriod] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePeriodId, setDeletePeriodId] = useState(null);
+  const [deletePeriodTitle, setDeletePeriodTitle] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
+
+  const role = getCurrentUserRole();
+  const userPrivs = PRIVILEGES[role] || [];
+  const isSAR = userPrivs.includes("TIMETABLE_DELETE");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -83,10 +95,29 @@ export default function AcademicCalendar() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this period?")) {
-      await axios.delete(`${API_URL}/${id}`);
+  const handleDelete = (period) => {
+    setDeletePeriodId(period.id);
+    setDeletePeriodTitle(period.title);
+    setDeleteConfirmText("");
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletePeriodId) return;
+    try {
+      // First delete all timetable data (cascading)
+      await axios.delete(`${API_URL}/${deletePeriodId}/timetable`);
+      // Then delete the academic calendar period itself
+      await axios.delete(`${API_URL}/${deletePeriodId}`);
+      setShowDeleteConfirm(false);
+      setDeleteConfirmText("");
+      setDeletePeriodId(null);
+      setDeletePeriodTitle("");
       fetchPeriods();
+      fetchCurrentPeriod();
+    } catch (err) {
+      console.error("Error deleting period:", err);
+      alert(err.response?.data?.message || "Failed to delete period.");
     }
   };
   // Calendar logic
@@ -138,7 +169,7 @@ export default function AcademicCalendar() {
 
   return (
     <div className="dashboard-container">
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
       <div className="dashboard-content">
         <AcademicSidebar activeItem="Academic Calendar" isDarkMode={true} />
 
@@ -195,12 +226,14 @@ export default function AcademicCalendar() {
                       >
                         Edit
                       </button>
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDelete(p.id)}
-                      >
-                        Delete
-                      </button>
+                      {isSAR && (
+                        <button
+                          className="delete-btn"
+                          onClick={() => handleDelete(p)}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -311,6 +344,82 @@ export default function AcademicCalendar() {
                     Cancel
                   </button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && (
+            <div className="modal-overlay" style={{ zIndex: 3000 }}>
+              <div className="modal" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                <i className="fa fa-exclamation-triangle" style={{ fontSize: '48px', textAlign: 'center', marginBottom: '12px', color: '#f87171', display: 'block' }}></i>
+                <h3 style={{ color: '#f87171', textAlign: 'center' }}>Delete Entire Timetable</h3>
+                <p style={{
+                  color: 'rgba(255,255,255,0.75)',
+                  fontSize: '14px',
+                  lineHeight: '1.6',
+                  textAlign: 'center',
+                  padding: '16px',
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.15)',
+                  borderRadius: '10px',
+                  marginBottom: '20px'
+                }}>
+                  This action is <strong style={{ color: '#f87171' }}>irreversible</strong>. It will permanently delete
+                  the period <strong style={{ color: '#f87171' }}>"{deletePeriodTitle}"</strong> along with all
+                  timetable entries, occupied venue/staff records, and approval history.
+                </p>
+                <label style={{ display: 'block', color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 500, marginBottom: '8px' }}>
+                  Type <strong style={{ color: '#f87171', letterSpacing: '0.05em' }}>DELETE</strong> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type DELETE here"
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    textAlign: 'center',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                  <button
+                    className="cancel-btn"
+                    style={{ flex: 1 }}
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={deleteConfirmText !== "DELETE"}
+                    onClick={handleConfirmDelete}
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: deleteConfirmText === "DELETE" ? 'pointer' : 'not-allowed',
+                      border: 'none',
+                      background: deleteConfirmText === "DELETE"
+                        ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                        : 'rgba(107,114,128,0.3)',
+                      color: deleteConfirmText === "DELETE" ? 'white' : 'rgba(255,255,255,0.3)',
+                      transition: '0.3s'
+                    }}
+                  >
+                    Delete Timetable
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -653,6 +762,10 @@ export default function AcademicCalendar() {
 }
 
       `}</style>
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 }

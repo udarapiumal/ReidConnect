@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
 import Header from './components/Header';
+import UserProfile from './UserProfile';
 import axios from '../../api/axiosInstance';
 import Select from 'react-select';
 
@@ -30,6 +31,7 @@ const CourseManagement = () => {
   const [lecturers, setLecturers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [venues, setVenues] = useState([]);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -304,11 +306,11 @@ const CourseManagement = () => {
 
   return (
     <div className={`dashboard-container ${showAddForm ? 'blur-background' : ''}`}>
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
 
       <div className="dashboard-content">
-        <AcademicSidebar 
-          activeItem={activeNavItem} 
+        <AcademicSidebar
+          activeItem={activeNavItem}
           onNavigate={handleNavigation}
         />
 
@@ -401,23 +403,23 @@ const CourseManagement = () => {
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Course Name</label>
-                <input 
-                  type="text" 
-                  placeholder="Course Name" 
-                  required 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                <input
+                  type="text"
+                  placeholder="Course Name"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
 
               <div className="form-group">
                 <label>Course Code</label>
-                <input 
-                  type="text" 
-                  placeholder="Course Code (e.g., SCS 101)" 
-                  required 
-                  value={formData.code} 
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
+                <input
+                  type="text"
+                  placeholder="Course Code (e.g., SCS 101)"
+                  required
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 />
               </div>
 
@@ -1052,6 +1054,10 @@ const CourseManagement = () => {
           }
         }
       `}</style>
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 };

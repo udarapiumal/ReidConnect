@@ -1,108 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from '../../api/axiosInstance';
 
 const UserProfile = ({ onClose }) => {
-const [user, setUser] = useState({
-    name: 'Sampath Perera',
-    email: 'admin@reidconnect.edu',
-    phone: '+94 123 4567',
-    location: 'University of Colombo School of Computing',
-    bio: 'Academic administrator passionate about creating efficient educational systems and supporting student success.',
-    joinDate: 'January 2023',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-});
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  const [editData, setEditData] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    location: user.location,
-    bio: user.bio
-  });
+  const [editData, setEditData] = useState({ username: '', email: '' });
+  const [editErrors, setEditErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
-  const [errors, setErrors] = useState({});
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/users/me');
+      setUser(res.data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load profile');
+      console.error('Error fetching profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditModal = () => {
+    setEditData({
+      username: user.username || user.name || '',
+      email: user.email || '',
+    });
+    setEditErrors({});
+    setEditModalOpen(true);
+  };
 
   const validateEditForm = () => {
     const newErrors = {};
-
-    if (!editData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!editData.username.trim()) {
+      newErrors.username = 'Username is required';
     }
-
     if (!editData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
-    if (!editData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    }
-
-    setErrors(newErrors);
+    setEditErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const validatePasswordForm = () => {
-    const newErrors = {};
-
-    if (!passwordData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
-    }
-
-    if (!passwordData.newPassword) {
-      newErrors.newPassword = 'New password is required';
-    } else if (passwordData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters long';
-    }
-
-    if (!passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your new password';
-    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (validateEditForm()) {
-      setUser(prev => ({ ...prev, ...editData }));
+    if (!validateEditForm()) return;
+
+    try {
+      setSaving(true);
+      const res = await axios.put('/users/me', {
+        username: editData.username,
+        email: editData.email,
+      });
+      setUser(res.data);
       setEditModalOpen(false);
-      setErrors({});
+      setSuccessMessage('Profile updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to update profile';
+      setEditErrors({ submit: msg });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    if (validatePasswordForm()) {
-      setPasswordModalOpen(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setErrors({});
-      alert('Password changed successfully!');
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await axios.delete('/users/me');
+      localStorage.removeItem('token');
+      navigate('/login');
+    } catch (err) {
+      console.error('Error disabling account:', err);
+      setDeleteConfirmOpen(false);
+      setError('Failed to deactivate account');
+      setDeleting(false);
     }
   };
 
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
+  const getRoleBadgeColor = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'admin': return 'linear-gradient(135deg, #ef4444, #dc2626)';
+      case 'academic_admin': return 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
+      case 'lecturer': return 'linear-gradient(135deg, #3b82f6, #2563eb)';
+      case 'student': return 'linear-gradient(135deg, #10b981, #059669)';
+      case 'club': return 'linear-gradient(135deg, #f59e0b, #d97706)';
+      default: return 'linear-gradient(135deg, #6b7280, #4b5563)';
+    }
+  };
+
+  const formatRole = (role) => {
+    if (!role) return 'Unknown';
+    return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   return (
@@ -112,77 +117,120 @@ const [user, setUser] = useState({
         <div className="profile-content">
           {/* Header */}
           <div className="profile-header">
-            <h1>Profile Settings</h1>
-            <p>Manage your account information and preferences</p>
+            <h1>My Profile</h1>
+            <p>Your account information</p>
             <button className="close-btn" onClick={onClose}>
               <i className="fa fa-times"></i>
             </button>
           </div>
 
-          {/* Main Profile Card */}
-          <div className="profile-card">
-            {/* Cover Section */}
-            <div className="cover-section">
-              <div className="avatar-section">
-                <div className="avatar-wrapper">
-                  <img src={user.avatar} alt="Profile" className="avatar" />
-                  <button className="camera-btn">
-                    <i className="fa fa-camera"></i>
-                  </button>
+          {/* Loading State */}
+          {loading && (
+            <div className="profile-loading">
+              <div className="spinner"></div>
+              <p>Loading profile...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="profile-error">
+              <i className="fa fa-exclamation-circle"></i>
+              <p>{error}</p>
+              <button onClick={fetchProfile} className="retry-btn">
+                <i className="fa fa-redo"></i> Retry
+              </button>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="success-toast">
+              <i className="fa fa-check-circle"></i>
+              {successMessage}
+            </div>
+          )}
+
+          {/* Profile Card */}
+          {user && !loading && (
+            <div className="profile-card">
+              <div className="cover-section">
+                <div className="avatar-section">
+                  <div className="avatar-wrapper">
+                    <div className="avatar-placeholder">
+                      <i className="fa fa-user"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-info">
+                <div className="info-header">
+                  <div className="user-details">
+                    <div className="name-row">
+                      <h2>{user.username || user.name}</h2>
+                      <span
+                        className="role-badge"
+                        style={{ background: getRoleBadgeColor(user.role) }}
+                      >
+                        {formatRole(user.role)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="action-buttons">
+                    <button onClick={openEditModal} className="edit-btn">
+                      <i className="fa fa-edit"></i>
+                      Edit Profile
+                    </button>
+                    <button onClick={() => setDeleteConfirmOpen(true)} className="delete-btn">
+                      <i className="fa fa-ban"></i>
+                      Deactivate Account
+                    </button>
+                  </div>
+                </div>
+
+                {/* Info Grid */}
+                <div className="info-grid">
+                  <div className="info-item">
+                    <div className="info-icon">
+                      <i className="fa fa-user"></i>
+                    </div>
+                    <div className="info-text">
+                      <label>Username</label>
+                      <span>{user.username || user.name}</span>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">
+                      <i className="fa fa-envelope"></i>
+                    </div>
+                    <div className="info-text">
+                      <label>Email</label>
+                      <span>{user.email}</span>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">
+                      <i className="fa fa-shield-alt"></i>
+                    </div>
+                    <div className="info-text">
+                      <label>Role</label>
+                      <span>{formatRole(user.role)}</span>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">
+                      <i className="fa fa-id-badge"></i>
+                    </div>
+                    <div className="info-text">
+                      <label>User ID</label>
+                      <span>#{user.id}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Profile Info */}
-            <div className="profile-info">
-              <div className="info-header">
-                <div className="user-details">
-                  <h2>{user.name}</h2>
-                  <p>{user.bio}</p>
-                </div>
-                <div className="action-buttons">
-                  <button
-                    onClick={() => setEditModalOpen(true)}
-                    className="edit-btn"
-                  >
-                    <i className="fa fa-edit"></i>
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={() => setPasswordModalOpen(true)}
-                    className="password-btn"
-                  >
-                    <i className="fa fa-lock"></i>
-                    Change Password
-                  </button>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="contact-grid">
-                <div className="contact-column">
-                  <div className="contact-item">
-                    <i className="fa fa-envelope"></i>
-                    <span>{user.email}</span>
-                  </div>
-                  <div className="contact-item">
-                    <i className="fa fa-phone"></i>
-                    <span>{user.phone}</span>
-                  </div>
-                </div>
-                <div className="contact-column">
-                  <div className="contact-item">
-                    <i className="fa fa-map-marker-alt"></i>
-                    <span>{user.location}</span>
-                  </div>
-                  <div className="contact-item">
-                    <i className="fa fa-calendar"></i>
-                    <span>Member since {user.joinDate}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Edit Profile Modal */}
           {editModalOpen && (
@@ -200,14 +248,14 @@ const [user, setUser] = useState({
 
                 <form onSubmit={handleEditSubmit} className="modal-form">
                   <div className="form-group">
-                    <label>Full Name</label>
+                    <label>Username</label>
                     <input
                       type="text"
-                      value={editData.name}
-                      onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter your full name"
+                      value={editData.username}
+                      onChange={(e) => setEditData(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="Enter your username"
                     />
-                    {errors.name && <p className="error">{errors.name}</p>}
+                    {editErrors.username && <p className="error">{editErrors.username}</p>}
                   </div>
 
                   <div className="form-group">
@@ -218,44 +266,29 @@ const [user, setUser] = useState({
                       onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="Enter your email address"
                     />
-                    {errors.email && <p className="error">{errors.email}</p>}
+                    {editErrors.email && <p className="error">{editErrors.email}</p>}
                   </div>
 
-                  <div className="form-group">
-                    <label>Phone Number</label>
-                    <input
-                      type="tel"
-                      value={editData.phone}
-                      onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter your phone number"
-                    />
-                    {errors.phone && <p className="error">{errors.phone}</p>}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Location</label>
-                    <input
-                      type="text"
-                      value={editData.location}
-                      onChange={(e) => setEditData(prev => ({ ...prev, location: e.target.value }))}
-                      placeholder="Enter your location"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Bio</label>
-                    <textarea
-                      value={editData.bio}
-                      onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
-                      rows={4}
-                      placeholder="Tell us about yourself"
-                    />
-                  </div>
+                  {editErrors.submit && (
+                    <div className="submit-error">
+                      <i className="fa fa-exclamation-triangle"></i>
+                      {editErrors.submit}
+                    </div>
+                  )}
 
                   <div className="form-actions">
-                    <button type="submit" className="save-btn">
-                      <i className="fa fa-save"></i>
-                      Save Changes
+                    <button type="submit" className="save-btn" disabled={saving}>
+                      {saving ? (
+                        <>
+                          <div className="btn-spinner"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa fa-save"></i>
+                          Save Changes
+                        </>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -270,95 +303,44 @@ const [user, setUser] = useState({
             </div>
           )}
 
-          {/* Change Password Modal */}
-          {passwordModalOpen && (
+          {/* Delete Confirmation Modal */}
+          {deleteConfirmOpen && (
             <div className="modal-overlay">
-              <div className="modal-content password-modal">
-                <div className="modal-header">
-                  <h3>Change Password</h3>
+              <div className="modal-content delete-modal">
+                <div className="delete-icon-wrapper">
+                  <i className="fa fa-exclamation-triangle"></i>
+                </div>
+                <h3>Deactivate Account</h3>
+                <p className="delete-warning">
+                  Are you sure you want to deactivate your account? Your account will be
+                  <strong> disabled</strong> and you will be logged out. Contact an administrator to reactivate.
+                </p>
+                <div className="form-actions">
                   <button
-                    onClick={() => setPasswordModalOpen(false)}
-                    className="modal-close"
+                    onClick={handleDelete}
+                    className="confirm-delete-btn"
+                    disabled={deleting}
                   >
-                    <i className="fa fa-times"></i>
+                    {deleting ? (
+                      <>
+                        <div className="btn-spinner"></div>
+                        Deactivating...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa fa-ban"></i>
+                        Yes, Deactivate My Account
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmOpen(false)}
+                    className="cancel-btn"
+                    disabled={deleting}
+                  >
+                    Cancel
                   </button>
                 </div>
-
-                <form onSubmit={handlePasswordSubmit} className="modal-form">
-                  <div className="form-group">
-                    <label>Current Password</label>
-                    <div className="password-input">
-                      <input
-                        type={showPasswords.current ? "text" : "password"}
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                        placeholder="Enter current password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('current')}
-                        className="password-toggle"
-                      >
-                        <i className={`fa ${showPasswords.current ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
-                    </div>
-                    {errors.currentPassword && <p className="error">{errors.currentPassword}</p>}
-                  </div>
-
-                  <div className="form-group">
-                    <label>New Password</label>
-                    <div className="password-input">
-                      <input
-                        type={showPasswords.new ? "text" : "password"}
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        placeholder="Enter new password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('new')}
-                        className="password-toggle"
-                      >
-                        <i className={`fa ${showPasswords.new ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
-                    </div>
-                    {errors.newPassword && <p className="error">{errors.newPassword}</p>}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Confirm New Password</label>
-                    <div className="password-input">
-                      <input
-                        type={showPasswords.confirm ? "text" : "password"}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        placeholder="Confirm new password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('confirm')}
-                        className="password-toggle"
-                      >
-                        <i className={`fa ${showPasswords.confirm ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
-                    </div>
-                    {errors.confirmPassword && <p className="error">{errors.confirmPassword}</p>}
-                  </div>
-
-                  <div className="form-actions">
-                    <button type="submit" className="save-btn full-width">
-                      <i className="fa fa-lock"></i>
-                      Update Password
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPasswordModalOpen(false)}
-                      className="cancel-btn full-width"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
               </div>
             </div>
           )}
@@ -391,20 +373,20 @@ const [user, setUser] = useState({
           left: 50%;
           transform: translate(-50%, -50%);
           width: 90%;
-          max-width: 900px;
+          max-width: 600px;
           max-height: 90vh;
           overflow-y: auto;
-          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          background: linear-gradient(145deg, #1e1e1e 0%, #252525 100%);
           border-radius: 20px;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-          animation: slideIn 0.3s ease-out;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+          animation: profileSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes slideIn {
+        @keyframes profileSlideIn {
           from {
             opacity: 0;
-            transform: translate(-50%, -60%) scale(0.9);
+            transform: translate(-50%, -55%) scale(0.95);
           }
           to {
             opacity: 1;
@@ -418,189 +400,296 @@ const [user, setUser] = useState({
 
         .profile-header {
           text-align: center;
-          padding: 30px 30px 20px 30px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 28px 28px 20px 28px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           position: relative;
         }
 
         .profile-header h1 {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 700;
           color: #ffffff;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
           letter-spacing: -0.02em;
         }
 
         .profile-header p {
-          color: rgba(255, 255, 255, 0.6);
+          color: rgba(255, 255, 255, 0.5);
           margin: 0;
-          font-size: 14px;
+          font-size: 13px;
         }
 
         .close-btn {
           position: absolute;
-          top: 20px;
-          right: 20px;
-          background: none;
+          top: 16px;
+          right: 16px;
+          background: rgba(255, 255, 255, 0.06);
           border: none;
           color: rgba(255, 255, 255, 0.6);
-          font-size: 18px;
+          font-size: 16px;
           cursor: pointer;
           padding: 8px;
           border-radius: 8px;
           transition: all 0.2s ease;
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .close-btn:hover {
           color: #ffffff;
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.12);
         }
 
+        /* Loading & Error States */
+        .profile-loading, .profile-error {
+          text-align: center;
+          padding: 60px 20px;
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid rgba(255, 255, 255, 0.1);
+          border-top-color: rgba(255, 255, 255, 0.6);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .profile-error i {
+          font-size: 40px;
+          color: #ef4444;
+          margin-bottom: 12px;
+          display: block;
+        }
+
+        .retry-btn {
+          margin-top: 12px;
+          padding: 8px 20px;
+          background: rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.8);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 13px;
+          transition: all 0.2s;
+        }
+
+        .retry-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: #ffffff;
+        }
+
+        /* Success Toast */
+        .success-toast {
+          position: absolute;
+          top: 80px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #059669;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          z-index: 10;
+          animation: toastFadeIn 0.3s ease;
+          box-shadow: 0 4px 20px rgba(5, 150, 105, 0.3);
+        }
+
+        @keyframes toastFadeIn {
+          from { opacity: 0; transform: translate(-50%, -10px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* Profile Card */
         .profile-card {
-          margin: 20px 30px 30px 30px;
-          background: linear-gradient(145deg, #333333 0%, #2e2e2e 100%);
+          margin: 20px 24px 24px 24px;
+          background: linear-gradient(145deg, #2a2a2a 0%, #262626 100%);
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .cover-section {
-          height: 120px;
-          background: #ffffff;
+          height: 80px;
+          background: linear-gradient(135deg, #2a2a2a 0%, #333333 100%);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           position: relative;
         }
 
         .avatar-section {
           position: absolute;
-          bottom: -60px;
-          left: 30px;
+          bottom: -36px;
+          left: 24px;
         }
 
         .avatar-wrapper {
           position: relative;
         }
 
-        .avatar {
-          width: 120px;
-          height: 120px;
+        .avatar-placeholder {
+          width: 72px;
+          height: 72px;
           border-radius: 50%;
-          border: 4px solid #2a2a2a;
-          object-fit: cover;
-        }
-
-        .camera-btn {
-          position: absolute;
-          bottom: 8px;
-          right: 8px;
-          background: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
-          cursor: pointer;
-          transition: all 0.2s ease;
+          border: 3px solid #1e1e1e;
+          background: linear-gradient(145deg, #374151, #4b5563);
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-
-        .camera-btn:hover {
-          background: #2563eb;
-          transform: scale(1.1);
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 28px;
         }
 
         .profile-info {
-          padding: 80px 30px 30px 30px;
+          padding: 52px 24px 24px 24px;
         }
 
         .info-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 30px;
+          margin-bottom: 24px;
           flex-wrap: wrap;
-          gap: 20px;
+          gap: 16px;
         }
 
-        .user-details h2 {
-          font-size: 24px;
-          font-weight: 700;
-          color: #ffffff;
-          margin: 0 0 8px 0;
-          letter-spacing: -0.02em;
-        }
-
-        .user-details p {
-          color: rgba(255, 255, 255, 0.7);
-          margin: 0;
-          font-size: 14px;
-          line-height: 1.5;
-        }
-
-        .action-buttons {
+        .name-row {
           display: flex;
+          align-items: center;
           gap: 12px;
           flex-wrap: wrap;
         }
 
-        .edit-btn, .password-btn {
+        .user-details h2 {
+          font-size: 22px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0;
+          letter-spacing: -0.02em;
+        }
+
+        .role-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          color: white;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .edit-btn, .delete-btn {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
+          gap: 6px;
+          padding: 8px 14px;
           border: none;
-          border-radius: 10px;
-          font-size: 13px;
+          border-radius: 8px;
+          font-size: 12px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
         .edit-btn {
-          background: #3b82f6;
-          color: white;
+          background: rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .edit-btn:hover {
-          background: #2563eb;
+          background: rgba(255, 255, 255, 0.15);
+          color: #ffffff;
           transform: translateY(-1px);
         }
 
-        .password-btn {
-          background: #ef4444;
-          color: white;
-          border: 1px solid rgba(239, 68, 68, 0.3);
+        .delete-btn {
+          background: rgba(239, 68, 68, 0.15);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        .password-btn:hover {
-          background: #dc2626;
+        .delete-btn:hover {
+          background: rgba(239, 68, 68, 0.25);
+          transform: translateY(-1px);
         }
 
-        .contact-grid {
+        /* Info Grid */
+        .info-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 30px;
+          gap: 12px;
         }
 
-        .contact-column {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .contact-item {
+        .info-item {
           display: flex;
           align-items: center;
           gap: 12px;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 14px;
+          padding: 14px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          transition: background 0.2s;
         }
 
-        .contact-item i {
-          color: #60a5fa;
-          width: 18px;
+        .info-item:hover {
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .info-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.06);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 14px;
           flex-shrink: 0;
+        }
+
+        .info-text {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+
+        .info-text label {
+          font-size: 11px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .info-text span {
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         /* Modal Styles */
@@ -619,50 +708,56 @@ const [user, setUser] = useState({
         }
 
         .modal-content {
-          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          background: linear-gradient(145deg, #1e1e1e 0%, #222222 100%);
           border-radius: 16px;
           width: 100%;
-          max-width: 450px;
-          max-height: 70vh;
+          max-width: 420px;
+          max-height: 80vh;
           overflow-y: auto;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+          animation: modalFadeIn 0.25s ease;
         }
 
-        .password-modal {
-          max-width: 400px;
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
 
         .modal-header {
-          padding: 20px 20px 12px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 20px 20px 14px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
 
         .modal-header h3 {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 700;
           color: #ffffff;
           margin: 0;
-          letter-spacing: -0.02em;
         }
 
         .modal-close {
-          background: none;
+          background: rgba(255, 255, 255, 0.06);
           border: none;
           color: rgba(255, 255, 255, 0.6);
-          font-size: 18px;
+          font-size: 14px;
           cursor: pointer;
-          padding: 4px;
+          padding: 6px;
           border-radius: 6px;
           transition: all 0.2s ease;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .modal-close:hover {
           color: #ffffff;
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.12);
         }
 
         .modal-form {
@@ -675,17 +770,19 @@ const [user, setUser] = useState({
 
         .form-group label {
           display: block;
-          font-size: 14px;
-          font-weight: 500;
-          color: rgba(255, 255, 255, 0.8);
-          margin-bottom: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.7);
+          margin-bottom: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input {
           width: 100%;
           padding: 10px 14px;
           background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 10px;
           color: #ffffff;
           font-size: 14px;
@@ -693,41 +790,11 @@ const [user, setUser] = useState({
           box-sizing: border-box;
         }
 
-        .form-group input:focus, .form-group textarea:focus {
+        .form-group input:focus {
           outline: none;
-          border-color: #3b82f6;
+          border-color: rgba(255, 255, 255, 0.3);
           background: rgba(255, 255, 255, 0.08);
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-group textarea {
-          resize: vertical;
-          min-height: 70px;
-        }
-
-        .password-input {
-          position: relative;
-        }
-
-        .password-input input {
-          padding-right: 45px;
-        }
-
-        .password-toggle {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: rgba(255, 255, 255, 0.6);
-          cursor: pointer;
-          padding: 4px;
-          transition: color 0.2s ease;
-        }
-
-        .password-toggle:hover {
-          color: #ffffff;
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
         }
 
         .error {
@@ -737,16 +804,29 @@ const [user, setUser] = useState({
           margin-bottom: 0;
         }
 
+        .submit-error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: #ef4444;
+          padding: 10px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+          margin-bottom: 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
         .form-actions {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           margin-top: 20px;
         }
 
-        .save-btn, .cancel-btn {
-          padding: 12px 20px;
+        .save-btn, .cancel-btn, .confirm-delete-btn {
+          padding: 10px 18px;
           border-radius: 10px;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -758,97 +838,110 @@ const [user, setUser] = useState({
         }
 
         .save-btn {
-          background: #3b82f6;
-          color: white;
-          border: none;
+          background: rgba(255, 255, 255, 0.12);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .save-btn:hover {
-          background: #2563eb;
+        .save-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.18);
+        }
+
+        .save-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .cancel-btn {
           background: transparent;
-          color: rgba(255, 255, 255, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.7);
+          border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
-        .cancel-btn:hover {
+        .cancel-btn:hover:not(:disabled) {
           background: rgba(255, 255, 255, 0.05);
         }
 
-        .full-width {
-          width: 100%;
-          margin-bottom: 12px;
+        .btn-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.6s linear infinite;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
+        /* Delete Modal */
+        .delete-modal {
+          text-align: center;
+          padding: 32px 24px 24px;
+          max-width: 380px;
+        }
+
+        .delete-icon-wrapper {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: rgba(239, 68, 68, 0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+          color: #ef4444;
+          font-size: 24px;
+        }
+
+        .delete-modal h3 {
+          font-size: 20px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 10px 0;
+        }
+
+        .delete-warning {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 14px;
+          line-height: 1.6;
+          margin: 0 0 24px 0;
+        }
+
+        .confirm-delete-btn {
+          background: #ef4444;
+          color: white;
+          border: none;
+        }
+
+        .confirm-delete-btn:hover:not(:disabled) {
+          background: #dc2626;
+        }
+
+        .confirm-delete-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
           .profile-modal {
             width: 95%;
             max-height: 95vh;
           }
 
-          .profile-header {
-            padding: 20px 20px 16px 20px;
-          }
-
-          .profile-header h1 {
-            font-size: 24px;
-          }
-
-          .profile-card {
-            margin: 16px 20px 20px 20px;
-          }
-
-          .profile-info {
-            padding: 80px 20px 20px 20px;
-          }
-
-          .avatar-section {
-            left: 20px;
-          }
-
-          .avatar {
-            width: 100px;
-            height: 100px;
+          .info-grid {
+            grid-template-columns: 1fr;
           }
 
           .info-header {
             flex-direction: column;
-            align-items: flex-start;
           }
 
           .action-buttons {
             width: 100%;
           }
 
-          .edit-btn, .password-btn {
+          .edit-btn, .delete-btn {
             flex: 1;
             justify-content: center;
-          }
-
-          .contact-grid {
-            grid-template-columns: 1fr;
-            gap: 20px;
-          }
-
-          .modal-content {
-            margin: 10px;
-            max-height: 90vh;
-          }
-
-          .modal-header, .modal-form {
-            padding: 20px;
-          }
-
-          .form-actions {
-            flex-direction: column;
-          }
-
-          .form-actions .save-btn, .form-actions .cancel-btn {
-            width: 100%;
-            flex: none;
           }
         }
       `}</style>

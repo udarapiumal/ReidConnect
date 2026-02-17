@@ -11,15 +11,19 @@ import java.util.Optional;
 @Repository
 public interface OccupiedVenueRepository extends JpaRepository<OccupiedVenue, Long> {
 
-    boolean existsByVenue_IdAndDayAndSlot_IdAndAcademicCalendar_Id(Long venueId, String day, Long slotId,
-            Long academicCalendarId);
+        boolean existsByVenue_IdAndDayAndSlot_IdAndAcademicCalendar_Id(Long venueId, String day, Long slotId,
+                        Long academicCalendarId);
 
-    List<OccupiedVenue> findByVenue_IdAndDayAndSlot_IdInAndAcademicCalendar_Id(Long venueId, String day,
-            List<Long> slotIds, Long academicCalendarId);
+        List<OccupiedVenue> findByVenue_IdAndDayAndSlot_IdInAndAcademicCalendar_Id(Long venueId, String day,
+                        List<Long> slotIds, Long academicCalendarId);
 
-    @Transactional
-    void deleteByTimeTableId(Long timeTableId);
+        @Transactional
+        void deleteByTimeTableId(Long timeTableId);
 
-    Optional<OccupiedVenue> findByVenueIdAndDayAndSlotIdAndAcademicCalendar_Id(Long venueId, String day, Long slotId,
-            Long academicCalendarId);
+        Optional<OccupiedVenue> findByVenueIdAndDayAndSlotIdAndAcademicCalendar_Id(Long venueId, String day,
+                        Long slotId,
+                        Long academicCalendarId);
+
+        @Transactional
+        void deleteByAcademicCalendar_Id(Long academicCalendarId);
 }

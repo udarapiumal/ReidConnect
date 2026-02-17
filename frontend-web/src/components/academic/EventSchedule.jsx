@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import AcademicSidebar from './AcademicSidebar';
 import Header from './components/Header';
+import UserProfile from './UserProfile';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../api/axiosInstance'; 
+import axiosInstance from '../../api/axiosInstance';
 import { getCurrentUserRole, getCurrentUserId } from '../../utils/auth';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -14,12 +15,13 @@ const EventSchedule = () => {
   const navigate = useNavigate();
   const [selectedFilter, setSelectedFilter] = useState("All events");
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(now.getMonth()); 
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(now.getMonth());
   const [showEventViewModal, setShowEventViewModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [events, setEvents] = useState([]);
   const [activeNavItem, setActiveNavItem] = useState("Events");
-  
+  const [showProfile, setShowProfile] = useState(false);
+
   const months = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -29,7 +31,7 @@ const EventSchedule = () => {
   const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const today = now.getDate();
   const user_id = getCurrentUserId();
-  
+
   // Time slots mapping
   const TIME_SLOTS = [
     { id: 1, time: '08:00', label: '8:00 AM' },
@@ -64,7 +66,7 @@ const EventSchedule = () => {
   }, [currentYear, currentMonthIndex]);
 
   const fetchEvents = async () => {
-    try {   
+    try {
       const response = await axiosInstance.get('/api/events');
       setEvents(response.data);
     } catch (error) {
@@ -131,290 +133,290 @@ const EventSchedule = () => {
     return colors[category] || colors.OTHER;
   };
 
-const generateReport = (period) => {
-  const doc = new jsPDF();
-  const now = new Date();
-  let filteredEvents = [];
-  let reportTitle = "";
-  let periodLabel = "";
+  const generateReport = (period) => {
+    const doc = new jsPDF();
+    const now = new Date();
+    let filteredEvents = [];
+    let reportTitle = "";
+    let periodLabel = "";
 
-  if (period === "month") {
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const month = lastMonth.getMonth() + 1;
-    const year = lastMonth.getFullYear();
+    if (period === "month") {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const month = lastMonth.getMonth() + 1;
+      const year = lastMonth.getFullYear();
 
-    filteredEvents = events.filter(e => {
-      const d = new Date(e.date);
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
-    });
+      filteredEvents = events.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() + 1 === month && d.getFullYear() === year;
+      });
 
-    reportTitle = `${months[month - 1]} ${year}`;
-    periodLabel = "Monthly Event Report";
+      reportTitle = `${months[month - 1]} ${year}`;
+      periodLabel = "Monthly Event Report";
 
-  } else if (period === "year") {
-    const lastYear = now.getFullYear();
+    } else if (period === "year") {
+      const lastYear = now.getFullYear();
 
-    filteredEvents = events.filter(e => new Date(e.date).getFullYear() === lastYear);
+      filteredEvents = events.filter(e => new Date(e.date).getFullYear() === lastYear);
 
-    reportTitle = `Year ${lastYear}`;
-    periodLabel = "Annual Event Report";
-  }
-
-  // Sort events by date
-  filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  // === COVER PAGE ===
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-
-  // Background accent
-  doc.setFillColor(255, 255, 255); // UCSC Maroon
-  doc.rect(0, 0, pageWidth, 60, 'F');
-  
-  // University Logo
-  // Option 1: Use path from public folder
-  const logoPath = ucscLogo;
-  
-  // Option 2: Use Base64 encoded image (most reliable)
-  // Convert your logo to Base64 at: https://www.base64-image.de/
-  // Then paste the data here:
-  const logoBase64 = "data:image/png;base64,YOUR_BASE64_STRING_HERE";
-  
-  try {
-    // Add the logo image
-    // Using path (requires logo in public folder)
-    doc.addImage(logoPath, "PNG", pageWidth / 2 - 15, 20, 30, 30);
-    
-    // OR using Base64 (uncomment to use):
-    // doc.addImage(logoBase64, "PNG", pageWidth / 2 - 15, 20, 30, 30);
-  } catch (error) {
-    // Fallback to placeholder if logo doesn't load
-    console.warn("Logo not found, using placeholder:", error);
-    doc.setFillColor(255, 255, 255);
-    doc.circle(pageWidth / 2, 35, 15, 'F');
-    doc.setFontSize(12);
-    doc.setTextColor(139, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.text("UCSC", pageWidth / 2, 37, { align: "center" });
-  }
-
-  // University Name
-  doc.setFontSize(18);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "bold");
-  doc.text("UNIVERSITY OF COLOMBO", pageWidth / 2, 75, { align: "center" });
-  doc.text("SCHOOL OF COMPUTING", pageWidth / 2, 85, { align: "center" });
-
-  // Decorative line
-  doc.setDrawColor(139, 0, 0);
-  doc.setLineWidth(0.5);
-  doc.line(40, 95, pageWidth - 40, 95);
-
-  // Report Title
-  doc.setFontSize(24);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "bold");
-  doc.text("EVENT SCHEDULE REPORT", pageWidth / 2, 120, { align: "center" });
-
-  // Period
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text(periodLabel, pageWidth / 2, 135, { align: "center" });
-  
-  doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(139, 0, 0);
-  doc.text(reportTitle, pageWidth / 2, 150, { align: "center" });
-
-  // Category breakdown
-  const categories = {};
-  filteredEvents.forEach(e => {
-    categories[e.category] = (categories[e.category] || 0) + 1;
-  });
-
-  let categoryY = 225;
-  categoryY += 10;
-
-  // Footer
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
-  doc.setFont("helvetica", "italic");
-  doc.text(`Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, pageWidth / 2, pageHeight - 20, { align: "center" });
-  doc.text("Academic, Publications & Welfare Division", pageWidth / 2, pageHeight - 15, { align: "center" });
-
-  if (filteredEvents.length === 0) {
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text("No events found for the selected period.", pageWidth / 2, 40, { align: "center" });
-    doc.save(`UCSC_Event_Report_${reportTitle.replace(/\s+/g, '_')}.pdf`);
-    return;
-  }
-
-  // === NEW PAGE FOR TABLE ===
-  doc.addPage();
-
-  // Header for table page
-  doc.setFillColor(139, 0, 0);
-  doc.rect(0, 0, pageWidth, 25, 'F');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Detailed Event Schedule - ${reportTitle}`, pageWidth / 2, 16, { align: "center" });
-
-  // Prepare table data
-  const tableData = filteredEvents.map((e, index) => [
-    index + 1,
-    e.name,
-    e.category,
-    new Date(e.date).toLocaleDateString(),
-    e.venueName || e.venue || "N/A",
-    e.clubName || "Unknown",
-    e.targetFaculties?.join(", ") || "All Faculties",
-    e.targetYears?.map(y => y.replace('_', ' ')).join(", ") || "All Years"
-  ]);
-
-  // Generate professional table
-  autoTable(doc, {
-    head: [["#", "Event Name", "Category", "Date", "Venue", "Organized By", "Target Faculties", "Target Years"]],
-    body: tableData,
-    startY: 35,
-    theme: "striped",
-    headStyles: { 
-      fillColor: [139, 0, 0],
-      textColor: 255,
-      fontSize: 9,
-      fontStyle: "bold",
-      halign: "center",
-      valign: "middle"
-    },
-    styles: { 
-      fontSize: 8,
-      cellPadding: 4,
-      overflow: "linebreak",
-      halign: "left",
-      valign: "middle"
-    },
-    columnStyles: {
-      0: { halign: "center", cellWidth: 15 },
-      1: { cellWidth: 30, fontStyle: "bold" },
-      2: { cellWidth: 28 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: 25 },
-      5: { cellWidth: 28 },
-      6: { cellWidth: 25 },
-      7: { cellWidth: 20 }
-    },
-    alternateRowStyles: { fillColor: [250, 250, 250] },
-    margin: { top: 35, left: 10, right: 10 },
-    didDrawPage: (data) => {
-      // Footer on each page
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `Page ${doc.internal.getCurrentPageInfo().pageNumber}`,
-        pageWidth - 20,
-        pageHeight - 10,
-        { align: "right" }
-      );
+      reportTitle = `Year ${lastYear}`;
+      periodLabel = "Annual Event Report";
     }
-  });
 
-  // Final summary at bottom
-  const finalY = doc.lastAutoTable.finalY + 15;
-  
-  // Calculate category statistics
-  filteredEvents.forEach(e => {
-    categories[e.category] = (categories[e.category] || 0) + 1;
-  });
-  
-  const categoryEntries = Object.entries(categories);
-  const summaryHeight = 35 + (categoryEntries.length * 7);
-  
-  // Check if we need a new page for summary
-  if (finalY + summaryHeight > pageHeight - 30) {
-    doc.addPage();
-  }
-  
-  const summaryY = doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY + 15 : 40;
-  
-  // Summary box
-  doc.setFillColor(139, 0, 0);
-  doc.roundedRect(10, summaryY, pageWidth - 20, 12, 2, 2, 'F');
-  
-  doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.text("REPORT SUMMARY", pageWidth / 2, summaryY + 8, { align: "center" });
-  
-  // Total events section
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(10, summaryY + 15, pageWidth - 20, 15, 2, 2, 'F');
-  
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Total Events: `, 20, summaryY + 25);
-  
-  doc.setTextColor(139, 0, 0);
-  doc.setFontSize(12);
-  doc.text(`${filteredEvents.length}`, 55, summaryY + 25);
-  
-  // Category breakdown section
-  if (categoryEntries.length > 0) {
-    doc.setFillColor(250, 250, 250);
-    doc.roundedRect(10, summaryY + 33, pageWidth - 20, 10 + (categoryEntries.length * 7), 2, 2, 'F');
-    
-    doc.setFontSize(10);
-    doc.setTextColor(60, 60, 60);
-    doc.setFont("helvetica", "bold");
-    doc.text("Events by Category:", 20, summaryY + 41);
-    
-    let catY = summaryY + 49;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    
-    categoryEntries.forEach(([cat, count]) => {
-      doc.setTextColor(80, 80, 80);
-      doc.text(`• ${cat}:`, 25, catY);
-      
+    // Sort events by date
+    filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // === COVER PAGE ===
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Background accent
+    doc.setFillColor(255, 255, 255); // UCSC Maroon
+    doc.rect(0, 0, pageWidth, 60, 'F');
+
+    // University Logo
+    // Option 1: Use path from public folder
+    const logoPath = ucscLogo;
+
+    // Option 2: Use Base64 encoded image (most reliable)
+    // Convert your logo to Base64 at: https://www.base64-image.de/
+    // Then paste the data here:
+    const logoBase64 = "data:image/png;base64,YOUR_BASE64_STRING_HERE";
+
+    try {
+      // Add the logo image
+      // Using path (requires logo in public folder)
+      doc.addImage(logoPath, "PNG", pageWidth / 2 - 15, 20, 30, 30);
+
+      // OR using Base64 (uncomment to use):
+      // doc.addImage(logoBase64, "PNG", pageWidth / 2 - 15, 20, 30, 30);
+    } catch (error) {
+      // Fallback to placeholder if logo doesn't load
+      console.warn("Logo not found, using placeholder:", error);
+      doc.setFillColor(255, 255, 255);
+      doc.circle(pageWidth / 2, 35, 15, 'F');
+      doc.setFontSize(12);
       doc.setTextColor(139, 0, 0);
       doc.setFont("helvetica", "bold");
-      doc.text(`${count}`, 70, catY);
-      
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(120, 120, 120);
-      doc.text(`(${((count / filteredEvents.length) * 100).toFixed(1)}%)`, 78, catY);
-      
-      catY += 7;
-    });
-  }
-  
-  // Report footer signature
-  const footerY = pageHeight - 25;
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
-  doc.line(20, footerY, pageWidth - 20, footerY);
-  
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont("helvetica", "italic");
-  doc.text("This is a computer-generated report ReidConnect", pageWidth / 2, footerY + 5, { align: "center" });
-  doc.text(`Generated: ${now.toLocaleDateString()} | Academic, Publications & Welfare Division`, pageWidth / 2, footerY + 10, { align: "center" });
+      doc.text("UCSC", pageWidth / 2, 37, { align: "center" });
+    }
 
-  // Save with professional filename
-  doc.save(`UCSC_Event_Report_${reportTitle.replace(/\s+/g, '_')}.pdf`);
-};
+    // University Name
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("UNIVERSITY OF COLOMBO", pageWidth / 2, 75, { align: "center" });
+    doc.text("SCHOOL OF COMPUTING", pageWidth / 2, 85, { align: "center" });
+
+    // Decorative line
+    doc.setDrawColor(139, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(40, 95, pageWidth - 40, 95);
+
+    // Report Title
+    doc.setFontSize(24);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("EVENT SCHEDULE REPORT", pageWidth / 2, 120, { align: "center" });
+
+    // Period
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(periodLabel, pageWidth / 2, 135, { align: "center" });
+
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(139, 0, 0);
+    doc.text(reportTitle, pageWidth / 2, 150, { align: "center" });
+
+    // Category breakdown
+    const categories = {};
+    filteredEvents.forEach(e => {
+      categories[e.category] = (categories[e.category] || 0) + 1;
+    });
+
+    let categoryY = 225;
+    categoryY += 10;
+
+    // Footer
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont("helvetica", "italic");
+    doc.text(`Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, pageWidth / 2, pageHeight - 20, { align: "center" });
+    doc.text("Academic, Publications & Welfare Division", pageWidth / 2, pageHeight - 15, { align: "center" });
+
+    if (filteredEvents.length === 0) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("No events found for the selected period.", pageWidth / 2, 40, { align: "center" });
+      doc.save(`UCSC_Event_Report_${reportTitle.replace(/\s+/g, '_')}.pdf`);
+      return;
+    }
+
+    // === NEW PAGE FOR TABLE ===
+    doc.addPage();
+
+    // Header for table page
+    doc.setFillColor(139, 0, 0);
+    doc.rect(0, 0, pageWidth, 25, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Detailed Event Schedule - ${reportTitle}`, pageWidth / 2, 16, { align: "center" });
+
+    // Prepare table data
+    const tableData = filteredEvents.map((e, index) => [
+      index + 1,
+      e.name,
+      e.category,
+      new Date(e.date).toLocaleDateString(),
+      e.venueName || e.venue || "N/A",
+      e.clubName || "Unknown",
+      e.targetFaculties?.join(", ") || "All Faculties",
+      e.targetYears?.map(y => y.replace('_', ' ')).join(", ") || "All Years"
+    ]);
+
+    // Generate professional table
+    autoTable(doc, {
+      head: [["#", "Event Name", "Category", "Date", "Venue", "Organized By", "Target Faculties", "Target Years"]],
+      body: tableData,
+      startY: 35,
+      theme: "striped",
+      headStyles: {
+        fillColor: [139, 0, 0],
+        textColor: 255,
+        fontSize: 9,
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle"
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 4,
+        overflow: "linebreak",
+        halign: "left",
+        valign: "middle"
+      },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 15 },
+        1: { cellWidth: 30, fontStyle: "bold" },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 25 },
+        7: { cellWidth: 20 }
+      },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      margin: { top: 35, left: 10, right: 10 },
+      didDrawPage: (data) => {
+        // Footer on each page
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${doc.internal.getCurrentPageInfo().pageNumber}`,
+          pageWidth - 20,
+          pageHeight - 10,
+          { align: "right" }
+        );
+      }
+    });
+
+    // Final summary at bottom
+    const finalY = doc.lastAutoTable.finalY + 15;
+
+    // Calculate category statistics
+    filteredEvents.forEach(e => {
+      categories[e.category] = (categories[e.category] || 0) + 1;
+    });
+
+    const categoryEntries = Object.entries(categories);
+    const summaryHeight = 35 + (categoryEntries.length * 7);
+
+    // Check if we need a new page for summary
+    if (finalY + summaryHeight > pageHeight - 30) {
+      doc.addPage();
+    }
+
+    const summaryY = doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY + 15 : 40;
+
+    // Summary box
+    doc.setFillColor(139, 0, 0);
+    doc.roundedRect(10, summaryY, pageWidth - 20, 12, 2, 2, 'F');
+
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("REPORT SUMMARY", pageWidth / 2, summaryY + 8, { align: "center" });
+
+    // Total events section
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(10, summaryY + 15, pageWidth - 20, 15, 2, 2, 'F');
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Events: `, 20, summaryY + 25);
+
+    doc.setTextColor(139, 0, 0);
+    doc.setFontSize(12);
+    doc.text(`${filteredEvents.length}`, 55, summaryY + 25);
+
+    // Category breakdown section
+    if (categoryEntries.length > 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.roundedRect(10, summaryY + 33, pageWidth - 20, 10 + (categoryEntries.length * 7), 2, 2, 'F');
+
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.setFont("helvetica", "bold");
+      doc.text("Events by Category:", 20, summaryY + 41);
+
+      let catY = summaryY + 49;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+
+      categoryEntries.forEach(([cat, count]) => {
+        doc.setTextColor(80, 80, 80);
+        doc.text(`• ${cat}:`, 25, catY);
+
+        doc.setTextColor(139, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${count}`, 70, catY);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(120, 120, 120);
+        doc.text(`(${((count / filteredEvents.length) * 100).toFixed(1)}%)`, 78, catY);
+
+        catY += 7;
+      });
+    }
+
+    // Report footer signature
+    const footerY = pageHeight - 25;
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(20, footerY, pageWidth - 20, footerY);
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont("helvetica", "italic");
+    doc.text("This is a computer-generated report ReidConnect", pageWidth / 2, footerY + 5, { align: "center" });
+    doc.text(`Generated: ${now.toLocaleDateString()} | Academic, Publications & Welfare Division`, pageWidth / 2, footerY + 10, { align: "center" });
+
+    // Save with professional filename
+    doc.save(`UCSC_Event_Report_${reportTitle.replace(/\s+/g, '_')}.pdf`);
+  };
 
 
   return (
     <div className="event-schedule-container">
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
 
       <div className="event-schedule-content">
-        <AcademicSidebar 
-          activeItem={activeNavItem} 
+        <AcademicSidebar
+          activeItem={activeNavItem}
           onNavigate={handleNavigation}
         />
 
@@ -438,7 +440,7 @@ const generateReport = (period) => {
               <div className="month-navigation">
                 <button onClick={navigatePrevMonth} className="nav-button" type="button">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
                   </svg>
                 </button>
                 <div className="current-month-display">
@@ -446,7 +448,7 @@ const generateReport = (period) => {
                 </div>
                 <button onClick={navigateNextMonth} className="nav-button" type="button">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
                   </svg>
                 </button>
               </div>
@@ -462,13 +464,13 @@ const generateReport = (period) => {
               <div className="calendar-grid">
                 {calendarDays.map((day, index) => {
                   const eventsForDay = day ? getEventsForSelectedDate(day) : [];
-                  const isToday = day === today && 
-                    currentMonthIndex === new Date().getMonth() && 
+                  const isToday = day === today &&
+                    currentMonthIndex === new Date().getMonth() &&
                     currentYear === new Date().getFullYear();
-                  
+
                   return (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className={`calendar-day ${day ? "has-day" : "empty"} ${isToday ? "today" : ""} ${eventsForDay.length > 0 ? "has-events" : ""}`}
                       onClick={() => handleDateClick(day)}
                       style={{ cursor: day ? 'pointer' : 'default' }}
@@ -479,17 +481,17 @@ const generateReport = (period) => {
                             <span className="day-number">{day}</span>
                             {isToday && <span className="today-badge">Today</span>}
                           </div>
-                          
+
                           {eventsForDay.length > 0 && (
                             <div className="day-events">
                               {eventsForDay.slice(0, 3).map((event, idx) => (
-                                <div 
-                                  key={idx} 
+                                <div
+                                  key={idx}
                                   className="event-preview"
                                   style={{ borderLeftColor: getEventTypeColor(event.category) }}
                                 >
                                   <div className="event-time">
-                                    {event.slotIds?.length > 0 && 
+                                    {event.slotIds?.length > 0 &&
                                       TIME_SLOTS.find(slot => slot.id === event.slotIds[0])?.label?.split(' ')[0]
                                     }
                                   </div>
@@ -514,19 +516,19 @@ const generateReport = (period) => {
             </div>
 
             <div className="calendar-footer">
-  <div className="calendar-legend">
-    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#10b981' }}></div><span>Sports</span></div>
-    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#8b5cf6' }}></div><span>Music</span></div>
-    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div><span>Wellness</span></div>
-    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#ef4444' }}></div><span>Competition</span></div>
-    <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#6b7280' }}></div><span>Other</span></div>
-  </div>
+              <div className="calendar-legend">
+                <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#10b981' }}></div><span>Sports</span></div>
+                <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#8b5cf6' }}></div><span>Music</span></div>
+                <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div><span>Wellness</span></div>
+                <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#ef4444' }}></div><span>Competition</span></div>
+                <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#6b7280' }}></div><span>Other</span></div>
+              </div>
 
-  <div className="report-buttons">
-    <button className="report-btn month" onClick={() => generateReport('month')}>📅 Print Last Month Report</button>
-    <button className="report-btn year" onClick={() => generateReport('year')}>📆 Print This Year Report</button>
-  </div>
-</div>
+              <div className="report-buttons">
+                <button className="report-btn month" onClick={() => generateReport('month')}>📅 Print Last Month Report</button>
+                <button className="report-btn year" onClick={() => generateReport('year')}>📆 Print This Year Report</button>
+              </div>
+            </div>
 
           </div>
         </main>
@@ -539,17 +541,17 @@ const generateReport = (period) => {
             <div className="modal-header">
               <div className="modal-title">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
                 </svg>
                 <h3>Events for {months[currentMonthIndex]} {selectedDate}, {currentYear}</h3>
               </div>
               <button className="close-button" onClick={handleCloseEventViewModal} type="button">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                  <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
                 </svg>
               </button>
             </div>
-            
+
             <div className="event-view-content">
               {getEventsForSelectedDate(selectedDate).length > 0 ? (
                 <div className="events-list-view">
@@ -557,8 +559,8 @@ const generateReport = (period) => {
                     <div key={index} className="event-card">
                       <div className="event-card-header">
                         <div className="event-card-title">
-                          <div 
-                            className="event-type-indicator" 
+                          <div
+                            className="event-type-indicator"
                             style={{ backgroundColor: getEventTypeColor(event.category) }}
                           ></div>
                           <div className="event-title-content">
@@ -567,32 +569,32 @@ const generateReport = (period) => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="event-details">
                         <div className="event-info-grid">
                           <div className="event-info-row">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                             </svg>
                             <div className="info-content">
                               <span className="info-label">Organized by</span>
                               <span className="info-value">{event.clubName || 'Unknown Club'}</span>
                             </div>
                           </div>
-                          
+
                           <div className="event-info-row">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                             </svg>
                             <div className="info-content">
                               <span className="info-label">Venue</span>
                               <span className="info-value">{event.venueName || event.venue || 'Venue TBD'}</span>
                             </div>
                           </div>
-                          
+
                           <div className="event-info-row">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.7L16.2,16.2Z"/>
+                              <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.7L16.2,16.2Z" />
                             </svg>
                             <div className="info-content">
                               <span className="info-label">Time</span>
@@ -604,10 +606,10 @@ const generateReport = (period) => {
                               </span>
                             </div>
                           </div>
-                          
+
                           <div className="event-info-row">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                             </svg>
                             <div className="info-content">
                               <span className="info-label">Target Audience</span>
@@ -617,7 +619,7 @@ const generateReport = (period) => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {event.description && (
                           <div className="event-description">
                             <h5>Description</h5>
@@ -628,8 +630,8 @@ const generateReport = (period) => {
                         {event.imageUrl && (
                           <div className="event-image">
                             <h5>Event Image</h5>
-                            <img 
-                              src={`http://localhost:8080/${event.imageUrl}`} 
+                            <img
+                              src={`http://localhost:8080/${event.imageUrl}`}
                               alt={event.name}
                               loading="lazy"
                             />
@@ -643,7 +645,7 @@ const generateReport = (period) => {
                 <div className="no-events-message">
                   <div className="no-events-illustration">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
                     </svg>
                   </div>
                   <div className="no-events-content">
@@ -656,8 +658,8 @@ const generateReport = (period) => {
           </div>
         </div>
       )}
-    
-    <style>{`
+
+      <style>{`
     .event-schedule-container {
     min-height: 100vh;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1412,7 +1414,11 @@ main.event-schedule-main {
     }
 }
       `}</style>
-      </div>
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
+      )}
+    </div>
   );
 };
 

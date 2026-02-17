@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AcademicSidebar from './AcademicSidebar';
 import axios from '../../api/axiosInstance';
 import Header from './components/Header';
+import UserProfile from './UserProfile';
 import Select from 'react-select';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
@@ -23,6 +24,7 @@ const LecturerManagement = () => {
     rank: ''
   });
   const [lecturers, setLecturers] = useState([]);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     fetchLecturers();
@@ -212,7 +214,7 @@ const LecturerManagement = () => {
 
   return (
     <div className={`dashboard-container ${showAddForm ? 'blur-background' : ''}`}>
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
 
       {showAddForm && (
         <>
@@ -228,34 +230,34 @@ const LecturerManagement = () => {
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                 <div className="form-group">
                   <label>Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="Name" 
-                    required 
-                    value={formData.name} 
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
 
                 <div className="form-group">
                   <label>Code</label>
-                  <input 
-                    type="text" 
-                    placeholder="Code (3 letters)" 
-                    required 
-                    value={formData.code} 
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })} 
+                  <input
+                    type="text"
+                    placeholder="Code (3 letters)"
+                    required
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   />
                 </div>
 
                 <div className="form-group">
                   <label>Email</label>
                   <div className="email-input-container">
-                    <input 
-                      type="text" 
-                      placeholder="Enter username (e.g., john.doe)" 
-                      required 
-                      value={formData.email.replace('@ucsc.cmb.ac.lk', '')} 
+                    <input
+                      type="text"
+                      placeholder="Enter username (e.g., john.doe)"
+                      required
+                      value={formData.email.replace('@ucsc.cmb.ac.lk', '')}
                       onChange={(e) => {
                         const username = e.target.value.replace('@ucsc.cmb.ac.lk', '');
                         setFormData({ ...formData, email: username + '@ucsc.cmb.ac.lk' });
@@ -267,11 +269,11 @@ const LecturerManagement = () => {
 
                 <div className="form-group">
                   <label>Degree</label>
-                  <input 
-                    type="text" 
-                    placeholder="Degree" 
-                    value={formData.degree} 
-                    onChange={(e) => setFormData({ ...formData, degree: e.target.value })} 
+                  <input
+                    type="text"
+                    placeholder="Degree"
+                    value={formData.degree}
+                    onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
                   />
                 </div>
 
@@ -314,9 +316,9 @@ const LecturerManagement = () => {
       )}
 
       <div className="dashboard-content">
-        <AcademicSidebar 
-          activeItem={activeNavItem} 
-          onNavigate={handleNavigation} 
+        <AcademicSidebar
+          activeItem={activeNavItem}
+          onNavigate={handleNavigation}
           isDarkMode={true}
         />
 
@@ -841,6 +843,10 @@ const LecturerManagement = () => {
           }
         }
       `}</style>
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 };

@@ -9,15 +9,19 @@ import java.util.Optional;
 
 public interface OccupiedStaffRepository extends JpaRepository<OccupiedStaff, Long> {
 
-    boolean existsByStaff_IdAndDayAndSlot_IdAndAcademicCalendar_Id(Long staffId, String day, Long slotId,
-            Long academicCalendarId);
+        boolean existsByStaff_IdAndDayAndSlot_IdAndAcademicCalendar_Id(Long staffId, String day, Long slotId,
+                        Long academicCalendarId);
 
-    List<OccupiedStaff> findByStaff_IdAndDayAndSlot_IdInAndAcademicCalendar_Id(Long staffId, String day,
-            List<Long> slotIds, Long academicCalendarId);
+        List<OccupiedStaff> findByStaff_IdAndDayAndSlot_IdInAndAcademicCalendar_Id(Long staffId, String day,
+                        List<Long> slotIds, Long academicCalendarId);
 
-    @Transactional
-    void deleteByTimeTableId(Long timeTableId);
+        @Transactional
+        void deleteByTimeTableId(Long timeTableId);
 
-    Optional<OccupiedStaff> findByStaffIdAndDayAndSlotIdAndAcademicCalendar_Id(Long staffId, String day, Long slotId,
-            Long academicCalendarId);
+        Optional<OccupiedStaff> findByStaffIdAndDayAndSlotIdAndAcademicCalendar_Id(Long staffId, String day,
+                        Long slotId,
+                        Long academicCalendarId);
+
+        @Transactional
+        void deleteByAcademicCalendar_Id(Long academicCalendarId);
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axiosInstance from '../../api/axiosInstance';
 import Header from './components/Header';
+import UserProfile from './UserProfile';
 import TimeTableFilters from './components/TimeTableFilters';
 import TimeTableGrid from './components/TimeTableGrid';
 import EditableTimeTableGrid from './components/EditableTimeTableGrid';
@@ -18,12 +19,12 @@ import './styles/PrintTimeTable.css';
 
 // ── Status Display Config ──────────────────────────────────────────
 const STATUS_CONFIG = {
-  DRAFT: { label: "Draft", color: "#6b7280", icon: "📝" },
-  PENDING_RECOMMENDATION: { label: "Pending SAR Review", color: "#f59e0b", icon: "⏳" },
-  RECOMMENDED: { label: "Recommended – Awaiting DD", color: "#3b82f6", icon: "👍" },
-  NOT_RECOMMENDED: { label: "Not Recommended by SAR", color: "#ef4444", icon: "↩️" },
-  APPROVED: { label: "Approved", color: "#10b981", icon: "✅" },
-  REJECTED: { label: "Rejected by Deputy Director", color: "#ef4444", icon: "↩️" },
+  DRAFT: { label: "Draft", color: "#6b7280", icon: "fa-edit" },
+  PENDING_RECOMMENDATION: { label: "Pending SAR Review", color: "#f59e0b", icon: "fa-clock" },
+  RECOMMENDED: { label: "Recommended – Awaiting DD", color: "#3b82f6", icon: "fa-thumbs-up" },
+  NOT_RECOMMENDED: { label: "Not Recommended by SAR", color: "#ef4444", icon: "fa-times-circle" },
+  APPROVED: { label: "Approved", color: "#10b981", icon: "fa-check-circle" },
+  REJECTED: { label: "Rejected by Deputy Director", color: "#ef4444", icon: "fa-ban" },
 };
 
 // ── Visibility Rules ───────────────────────────────────────────────
@@ -55,6 +56,7 @@ export default function TimeTable() {
   const [clashAlert, setClashAlert] = useState(null);
   const [approvals, setApprovals] = useState([]);
   const [approvalMessage, setApprovalMessage] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
 
   const role = getCurrentUserRole();
   const userId = getCurrentUserId();
@@ -318,12 +320,12 @@ export default function TimeTable() {
   };
 
   // ── Status badge helper ────────────────────────────────────────
-  const statusCfg = STATUS_CONFIG[timetableStatus] || { label: "Unknown", color: "#6b7280", icon: "❓" };
+  const statusCfg = STATUS_CONFIG[timetableStatus] || { label: "Unknown", color: "#6b7280", icon: "fa-question" };
 
   // ── Render ─────────────────────────────────────────────────────
   return (
     <div className="timetable-container">
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
 
       <div className="dashboard-content">
         <AcademicSidebar
@@ -373,7 +375,7 @@ export default function TimeTable() {
                 gap: "8px",
               }}
             >
-              <span style={{ fontSize: "1.2em" }}>{statusCfg.icon}</span>
+              <i className={`fa ${statusCfg.icon}`} style={{ fontSize: "1.2em", color: statusCfg.color }}></i>
               <strong style={{ color: statusCfg.color }}>
                 {statusCfg.label}
               </strong>
@@ -551,6 +553,10 @@ export default function TimeTable() {
       {/* Clash Alert */}
       {clashAlert && (
         <StyledAlert message={clashAlert} onClose={() => setClashAlert(null)} />
+      )}
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
       )}
     </div>
   );
