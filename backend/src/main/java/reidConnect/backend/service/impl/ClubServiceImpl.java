@@ -23,11 +23,11 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     public ClubDto createClub(ClubDto clubDto) {
-        //Fetch User entity from userId
+        // Fetch User entity from userId
         User user = userRepository.findById(clubDto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + clubDto.getUserId()));
 
-        //Pass User entity into mapper
+        // Pass User entity into mapper
         Club club = ClubMapper.mapToClub(clubDto, user);
         Club savedClub = clubRepository.save(club);
         return ClubMapper.mapToClubDto(savedClub);
@@ -70,7 +70,8 @@ public class ClubServiceImpl implements ClubService {
         // Update the user if changed (optional)
         if (!club.getUser().getId().equals(updatedClubDto.getUserId())) {
             User user = userRepository.findById(updatedClubDto.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found for id: " + updatedClubDto.getUserId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "User not found for id: " + updatedClubDto.getUserId()));
             club.setUser(user);
         }
 
@@ -83,5 +84,34 @@ public class ClubServiceImpl implements ClubService {
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found for this id :: " + clubId));
         clubRepository.delete(club);
+    }
+
+    @Override
+    public List<ClubDto> getPendingClubs() {
+        List<User> pendingUsers = userRepository.findAllByRoleAndEnabled("club", false);
+        List<ClubDto> pendingClubs = new java.util.ArrayList<>();
+        for (User user : pendingUsers) {
+            clubRepository.findByUser(user).ifPresent(club -> pendingClubs.add(ClubMapper.mapToClubDto(club)));
+        }
+        return pendingClubs;
+    }
+
+    @Override
+    public ClubDto approveClub(Long clubId) {
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ResourceNotFoundException("Club not found for this id :: " + clubId));
+        User user = club.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+        return ClubMapper.mapToClubDto(club);
+    }
+
+    @Override
+    public void rejectClub(Long clubId) {
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ResourceNotFoundException("Club not found for this id :: " + clubId));
+        User user = club.getUser();
+        clubRepository.delete(club);
+        userRepository.delete(user);
     }
 }

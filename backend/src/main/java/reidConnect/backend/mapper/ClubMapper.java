@@ -7,15 +7,21 @@ import reidConnect.backend.entity.User;
 public class ClubMapper {
 
     public static ClubDto mapToClubDto(Club club) {
-        return new ClubDto(
-                club.getId(),
-                club.getClub_name(),
-                club.getUser().getId(),
-                club.getWebsite(),
-                club.getProfile_picture(),
-                club.getCover_picture(),
-                club.getBio()
-        );
+        ClubDto dto = new ClubDto();
+        dto.setId(club.getId());
+        dto.setClubName(club.getClub_name());
+        dto.setWebsite(club.getWebsite());
+        dto.setProfilePicture(club.getProfile_picture());
+        dto.setCoverPicture(club.getCover_picture());
+        dto.setBio(club.getBio());
+        User user = club.getUser();
+        if (user != null) {
+            dto.setUserId(user.getId());
+            dto.setUserEnabled(user.isEnabled());
+            dto.setEmail(user.getEmail());
+            dto.setUsername(user.getName());
+        }
+        return dto;
     }
 
     public static Club mapToClub(ClubDto clubDto, User user) {
@@ -26,7 +32,6 @@ public class ClubMapper {
                 clubDto.getProfilePicture(),
                 clubDto.getCoverPicture(),
                 clubDto.getBio(),
-                user
-        );
+                user);
     }
 }

@@ -17,7 +17,7 @@ public class ClubController {
 
     private ClubService clubService;
 
-    //Build Add Club REST API
+    // Build Add Club REST API
     // @PreAuthorize("hasRole('CLUB')")
     @PostMapping
     public ResponseEntity<ClubDto> createClub(@RequestBody ClubDto clubDto) {
@@ -25,7 +25,7 @@ public class ClubController {
         return new ResponseEntity<>(savedClub, HttpStatus.CREATED);
     }
 
-    //Build Get Club REST API
+    // Build Get Club REST API
     // @PreAuthorize("hasRole('CLUB')")
     @GetMapping("{id}")
     public ResponseEntity<ClubDto> getClubById(@PathVariable("id") Long clubId) {
@@ -33,7 +33,7 @@ public class ClubController {
         return ResponseEntity.ok(clubDto);
     }
 
-    //Build Get Club by user_id REST API
+    // Build Get Club by user_id REST API
     // @PreAuthorize("hasRole('CLUB')")
     @GetMapping("/by-user/{userId}")
     public ResponseEntity<ClubDto> getClubByUserId(@PathVariable("userId") Long userId) {
@@ -41,9 +41,8 @@ public class ClubController {
         return ResponseEntity.ok(clubDto);
     }
 
-
-    //Build Get All Clubs REST API
-    //authorize club and student roles to view all clubs
+    // Build Get All Clubs REST API
+    // authorize club and student roles to view all clubs
     // @PreAuthorize("hasRole('CLUB') or hasRole('STUDENT')")
     @GetMapping
     public ResponseEntity<Iterable<ClubDto>> getAllClubs() {
@@ -51,20 +50,44 @@ public class ClubController {
         return ResponseEntity.ok(clubs);
     }
 
-    //Build Update Club REST API
+    // Build Update Club REST API
     // @PreAuthorize("hasRole('CLUB')")
     @PutMapping("{id}")
     public ResponseEntity<ClubDto> updateClub(@PathVariable("id") Long clubId,
-                                              @RequestBody ClubDto updatedClub) {
+            @RequestBody ClubDto updatedClub) {
         ClubDto clubDto = clubService.updateClub(clubId, updatedClub);
         return ResponseEntity.ok(clubDto);
     }
 
-    //Build Delete Club REST API
+    // Build Delete Club REST API
     @PreAuthorize("hasRole('CLUB')")
     @DeleteMapping("{id}")
     public ResponseEntity<String> deleteClubById(@PathVariable("id") Long clubId) {
         clubService.deleteClubById(clubId);
         return ResponseEntity.ok("Club deleted successfully");
+    }
+
+    // Get all pending (unapproved) clubs - union only
+    @PreAuthorize("hasRole('UNION')")
+    @GetMapping("/pending")
+    public ResponseEntity<List<ClubDto>> getPendingClubs() {
+        List<ClubDto> pendingClubs = clubService.getPendingClubs();
+        return ResponseEntity.ok(pendingClubs);
+    }
+
+    // Approve a pending club - union only
+    @PreAuthorize("hasRole('UNION')")
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<ClubDto> approveClub(@PathVariable("id") Long clubId) {
+        ClubDto approvedClub = clubService.approveClub(clubId);
+        return ResponseEntity.ok(approvedClub);
+    }
+
+    // Reject (delete) a pending club - union only
+    @PreAuthorize("hasRole('UNION')")
+    @DeleteMapping("/{id}/reject")
+    public ResponseEntity<String> rejectClub(@PathVariable("id") Long clubId) {
+        clubService.rejectClub(clubId);
+        return ResponseEntity.ok("Club registration rejected and deleted");
     }
 }

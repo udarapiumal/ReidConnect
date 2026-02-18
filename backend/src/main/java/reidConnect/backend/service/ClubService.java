@@ -1,4 +1,5 @@
 package reidConnect.backend.service;
+
 import reidConnect.backend.dto.ClubDto;
 import java.util.List;
 
@@ -14,5 +15,11 @@ public interface ClubService {
     ClubDto updateClub(Long clubCoordinatorId, ClubDto updatedClubCoordinator);
 
     void deleteClubById(Long clubCoordinatorId);
+
+    List<ClubDto> getPendingClubs();
+
+    ClubDto approveClub(Long clubId);
+
+    void rejectClub(Long clubId);
 
 }
