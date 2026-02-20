@@ -14,6 +14,7 @@ import reidConnect.backend.service.AuthenticationService;
 import reidConnect.backend.service.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.service.PasswordResetService;
 import reidConnect.backend.util.KeyUtil;
 
 import java.io.IOException;
@@ -26,11 +27,13 @@ public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
     private final KeyStoreRepository keyStoreRepository;
+    private final PasswordResetService passwordResetService;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, KeyStoreRepository keyStoreRepository) {
+    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, KeyStoreRepository keyStoreRepository,PasswordResetService passwordResetService) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
         this.keyStoreRepository = keyStoreRepository;
+        this.passwordResetService=passwordResetService;
     }
 
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -195,6 +198,22 @@ public class AuthenticationController {
 
         RegisterClubDto savedClub = authenticationService.saveClub(club);
         return ResponseEntity.ok(savedClub);
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordDto dto) {
+        passwordResetService.processForgotPassword(dto.getEmail());
+        return ResponseEntity.ok("Password reset link sent to your email.");
+    }
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<String> validateResetToken(@RequestParam String token) {
+        passwordResetService.validateToken(token);
+        return ResponseEntity.ok("Token is valid");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordDto dto) {
+        passwordResetService.resetPassword(dto.getToken(), dto.getNewPassword());
+        return ResponseEntity.ok("Password reset successfully!");
     }
 
 
