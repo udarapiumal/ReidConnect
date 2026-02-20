@@ -17,7 +17,6 @@ public class UserWithProfileDto {
     private String profilePicUrl;
     private String academicYear;
     private String contactNumber;
-    private int registeredYear;
     private String faculty;
     private String studentName;
 }

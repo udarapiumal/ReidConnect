@@ -19,5 +19,6 @@ public class CommentResponseDto {
     private String content;
     private String userName;
     private LocalDateTime createdAt;
+    private String profilePictureUrl;
     private List<CommentResponseDto> replies;
 }

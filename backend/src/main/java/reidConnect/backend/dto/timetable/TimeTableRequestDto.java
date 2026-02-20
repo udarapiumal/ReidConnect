@@ -15,4 +15,5 @@ public class TimeTableRequestDto {
     private CourseType courseType;
     private Groups group;
     private Set<Long> slotIds;
+    private Long academicCalendarId;
 }

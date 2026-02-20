@@ -161,66 +161,6 @@ const sampleLectures = [
   },
 ];
 
-// const sampleEvents = [
-//   {
-//     id: 1,
-//     clubId: 101,
-//     name: 'Assignment Submission',
-//     description: 'Submit the assignment for SENG 31223.',
-//     venueId: 201,
-//     venueName: 'Online',
-//     date: '2025-08-12',
-//     imagePath: '/images/assignment.png',
-//     slotIds: [10],
-//     createdAt: '2025-08-01T10:00:00',
-//     targetYears: ['YEAR_3'],
-//     targetFaculties: ['FOC'],
-//     category: 'DEADLINE',
-//     startTime: '23:59',
-//     endTime: '23:59',
-//     type: 'deadline',
-//   },
-//   {
-//     id: 2,
-//     clubId: 102,
-//     name: 'Study Group Meeting',
-//     description: 'Group discussion for the upcoming exam.',
-//     venueId: 202,
-//     venueName: 'Library Discussion Room 3',
-//     date: '2025-08-14',
-//     imagePath: '/images/study-group.png',
-//     slotIds: [11, 12],
-//     createdAt: '2025-08-10T14:00:00',
-//     targetYears: ['YEAR_2', 'YEAR_3'],
-//     targetFaculties: ['FOC', 'FOE'],
-//     category: 'PERSONAL',
-//     startTime: '16:00',
-//     endTime: '18:00',
-//     type: 'personal',
-//   },
-//   {
-//     id: 3,
-//     clubId: 103,
-//     name: 'Career Fair',
-//     description: 'Annual career fair hosted by the university.',
-//     venueId: 203,
-//     venueName: 'Main Auditorium',
-//     date: '2025-08-15',
-//     imagePath: '/images/career-fair.png',
-//     slotIds: [13, 14, 15, 16],
-//     createdAt: '2025-07-20T09:00:00',
-//     targetYears: ['YEAR_3', 'YEAR_4'],
-//     targetFaculties: ['FOC', 'FOE', 'FOB'],
-//     category: 'UNIVERSITY',
-//     startTime: '10:00',
-//     endTime: '17:00',
-//     type: 'university',
-//   },
-// ];
-
-//get the event
-// const sampleEvents
-
 export default function CalendarScreen() {
   // Auth (to get email)
   const { user } = useAuth();
@@ -229,8 +169,10 @@ export default function CalendarScreen() {
   const [viewMode, setViewMode] = useState<'Week' | 'Month'>('Week');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarPermission, setCalendarPermission] = useState(false);
-  const { eventsByDate, isLoading } = useCalendarEvents(viewMode, currentMonth, selectedDate);
-  const { lecturesByDay, loadingTimetable } = useTimetable(user?.sub);
+  const [studentYear, setStudentYear] = useState('');
+  const [student, setStudent] = useState<any>(null);
+  const { eventsByDate, isLoading } = useCalendarEvents(viewMode, currentMonth, selectedDate, studentYear);
+  const { lecturesByDay, loadingTimetable } = useTimetable(user?.sub, setStudentYear, setStudent);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -735,7 +677,7 @@ function groupLecturesByDay(items: any[]): Record<string, LectureItem[]> {
   return map;
 }
 
-function useTimetable(emailFromToken?: string) {
+function useTimetable(emailFromToken?: string, setStudentYear?: (year: string) => void, setStudent?: (student: any) => void) {
   const [lecturesByDay, setLecturesByDay] = useState<Record<string, LectureItem[]>>({});
   const [loadingTimetable, setLoading] = useState(false);
   const [errorTimetable, setError] = useState<string | null>(null);
@@ -750,12 +692,13 @@ function useTimetable(emailFromToken?: string) {
         // Always read student profile to get academicYear; also email fallback
         const meRes = await axiosInstance.get('/student/me');
         const me = meRes.data || {};
+        if (setStudent) setStudent(me);
         const email: string | undefined = (emailFromToken as string) || me.email;
         // console.log(email);
         
         const degree = parseDegreeFromEmail(email) || undefined;
-        const yearEnum = yearDigitToEnum(me.academicYear) || undefined;
-// console.log(degree, yearEnum);
+        const yearEnum = yearDigitToEnum(me.academicYear) || '';
+        if (setStudentYear) setStudentYear(yearEnum);
 
         if (!degree || !yearEnum) {
           console.warn('Timetable fetch skipped due to missing degree/year', { degree, yearEnum });
@@ -800,14 +743,25 @@ function timesFromSlotIds(slotIds?: number[]): { startTime?: string; endTime?: s
   return { startTime: toHHMM(startMinutes), endTime: toHHMM(endMinutes) };
 }
 
-// Replace with your real API call
-async function fetchEvents(start: Date, end: Date): Promise<CalendarEvent[]> {
+async function fetchEvents(start: Date, end: Date, studentYear: string): Promise<CalendarEvent[]> {
   try {
-    // Backend expects date-only params without time: startDate/endDate in YYYY-MM-DD
+    const meRes = await axiosInstance.get('/student/me');
+    const me = meRes.data || {};
+
+    
+    const yearEnum = yearDigitToEnum(me.academicYear) || '';
+    
+    console.log('Student year set to:', yearEnum);
+
+    //get user year
+    const year = yearEnum;
+    //get user faculty
+    const faculty = 'UCSC';
     const startDate = dateKey(start);
     const endDate = dateKey(end);
-    const res = await axiosInstance.get(`/api/events/date/range`, {
-      params: { startDate, endDate },
+    //
+    const res = await axiosInstance.get(`/api/events/year-faculty-date-range`, {
+      params: { year, faculty, startDate, endDate },
     });
     
     if (res.status === 304) return [];
@@ -831,23 +785,23 @@ async function fetchEvents(start: Date, end: Date): Promise<CalendarEvent[]> {
   }
 }
 
-export function useCalendarEvents(viewMode: ViewMode, currentMonth: Date, selectedDate: Date) {
+export function useCalendarEvents(viewMode: ViewMode, currentMonth: Date, selectedDate: Date, studentYear: string) {
   const queryClient = useQueryClient();
   const range = getRange(viewMode, currentMonth, selectedDate);
 
   // Use date-only keys to align with API and improve cache hits
-  const queryKey = ['events', viewMode, dateKey(range.start), dateKey(range.end)];
+  const queryKey = ['events', viewMode, dateKey(range.start), dateKey(range.end), studentYear];
   const query = useQuery({
     queryKey,
-    queryFn: () => fetchEvents(range.start, range.end),
+    queryFn: () => fetchEvents(range.start, range.end, studentYear),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
   });
 
   // Prefetch adjacent windows
   const prefetch = (start: Date, end: Date) => {
-    const key = ['events', viewMode, dateKey(start), dateKey(end)];
-    queryClient.prefetchQuery({ queryKey: key, queryFn: () => fetchEvents(start, end) });
+    const key = ['events', viewMode, dateKey(start), dateKey(end), studentYear];
+    queryClient.prefetchQuery({ queryKey: key, queryFn: () => fetchEvents(start, end, studentYear) });
   };
 
   // compute neighbor ranges

@@ -45,5 +45,10 @@ public class AcademicCalendarController {
     public ResponseEntity<AcademicCalendarDto> getCurrent() {
         return ResponseEntity.ok(service.getCurrentPeriod());
     }
-}
 
+    @DeleteMapping("/{id}/timetable")
+    public ResponseEntity<Void> deleteEntireTimetable(@PathVariable Long id) {
+        service.deleteEntireTimetable(id);
+        return ResponseEntity.noContent().build();
+    }
+}

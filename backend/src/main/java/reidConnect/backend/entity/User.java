@@ -1,5 +1,6 @@
 package reidConnect.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
-@Table(name="\"user\"")
+@Table(name = "\"user\"")
 @Getter
 @Setter
 public class User implements UserDetails {
@@ -27,6 +28,7 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -35,9 +37,11 @@ public class User implements UserDetails {
 
     private boolean enabled;
 
+    @JsonIgnore
     @Column(name = "verification_code")
     private String verificationCode;
 
+    @JsonIgnore
     @Column(name = "verification_expiration")
     private LocalDateTime verificationExpiration;
 
@@ -48,7 +52,8 @@ public class User implements UserDetails {
         this.role = "student";
     }
 
-    public User() {}
+    public User() {
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -85,6 +90,5 @@ public class User implements UserDetails {
     public String getName() {
         return this.username;
     }
-
 
 }

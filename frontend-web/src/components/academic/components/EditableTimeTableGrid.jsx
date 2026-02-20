@@ -6,15 +6,16 @@ import TimeTableEntryModal from './TimeTableEntryModal';
 
 const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 
-export default function EditableTimeTableGrid({ 
-  timetableData, 
-  courses, 
-  loading, 
-  selectedYear, 
-  selectedDegree, 
-  onEntryDelete, 
-  onEntryUpdate, 
-  onEntryCreate 
+export default function EditableTimeTableGrid({
+  timetableData,
+  courses,
+  loading,
+  selectedYear,
+  selectedDegree,
+  academicCalendarId, // New prop
+  onEntryDelete,
+  onEntryUpdate,
+  onEntryCreate
 }) {
   const [selectedCells, setSelectedCells] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function EditableTimeTableGrid({
 
   const handleCellSelect = (day, timeSlot) => {
     const cellId = `${day}-${timeSlot.index}`;
-    
+
     setSelectedCells(prev => {
       if (prev.includes(cellId)) {
         return prev.filter(id => id !== cellId);
@@ -52,7 +53,7 @@ export default function EditableTimeTableGrid({
       alert('Please select at least one time slot to create a new entry.');
       return;
     }
-    
+
     setModalMode('create');
     setEditingEntry(null);
     setIsModalOpen(true);
@@ -71,51 +72,51 @@ export default function EditableTimeTableGrid({
   };
 
   const handleModalSubmit = async (formData) => {
-  try {
-    const slotIds = new Set();
+    try {
+      const slotIds = new Set();
 
-    if (modalMode === 'create') {
-      selectedCells.forEach(cellId => {
-        const [day, timeIndex] = cellId.split('-');
-        const timeSlot = timeSlots[parseInt(timeIndex)];
-        timeSlot.slotIds.forEach(slotId => slotIds.add(slotId));
-      });
+      if (modalMode === 'create') {
+        selectedCells.forEach(cellId => {
+          const [day, timeIndex] = cellId.split('-');
+          const timeSlot = timeSlots[parseInt(timeIndex)];
+          timeSlot.slotIds.forEach(slotId => slotIds.add(slotId));
+        });
 
-      const firstCell = selectedCells[0];
-      const [day] = firstCell.split('-');
+        const firstCell = selectedCells[0];
+        const [day] = firstCell.split('-');
 
-      const createData = {
-        ...formData,
-        day: day.toUpperCase(),
-        slotIds: Array.from(slotIds).sort((a, b) => a - b), // ensure correct order
-      };
+        const createData = {
+          ...formData,
+          day: day.toUpperCase(),
+          slotIds: Array.from(slotIds).sort((a, b) => a - b), // ensure correct order
+        };
 
-      
 
-      await onEntryCreate(createData);
-      setSelectedCells([]);
 
-    } else {
-      // Edit mode: recalc slotIds from editingEntry's start/end time
-      const matchedSlots = timeSlots.filter(ts =>
-        ts.start >= editingEntry.startTime && ts.end <= editingEntry.endTime
-      ).flatMap(ts => ts.slotIds);
+        await onEntryCreate(createData);
+        setSelectedCells([]);
 
-      const updateData = {
-        ...formData,
-        day: editingEntry.day.toUpperCase(),
-        slotIds: matchedSlots.sort((a, b) => a - b),
-      };
+      } else {
+        // Edit mode: recalc slotIds from editingEntry's start/end time
+        const matchedSlots = timeSlots.filter(ts =>
+          ts.start >= editingEntry.startTime && ts.end <= editingEntry.endTime
+        ).flatMap(ts => ts.slotIds);
 
-      await onEntryUpdate(editingEntry.id, updateData);
+        const updateData = {
+          ...formData,
+          day: editingEntry.day.toUpperCase(),
+          slotIds: matchedSlots.sort((a, b) => a - b),
+        };
+
+        await onEntryUpdate(editingEntry.id, updateData);
+      }
+
+      setIsModalOpen(false);
+      setEditingEntry(null);
+    } catch (error) {
+      console.error('Error submitting form:', error);
     }
-
-    setIsModalOpen(false);
-    setEditingEntry(null);
-  } catch (error) {
-    console.error('Error submitting form:', error);
-  }
-};
+  };
 
 
   const clearSelection = () => {
@@ -137,14 +138,14 @@ export default function EditableTimeTableGrid({
               )}
             </div>
             <div className="edit-actions">
-              <button 
+              <button
                 className="create-button"
                 onClick={handleCreateNew}
                 disabled={selectedCells.length === 0}
               >
                 Create New Entry
               </button>
-              <button 
+              <button
                 className="clear-button"
                 onClick={clearSelection}
                 disabled={selectedCells.length === 0}

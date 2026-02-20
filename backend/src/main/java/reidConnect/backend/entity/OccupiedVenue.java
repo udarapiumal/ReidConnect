@@ -5,10 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(
-        name = "occupied_venue",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"venue_id", "day", "slot_id"})
-)
+@Table(name = "occupied_venue", uniqueConstraints = @UniqueConstraint(columnNames = { "venue_id", "day", "slot_id",
+        "academic_calendar_id" }))
 @Getter
 @Setter
 public class OccupiedVenue {
@@ -31,4 +29,8 @@ public class OccupiedVenue {
     @ManyToOne(optional = false)
     @JoinColumn(name = "time_table_id")
     private TimeTable timeTable;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "academic_calendar_id")
+    private AcademicCalendar academicCalendar;
 }

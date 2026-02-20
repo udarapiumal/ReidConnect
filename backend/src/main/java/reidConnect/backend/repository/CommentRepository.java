@@ -11,4 +11,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     long countByPostId(Long postId);
 // top-level comments
+// New query for latest 3 comments on a post
+    List<Comment> findTop3ByPostOrderByCreatedAtDesc(Post post);
 }

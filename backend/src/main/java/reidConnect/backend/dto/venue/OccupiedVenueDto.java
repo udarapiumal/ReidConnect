@@ -8,4 +8,5 @@ public class OccupiedVenueDto {
     private String day;
     private Long slotId;
     private Long timeTableId;
+    private Long academicCalendarId;
 }

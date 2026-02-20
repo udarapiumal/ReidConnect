@@ -37,6 +37,7 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
     private final OccupiedStaffService occupiedStaffService;
     private final OccupiedStaffRepository occupiedStaffRepository;
     private final TimeTableApprovalService timeTableApprovalService;
+    private final AcademicCalendarRepository academicCalendarRepository;
 
     @Override
     @Transactional
@@ -45,10 +46,14 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
+        AcademicCalendar academicCalendar = academicCalendarRepository.findById(dto.getAcademicCalendarId())
+                .orElseThrow(() -> new ResourceNotFoundException("Academic Calendar not found"));
+
         tt.setDay(dto.getDay());
         tt.setCourse(course);
         tt.setCourseType(dto.getCourseType());
         tt.setGroup(dto.getGroup());
+        tt.setAcademicCalendar(academicCalendar);
 
         Set<TimeTableSlot> timeTableSlots = new HashSet<>();
         for (Long slotId : dto.getSlotIds()) {
@@ -62,7 +67,6 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         }
 
         tt.setSlots(timeTableSlots);
-        timeTableRepository.save(tt);
 
         // Save timetable first so it has an ID
         timeTableRepository.save(tt);
@@ -87,8 +91,6 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
             throw new RuntimeException("Venue not assigned for the course and course type");
         }
 
-
-
         // Now store occupied venue records for clash detection
         List<OccupiedVenueDto> occupiedDtos = dto.getSlotIds().stream()
                 .map(slotId -> {
@@ -97,6 +99,7 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
                     ovDto.setDay(dto.getDay());
                     ovDto.setSlotId(slotId);
                     ovDto.setTimeTableId(tt.getId());
+                    ovDto.setAcademicCalendarId(academicCalendar.getId());
                     return ovDto;
                 })
                 .collect(Collectors.toList());
@@ -110,7 +113,8 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
                     osDto.setStaffId(staff.getId());
                     osDto.setDay(dto.getDay());
                     osDto.setSlotId(slotId);
-                    osDto.setTimeTableId(tt.getId()); // or updatedTT.getId() in update
+                    osDto.setTimeTableId(tt.getId());
+                    osDto.setAcademicCalendarId(academicCalendar.getId());
                     return osDto;
                 }))
                 .collect(Collectors.toList());
@@ -118,10 +122,8 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         // Call service to check/add staff occupancy
         occupiedStaffService.addOccupiedStaff(occupiedStaffDtos);
 
-
         return timeTableMapper.toDto(tt);
     }
-
 
     @Override
     public TimeTableResponseDto getById(Long id) {
@@ -147,11 +149,15 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
+        AcademicCalendar academicCalendar = academicCalendarRepository.findById(dto.getAcademicCalendarId())
+                .orElseThrow(() -> new ResourceNotFoundException("Academic Calendar not found"));
+
         // Update timetable fields
         tt.setDay(dto.getDay());
         tt.setCourse(course);
         tt.setCourseType(dto.getCourseType());
         tt.setGroup(dto.getGroup());
+        tt.setAcademicCalendar(academicCalendar);
 
         // Clear and update slots
         tt.getSlots().clear();
@@ -199,12 +205,17 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
                     ovDto.setDay(dto.getDay());
                     ovDto.setSlotId(slotId);
                     ovDto.setTimeTableId(updatedTT.getId());
+                    ovDto.setAcademicCalendarId(academicCalendar.getId());
                     return ovDto;
                 })
                 .collect(Collectors.toList());
 
-        // Use the service method to add occupied venues — this includes clash detection & exception throwing
+        // Use the service method to add occupied venues — this includes clash detection
+        // & exception throwing
         occupiedVenueService.addOccupiedVenues(occupiedDtos);
+
+        // Remove existing occupied staff for this timetable
+        occupiedStaffRepository.deleteByTimeTableId(id);
 
         // Build occupied staff DTOs for ALL lecturers in the course
         List<OccupiedStaffDto> occupiedStaffDtos = course.getLecturers().stream()
@@ -213,7 +224,8 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
                     osDto.setStaffId(staff.getId());
                     osDto.setDay(dto.getDay());
                     osDto.setSlotId(slotId);
-                    osDto.setTimeTableId(tt.getId()); // or updatedTT.getId() in update
+                    osDto.setTimeTableId(updatedTT.getId());
+                    osDto.setAcademicCalendarId(academicCalendar.getId());
                     return osDto;
                 }))
                 .collect(Collectors.toList());
@@ -224,7 +236,6 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
         return timeTableMapper.toDto(updatedTT);
     }
 
-
     @Override
     @Transactional
     public void delete(Long id) {
@@ -233,17 +244,16 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
 
         // Delete occupied venue rows first
         occupiedVenueRepository.deleteByTimeTableId(id);
-        //Delete occipied staff rows as well
+        // Delete occupied staff rows as well
         occupiedStaffRepository.deleteByTimeTableId(id);
 
         timeTableRepository.delete(tt);
     }
 
-
     @Override
-    public List<TimeTableResponseDto> getByYearAndDegree(Degree degree, Years year) {
-        // Use optimized query with fetch joins to avoid N+1 problems
-        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
+    public List<TimeTableResponseDto> getByYearAndDegree(Degree degree, Years year, Long academicCalendarId) {
+        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeAndAcademicCalendarWithDetails(degree, year,
+                academicCalendarId);
 
         return timeTables.stream()
                 .map(timeTableMapper::toDto)
@@ -251,19 +261,21 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
     }
 
     @Override
-    public List<TimeTableResponseDto> getByDay(String day) {
-        List<TimeTable> timeTables = timeTableRepository.findByDayIgnoreCase(day);
+    public List<TimeTableResponseDto> getByDay(String day, Long academicCalendarId) {
+        List<TimeTable> timeTables = timeTableRepository.findByDayIgnoreCaseAndAcademicCalendar_Id(day,
+                academicCalendarId);
         return timeTables.stream()
                 .map(timeTableMapper::toDto)
                 .collect(Collectors.toList());
     }
-    @Override
-    public List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year) {
-        // Use optimized query with fetch joins to avoid N+1 problems
-        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeWithDetails(degree, year);
 
-        // Check if timetable approval is done
-        if (!timeTableApprovalService.hasApprovedDecision()) {
+    @Override
+    public List<TimeTableResponseDto> getByYearAndDegreeApproved(Degree degree, Years year, Long academicCalendarId) {
+        List<TimeTable> timeTables = timeTableRepository.findByYearAndDegreeAndAcademicCalendarWithDetails(degree, year,
+                academicCalendarId);
+
+        // Check if timetable approval is done for this academic calendar
+        if (!timeTableApprovalService.hasApprovedDecision(academicCalendarId)) {
             return List.of(); // return empty list if no approved decision
         }
 
@@ -273,10 +285,9 @@ public class TimeTableServiceImpl implements reidConnect.backend.service.TimeTab
     }
 
     @Override
-    public long countSessionsToday() {
+    public long countSessionsToday(Long academicCalendarId) {
         String today = LocalDate.now().getDayOfWeek().name(); // e.g. "MONDAY"
-        return timeTableRepository.countByDay(today);
+        return timeTableRepository.countByDayAndAcademicCalendar_Id(today, academicCalendarId);
     }
-
 
 }

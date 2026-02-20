@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.dto.SubscriptionDto;
 import reidConnect.backend.entity.Club;
+import reidConnect.backend.entity.User;
+import reidConnect.backend.repository.UserRepository;
 import reidConnect.backend.service.NotificationService;
 import reidConnect.backend.service.SubscriptionService;
 
@@ -17,6 +19,7 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
     @PostMapping("/subscribe")
     public ResponseEntity<String> subscribe(@RequestBody SubscriptionDto dto) {
         subscriptionService.subscribe(dto);
@@ -27,6 +30,19 @@ public class SubscriptionController {
         String message="you have subscribed to x club";
         String type="INDIVIDUAL";
         notificationService.createIndividual(userId, title, message, type);
+
+        // Notify the club
+
+        // 🔹 Fetch user info
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        String userFullName = user.getUsername() != null ? user.getUsername() : user.getEmail();
+
+        Club club = subscriptionService.getClubById(dto.getClubId());
+        String clubUserId = String.valueOf(club.getUser().getId());
+        String clubTitle = "New Subscriber Alert";
+        String clubMessage = "User " +  userFullName + " has subscribed to your club.";
+        notificationService.createIndividual(clubUserId, clubTitle, clubMessage, "INDIVIDUAL");
 
         return ResponseEntity.ok("Subscribed successfully");
     }
@@ -58,6 +74,11 @@ public class SubscriptionController {
     ) {
         boolean isSubscribed = subscriptionService.isUserSubscribedToClub(userId, clubId);
         return ResponseEntity.ok(isSubscribed);
+    }
+    // Get last month's subscriber count for a club
+    @GetMapping("/club/{clubId}/count/last-month")
+    public ResponseEntity<Long> getClubSubscriptionCountLastMonth(@PathVariable Long clubId) {
+        return ResponseEntity.ok(subscriptionService.countLastMonthSubscriptionsForClub(clubId));
     }
 
 

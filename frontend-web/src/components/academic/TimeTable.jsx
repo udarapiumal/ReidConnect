@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axiosInstance from '../../api/axiosInstance';
 import Header from './components/Header';
+import UserProfile from './UserProfile';
 import TimeTableFilters from './components/TimeTableFilters';
 import TimeTableGrid from './components/TimeTableGrid';
 import EditableTimeTableGrid from './components/EditableTimeTableGrid';
@@ -9,136 +10,132 @@ import PrintLayout from './components/PrintLayout';
 import { useTimeTableData } from './hooks/useTimeTableData';
 import { timeSlotConfig } from './utils/timeSlotConfig';
 import { PRIVILEGES } from '../../api/rolePrivileges';
-import { getCurrentUserRole } from '../../utils/auth';
-import { getCurrentUserId } from '../../utils/auth'; 
-import StyledAlert from './components/StyledAlert'; 
+import { getCurrentUserRole, getCurrentUserId } from '../../utils/auth';
+import StyledAlert from './components/StyledAlert';
 import AcademicSidebar from './AcademicSidebar';
 
 import './styles/TimeTable.css';
-import './styles/PrintTimeTable.css'; // For shared styles
+import './styles/PrintTimeTable.css';
+
+// ── Status Display Config ──────────────────────────────────────────
+const STATUS_CONFIG = {
+  DRAFT: { label: "Draft", color: "#6b7280", icon: "fa-edit" },
+  PENDING_RECOMMENDATION: { label: "Pending SAR Review", color: "#f59e0b", icon: "fa-clock" },
+  RECOMMENDED: { label: "Recommended – Awaiting DD", color: "#3b82f6", icon: "fa-thumbs-up" },
+  NOT_RECOMMENDED: { label: "Not Recommended by SAR", color: "#ef4444", icon: "fa-times-circle" },
+  APPROVED: { label: "Approved", color: "#10b981", icon: "fa-check-circle" },
+  REJECTED: { label: "Rejected by Deputy Director", color: "#ef4444", icon: "fa-ban" },
+};
+
+// ── Visibility Rules ───────────────────────────────────────────────
+// Which roles can VIEW the timetable in each status?
+const VISIBILITY_MAP = {
+  DRAFT: ["ACADEMIC_MA"],
+  PENDING_RECOMMENDATION: ["ACADEMIC_MA", "ACADEMIC_SAR"],
+  RECOMMENDED: ["ACADEMIC_MA", "ACADEMIC_SAR", "ACADEMIC_DEPUTY_DIRECTOR"],
+  NOT_RECOMMENDED: ["ACADEMIC_MA", "ACADEMIC_SAR"],
+  APPROVED: null, // everyone
+  REJECTED: ["ACADEMIC_MA", "ACADEMIC_DEPUTY_DIRECTOR"],
+};
+
+// ── Editable Statuses (only MA can ever edit) ──────────────────────
+const EDITABLE_STATUSES = new Set(["DRAFT", "NOT_RECOMMENDED", "REJECTED"]);
 
 export default function TimeTable() {
+  // ── State ──────────────────────────────────────────────────────
   const [selectedYear, setSelectedYear] = useState("YEAR_1");
   const [selectedDegree, setSelectedDegree] = useState("CS");
+  const [selectedCalendarId, setSelectedCalendarId] = useState(null);
+  const [timetableStatus, setTimetableStatus] = useState(null); // FSM status string
   const [printData, setPrintData] = useState({});
   const [activeNavItem, setActiveNavItem] = useState("Time Table");
   const [isLoadingPrint, setIsLoadingPrint] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [courses, setCourses] = useState([]);
-  const [refreshToggle, setRefreshToggle] = useState(false); 
+  const [refreshToggle, setRefreshToggle] = useState(false);
+  const [clashAlert, setClashAlert] = useState(null);
+  const [approvals, setApprovals] = useState([]);
+  const [approvalMessage, setApprovalMessage] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
+
   const role = getCurrentUserRole();
-  const id = getCurrentUserId(); 
+  const userId = getCurrentUserId();
   const userPrivs = PRIVILEGES[role] || [];
   const canEditTimetable = userPrivs.includes("TIMETABLE_EDIT");
-  const [clashAlert, setClashAlert] = useState(null);
-  const [approvals, setApprovals] = useState([]); // all approvals for this timetable type
-  const [approvalMessage, setApprovalMessage] = useState(""); // for input message
 
   const isMA = role === "ACADEMIC_MA";
-  const isSAR = role === "ACADEMIC_SAR"; 
-  const isHODorDeputy = role === "ACADEMIC_DEPUTY_DIRECTOR" || role === "ACADEMIC_HOD";
+  const isSAR = role === "ACADEMIC_SAR";
+  const isDD = role === "ACADEMIC_DEPUTY_DIRECTOR" || role === "ACADEMIC_HOD";
 
-  // Get latest decisions by role - sort by timestamp/id to get most recent
-  const getLatestDecisionByRole = (roleToFind) => {
-    // Check both uppercase and lowercase versions since the display shows lowercase
-    const approvalsByRole = approvals.filter(a => 
-      a.reviewerRole === roleToFind || 
-      a.reviewerRole === roleToFind.toLowerCase()
-    );
-    return approvalsByRole.sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))[0];
-  };
+  // ── Derived permissions from FSM status ────────────────────────
+  const canView = (() => {
+    if (!timetableStatus || !selectedCalendarId) return false;
+    const allowed = VISIBILITY_MAP[timetableStatus];
+    if (allowed === null) return true; // APPROVED — everyone
+    return allowed.includes(role);
+  })();
 
-  const latestSAR = getLatestDecisionByRole("ACADEMIC_SAR");
-  const latestHOD = getLatestDecisionByRole("ACADEMIC_DEPUTY_DIRECTOR") || 
-                   getLatestDecisionByRole("ACADEMIC_HOD");
-  const latestMA = getLatestDecisionByRole("ACADEMIC_MA");
+  const canEdit = isMA && canEditTimetable && EDITABLE_STATUSES.has(timetableStatus);
 
-  // Helper function to check if approval A came after approval B chronologically
-  const isAfter = (approvalA, approvalB) => {
-    if (!approvalA || !approvalB) return false;
-    const timeA = new Date(approvalA.createdAt || approvalA.id);
-    const timeB = new Date(approvalB.createdAt || approvalB.id);
-    return timeA > timeB;
-  };
+  // What action buttons should show?
+  const canSendForRecommendation = isMA && EDITABLE_STATUSES.has(timetableStatus);
+  const canRecommend = isSAR && timetableStatus === "PENDING_RECOMMENDATION";
+  const canApprove = isDD && timetableStatus === "RECOMMENDED";
 
-  // Check if MA sent a new PENDING request after previous rejections
-  const isPendingAfterSARRejection = latestMA && latestMA.decision === "PENDING" && 
-    latestSAR && latestSAR.decision === "NOT_RECOMMENDED" && 
-    isAfter(latestMA, latestSAR);
-
-  const isPendingAfterHODRejection = latestMA && latestMA.decision === "PENDING" && 
-    latestHOD && latestHOD.decision === "REJECTED" && 
-    isAfter(latestMA, latestHOD);
-
-  // Check if SAR recommended after MA's latest PENDING request
-  const isSARRecommendedAfterPending = latestSAR && latestSAR.decision === "RECOMMENDED" &&
-    latestMA && latestMA.decision === "PENDING" &&
-    isAfter(latestSAR, latestMA);
-
-  // MA: Can send for recommendation only if:
-  // - No SAR action exists, OR
-  // - SAR decision is NOT_RECOMMENDED, OR 
-  // - HOD decision is REJECTED
-  // BUT NOT if there's a current PENDING request or if SAR has RECOMMENDED (waiting for HOD)
-  const hasPendingRequest = latestMA && latestMA.decision === "PENDING" && (
-    !latestSAR || // No SAR response yet
-    isPendingAfterSARRejection || // New pending after SAR rejection
-    isPendingAfterHODRejection // New pending after HOD rejection
-  );
-  
-  const sarHasRecommended = isSARRecommendedAfterPending && 
-    (!latestHOD || isAfter(latestSAR, latestHOD)); // SAR recommended and HOD hasn't acted yet
-
-  const canSendForRecommendation = isMA && !hasPendingRequest && !sarHasRecommended && (
-    !latestSAR || 
-    latestSAR.decision === "NOT_RECOMMENDED" || 
-    (latestHOD && latestHOD.decision === "REJECTED")
-  );
-
-  // SAR: Can recommend/not recommend if:
-  // - There's a PENDING request from MA AND SAR hasn't acted on this specific request, OR
-  // - MA sent a new PENDING request after SAR's previous NOT_RECOMMENDED decision
-  const hasPendingFromMA = latestMA && latestMA.decision === "PENDING";
-  // SAR: Can recommend/not recommend only once per MA's PENDING request
-const canRecommend = isSAR && hasPendingFromMA && (
-  (!latestSAR || isAfter(latestMA, latestSAR)) // SAR never acted on THIS pending
-);
-
-
-  // HOD: Can approve/reject if:
-  // - SAR recommended and there's no HOD decision yet, OR
-  // - SAR recommended after the latest HOD decision
-  const canApprove = isHODorDeputy && latestSAR && latestSAR.decision === "RECOMMENDED" && (
-    !latestHOD || // No HOD decision yet
-    isAfter(latestSAR, latestHOD) // SAR recommended after last HOD decision
-  );
-
-  // Visibility logic:
-  // MA: Can always see (to edit and send for recommendation)
-  // SAR: Can see if there's a PENDING request from MA that they can act on
-  // HOD: Can see if they can approve, or if they previously acted
-  const isVisible = 
-    latestHOD?.decision === "APPROVED" ||
-    isMA || // MA can always see
-    (isSAR && canRecommend) || // SAR sees when they can act on pending request
-    (isHODorDeputy && (
-      canApprove || // HOD can see when they can approve
-      (latestHOD && (latestHOD.decision === "APPROVED" || latestHOD.decision === "REJECTED")) // HOD can see their past decisions
-    ));
-
+  // ── Data hooks ─────────────────────────────────────────────────
   const {
     timetableData,
     coursesData,
     loading,
     fetchTimetableData,
-  } = useTimeTableData(selectedYear, selectedDegree, refreshToggle);
+  } = useTimeTableData(selectedYear, selectedDegree, refreshToggle, selectedCalendarId);
 
+  // ── Fetch current academic period on mount ─────────────────────
   useEffect(() => {
-    fetchTimetableData();
-    fetchCourses();
-  }, [selectedYear, selectedDegree, refreshToggle]);
+    const fetchCurrentPeriod = async () => {
+      try {
+        const response = await axiosInstance.get('/api/academic-calendar/current');
+        if (response.data && response.data.periodType === 'SEMESTER') {
+          setSelectedCalendarId(response.data.id);
+        }
+      } catch (error) {
+        console.error("Error fetching current period:", error);
+      }
+    };
+    fetchCurrentPeriod();
+  }, []);
 
-  // Fetch courses for dropdowns in edit mode
+  // ── Fetch FSM status ───────────────────────────────────────────
+  const fetchStatus = useCallback(async () => {
+    if (!selectedCalendarId) {
+      setTimetableStatus(null);
+      return;
+    }
+    try {
+      const res = await axiosInstance.get(`/api/timetable-approvals/status/${selectedCalendarId}`);
+      setTimetableStatus(res.data.status);
+    } catch (error) {
+      console.error("Error fetching timetable status:", error);
+      setTimetableStatus(null);
+    }
+  }, [selectedCalendarId]);
+
+  // ── Fetch approval history (audit log) ─────────────────────────
+  const fetchApprovalHistory = useCallback(async () => {
+    if (!selectedCalendarId) {
+      setApprovals([]);
+      return;
+    }
+    try {
+      const res = await axiosInstance.get(`/api/timetable-approvals/${selectedCalendarId}`);
+      setApprovals(res.data);
+    } catch (error) {
+      console.error("Error fetching approval history:", error);
+      setApprovals([]);
+    }
+  }, [selectedCalendarId]);
+
+  // ── Fetch courses ──────────────────────────────────────────────
   const fetchCourses = async () => {
     try {
       const response = await axiosInstance.get('/api/courses');
@@ -149,17 +146,38 @@ const canRecommend = isSAR && hasPendingFromMA && (
     }
   };
 
+  // ── Re-fetch when calendar or refresh changes ──────────────────
+  useEffect(() => {
+    if (selectedCalendarId) {
+      fetchStatus();
+      fetchApprovalHistory();
+      fetchCourses();
+    }
+  }, [selectedCalendarId, refreshToggle, fetchStatus, fetchApprovalHistory]);
+
+  // Exit edit mode when status changes to non-editable
+  useEffect(() => {
+    if (isEditMode && !EDITABLE_STATUSES.has(timetableStatus)) {
+      setIsEditMode(false);
+    }
+  }, [timetableStatus, isEditMode]);
+
+  // ── Handlers ───────────────────────────────────────────────────
+  const triggerRefresh = () => setRefreshToggle(prev => !prev);
+
   const handleEditToggle = () => {
+    if (!selectedCalendarId) {
+      alert("Please select an academic calendar first.");
+      return;
+    }
+    if (!canEdit) {
+      alert("Editing is not allowed in the current workflow state.");
+      return;
+    }
     setIsEditMode(!isEditMode);
   };
-  
-  const handleNavigation = (itemId) => {
-    setActiveNavItem(itemId);
-  };
 
-  const triggerRefresh = () => {
-    setRefreshToggle(prev => !prev);
-  };
+  const handleNavigation = (itemId) => setActiveNavItem(itemId);
 
   const handleEntryDelete = async (entryId) => {
     try {
@@ -167,92 +185,69 @@ const canRecommend = isSAR && hasPendingFromMA && (
       triggerRefresh();
     } catch (error) {
       console.error('Error deleting entry:', error);
-      alert('Failed to delete entry. Please try again.');
+      const msg = error.response?.data?.message || 'Failed to delete entry.';
+      alert(msg);
     }
   };
 
   const handleEntryCreate = async (createData) => {
+    if (!selectedCalendarId) return;
     try {
-      await axiosInstance.post('/api/timetable', createData);
+      await axiosInstance.post('/api/timetable', { ...createData, academicCalendarId: selectedCalendarId });
       triggerRefresh();
     } catch (error) {
       console.error('Error creating entry:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        const msg = error.response.data.message;
-        if (msg.includes('Venue clash detected') || msg.includes('Staff clash detected')) {
-          setClashAlert(msg);
-        } else {
-          alert(msg);
-        }
+      const msg = error.response?.data?.message;
+      if (msg && (msg.includes('Venue clash') || msg.includes('Staff clash'))) {
+        setClashAlert(msg);
       } else {
-        alert('Failed to create entry. Please try again.');
+        alert(msg || 'Failed to create entry. Please try again.');
       }
-    }
-  };
-
-  const fetchApprovalStatus = async () => {
-    try {
-      const response = await axiosInstance.get(`/api/timetable-approvals/ACADEMIC_TIME_TABLE`);
-      setApprovals(response.data);
-    } catch (error) {
-      console.error("Error fetching approvals:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchApprovalStatus();
-  }, [selectedYear, selectedDegree, refreshToggle]);
-
-  const handleApprovalAction = async (decisionType) => {
-    try {
-      const reviewerId = id;
-      console.log(`Sending approval action: ${decisionType} by ${reviewerId}`);
-
-      await axiosInstance.post("/api/timetable-approvals", {
-        type: `ACADEMIC_TIME_TABLE`,
-        reviewerId: reviewerId,
-        decision: decisionType,
-        message: approvalMessage
-      });
-
-      setApprovalMessage("");
-      fetchApprovalStatus();
-      triggerRefresh();
-    } catch (error) {
-      console.error("Error sending approval:", error);
-      alert('Error processing approval action. Please try again.');
     }
   };
 
   const handleEntryUpdate = async (entryId, updateData) => {
+    if (!selectedCalendarId) return;
     try {
-      await axiosInstance.put(`/api/timetable/${entryId}`, updateData);
+      await axiosInstance.put(`/api/timetable/${entryId}`, { ...updateData, academicCalendarId: selectedCalendarId });
       triggerRefresh();
     } catch (error) {
       console.error('Error updating entry:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        const msg = error.response.data.message;
-        if (msg.includes('Venue clash detected') || msg.includes('Staff clash detected')) {
-          setClashAlert(msg);
-        } else {
-          alert(msg);
-        }
+      const msg = error.response?.data?.message;
+      if (msg && (msg.includes('Venue clash') || msg.includes('Staff clash'))) {
+        setClashAlert(msg);
       } else {
-        alert('Failed to update entry. Please try again.');
+        alert(msg || 'Failed to update entry. Please try again.');
       }
     }
   };
 
-  const handlePrint = async () => {
+  const handleApprovalAction = async (decisionType) => {
+    if (!selectedCalendarId) return;
     try {
-      console.log('Starting print process...');
-      const printDataResult = await fetchAllTimetableData();
-      console.log('Print data fetched:', printDataResult);
-      
-      setTimeout(() => {
-        console.log('Opening print dialog...');
-        window.print();
-      }, 1500);
+      await axiosInstance.post("/api/timetable-approvals", {
+        academicCalendarId: selectedCalendarId,
+        reviewerId: userId,
+        decision: decisionType,
+        message: approvalMessage
+      });
+      setApprovalMessage("");
+      triggerRefresh(); // triggers re-fetch of status + history + data
+    } catch (error) {
+      console.error("Error sending approval:", error);
+      const msg = error.response?.data?.message || 'Error processing approval action.';
+      alert(msg);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!selectedCalendarId) {
+      alert("Select a calendar first");
+      return;
+    }
+    try {
+      await fetchAllTimetableData();
+      setTimeout(() => window.print(), 1500);
     } catch (error) {
       console.error('Error preparing print data:', error);
       alert('Error preparing print data. Please try again.');
@@ -268,21 +263,15 @@ const canRecommend = isSAR && hasPendingFromMA && (
     try {
       for (const year of years) {
         allData[year] = { CS: [], IS: [], courses: { CS: [], IS: [] } };
-        
         for (const degree of degrees) {
           try {
-            console.log(`Fetching data for ${year} ${degree}`);
             const response = await axiosInstance.get(
-              `/api/timetable/byYearAndDegree?degree=${degree}&year=${year}`
+              `/api/timetable/byYearAndDegree?degree=${degree}&year=${year}&academicCalendarId=${selectedCalendarId}`
             );
-            
-            const timetableEntries = response.data || [];
-            console.log(`Received ${timetableEntries.length} entries for ${year} ${degree}`);
-            
-            const processedData = timetableEntries.map(entry => {
+            const entries = response.data || [];
+            allData[year][degree] = entries.map(entry => {
               const timeSlots = timeSlotConfig.convertSlotsToTime(entry.slotIds);
               if (!timeSlots) return null;
-
               return {
                 id: entry.id,
                 day: entry.day.toUpperCase(),
@@ -297,15 +286,13 @@ const canRecommend = isSAR && hasPendingFromMA && (
                 lecturerNames: entry.lecturerNames || '',
                 degree: entry.degree,
                 lectureCredits: entry.lectureCredits,
-                practicalCredits: entry.practicalCredits
+                practicalCredits: entry.practicalCredits,
               };
             }).filter(Boolean);
 
-            allData[year][degree] = processedData;
-
-            const uniqueCourses = timetableEntries.reduce((courses, entry) => {
-              if (!courses.some(course => course.courseCode === entry.courseCode)) {
-                courses.push({
+            allData[year].courses[degree] = entries.reduce((acc, entry) => {
+              if (!acc.some(c => c.courseCode === entry.courseCode)) {
+                acc.push({
                   id: entry.id,
                   code: entry.courseCode,
                   name: entry.courseName,
@@ -313,14 +300,11 @@ const canRecommend = isSAR && hasPendingFromMA && (
                   practicalCredits: entry.practicalCredits,
                   degree: entry.degree,
                   lecturerNames: entry.lecturerNames ? entry.lecturerNames.split(', ') : [],
-                  lecturerCodes: entry.lecturerCodes ? entry.lecturerCodes.split(', ') : []
+                  lecturerCodes: entry.lecturerCodes ? entry.lecturerCodes.split(', ') : [],
                 });
               }
-              return courses;
+              return acc;
             }, []);
-            
-            allData[year].courses[degree] = uniqueCourses;
-            
           } catch (degreeError) {
             console.error(`Error fetching ${year} ${degree}:`, degreeError);
             allData[year][degree] = [];
@@ -328,52 +312,25 @@ const canRecommend = isSAR && hasPendingFromMA && (
           }
         }
       }
-      
-      console.log('Final print data:', allData);
       setPrintData(allData);
       return allData;
-      
-    } catch (error) {
-      console.error('Error fetching print data:', error);
-      return {};
     } finally {
       setIsLoadingPrint(false);
     }
   };
 
-  // Helper function to get current workflow status for display
-  const getCurrentStatus = () => {
-    if (!latestMA) return "Draft";
-    
-    if (latestMA.decision === "PENDING") {
-      // Check if anyone has acted on this pending request
-      if (!latestSAR || isPendingAfterSARRejection || isPendingAfterHODRejection) {
-        return "Pending SAR Review";
-      }
-      if (isSARRecommendedAfterPending && (!latestHOD || isAfter(latestSAR, latestHOD))) {
-        return "Pending HOD Approval";
-      }
-    }
-    
-    if (latestSAR?.decision === "NOT_RECOMMENDED" && !isPendingAfterSARRejection) {
-      return "Not Recommended by SAR";
-    }
-    if (latestHOD?.decision === "APPROVED") return "Approved";
-    if (latestHOD?.decision === "REJECTED" && !isPendingAfterHODRejection) {
-      return "Rejected by HOD";
-    }
-    
-    return "In Progress";
-  };
+  // ── Status badge helper ────────────────────────────────────────
+  const statusCfg = STATUS_CONFIG[timetableStatus] || { label: "Unknown", color: "#6b7280", icon: "fa-question" };
 
+  // ── Render ─────────────────────────────────────────────────────
   return (
     <div className="timetable-container">
-      <Header />
+      <Header onProfileClick={() => setShowProfile(true)} />
 
       <div className="dashboard-content">
-        <AcademicSidebar 
-          activeItem={activeNavItem} 
-          onNavigate={handleNavigation} 
+        <AcademicSidebar
+          activeItem={activeNavItem}
+          onNavigate={handleNavigation}
           isDarkMode={true}
         />
 
@@ -384,161 +341,209 @@ const canRecommend = isSAR && hasPendingFromMA && (
               <TimeTableFilters
                 selectedYear={selectedYear}
                 selectedDegree={selectedDegree}
+                selectedCalendarId={selectedCalendarId}
                 onYearChange={setSelectedYear}
                 onDegreeChange={setSelectedDegree}
+                onCalendarChange={setSelectedCalendarId}
                 onPrint={handlePrint}
                 isLoadingPrint={isLoadingPrint}
               />
 
-              {canEditTimetable && isMA && (
+              {canEdit && selectedCalendarId && (
                 <button
                   className={`edit-button ${isEditMode ? "edit-active" : ""}`}
                   onClick={handleEditToggle}
                 >
-                  {isEditMode ? "Exit Edit" : "Edit"}
+                  {isEditMode ? "Exit Edit" : "Edit Timetable"}
                 </button>
               )}
             </div>
           </div>
 
-          {/* Current Status Display */}
-          <div className="status-banner">
-            <strong>Status: </strong>{getCurrentStatus()}
-          </div>
-
-          {/* Timetable Grid - conditional visibility */}
-          {isVisible ? (
-            isEditMode ? (
-              <EditableTimeTableGrid
-                timetableData={timetableData}
-                courses={courses}
-                loading={loading}
-                selectedYear={selectedYear}
-                selectedDegree={selectedDegree}
-                onEntryDelete={handleEntryDelete}
-                onEntryUpdate={handleEntryUpdate}
-                onEntryCreate={handleEntryCreate}
-              />
-            ) : (
-              <TimeTableGrid timetableData={timetableData} loading={loading} />
-            )
-          ) : (
-            <div className="no-access-message">
-              <p>Timetable is not accessible at this time. Please wait for the appropriate approval workflow stage.</p>
+          {/* ── Status Banner ──────────────────────────────── */}
+          {selectedCalendarId && timetableStatus && (
+            <div
+              className="status-banner"
+              style={{
+                backgroundColor: statusCfg.color + "18",
+                borderLeft: `4px solid ${statusCfg.color}`,
+                padding: "12px 16px",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <i className={`fa ${statusCfg.icon}`} style={{ fontSize: "1.2em", color: statusCfg.color }}></i>
+              <strong style={{ color: statusCfg.color }}>
+                {statusCfg.label}
+              </strong>
             </div>
           )}
 
-          {/* Courses List - only show if timetable is visible */}
-          {isVisible && (
+          {/* ── Timetable Grid ─────────────────────────────── */}
+          {selectedCalendarId ? (
+            canView ? (
+              isEditMode && canEdit ? (
+                <EditableTimeTableGrid
+                  timetableData={timetableData}
+                  courses={courses}
+                  loading={loading}
+                  selectedYear={selectedYear}
+                  selectedDegree={selectedDegree}
+                  academicCalendarId={selectedCalendarId}
+                  onEntryDelete={handleEntryDelete}
+                  onEntryUpdate={handleEntryUpdate}
+                  onEntryCreate={handleEntryCreate}
+                />
+              ) : (
+                <TimeTableGrid timetableData={timetableData} loading={loading} />
+              )
+            ) : (
+              <div className="no-access-message">
+                <p>This timetable is not accessible to your role in its current workflow state.</p>
+              </div>
+            )
+          ) : (
+            <div className="no-access-message">
+              <p>Please select an Academic Calendar to view the timetable.</p>
+            </div>
+          )}
+
+          {/* ── Courses List ───────────────────────────────── */}
+          {canView && selectedCalendarId && (
             <CoursesList coursesData={coursesData} loading={loading} />
           )}
 
-          {/* Approval Section */}
-          <div className="approval-section">
-            <h3>Approval History</h3>
-            
-              {/* Display approval history with timestamps */}
-              <div className="approval-history">
+          {/* ── Approval Workflow Section ──────────────────── */}
+          {selectedCalendarId && canView && (
+            <div className="approval-section">
+              <h3>Approval Workflow</h3>
+
+              {/* Action Buttons */}
+              <div className="approval-actions">
+
+                {/* MA: Send for Recommendation */}
+                {canSendForRecommendation && (
+                  <div className="action-group">
+                    <h4>
+                      {timetableStatus === "NOT_RECOMMENDED"
+                        ? "Re-send for SAR Recommendation:"
+                        : timetableStatus === "REJECTED"
+                          ? "Re-send for Recommendation (after rejection):"
+                          : "Send for SAR Recommendation:"}
+                    </h4>
+                    <textarea
+                      value={approvalMessage}
+                      onChange={(e) => setApprovalMessage(e.target.value)}
+                      placeholder="Message for SAR (optional)"
+                      rows={3}
+                    />
+                    <button
+                      onClick={() => handleApprovalAction("PENDING")}
+                      className="action-button primary"
+                    >
+                      Send for Recommendation
+                    </button>
+                  </div>
+                )}
+
+                {/* SAR: Recommend / Not Recommend */}
+                {canRecommend && (
+                  <div className="action-group">
+                    <h4>SAR Decision:</h4>
+                    <textarea
+                      value={approvalMessage}
+                      onChange={(e) => setApprovalMessage(e.target.value)}
+                      placeholder="Message (optional)"
+                      rows={3}
+                    />
+                    <div className="button-group">
+                      <button
+                        onClick={() => handleApprovalAction("RECOMMENDED")}
+                        className="action-button success"
+                      >
+                        Recommend to Deputy Director
+                      </button>
+                      <button
+                        onClick={() => handleApprovalAction("NOT_RECOMMENDED")}
+                        className="action-button danger"
+                      >
+                        Not Recommend
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Deputy Director: Approve / Reject */}
+                {canApprove && (
+                  <div className="action-group">
+                    <h4>Deputy Director Decision:</h4>
+                    <textarea
+                      value={approvalMessage}
+                      onChange={(e) => setApprovalMessage(e.target.value)}
+                      placeholder="Final decision message (optional)"
+                      rows={3}
+                    />
+                    <div className="button-group">
+                      <button
+                        onClick={() => handleApprovalAction("APPROVED")}
+                        className="action-button success"
+                      >
+                        Approve Timetable
+                      </button>
+                      <button
+                        onClick={() => handleApprovalAction("REJECTED")}
+                        className="action-button danger"
+                      >
+                        Reject Timetable
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* No actions message */}
+                {!canSendForRecommendation && !canRecommend && !canApprove && (
+                  <div className="no-actions">
+                    <p>
+                      {timetableStatus === "PENDING_RECOMMENDATION" && isMA
+                        ? "Waiting for SAR review…"
+                        : timetableStatus === "RECOMMENDED" && isSAR
+                          ? "Waiting for Deputy Director decision…"
+                          : timetableStatus === "APPROVED"
+                            ? "This timetable has been finalized."
+                            : "No approval actions available for your role at this time."}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Approval History (audit log) */}
+              <div className="approval-history" style={{ marginTop: "20px" }}>
+                <h4>History</h4>
                 {approvals.length === 0 ? (
                   <p>No approval actions yet.</p>
                 ) : (
                   <ul>
                     {approvals
-                      .sort((a, b) => new Date(a.createdAt || a.id) - new Date(b.createdAt || b.id)) // Sort chronologically (oldest first)
+                      .sort((a, b) => new Date(a.reviewedAt || a.id) - new Date(b.reviewedAt || b.id))
                       .map((approval) => (
-                      <li key={approval.id}>
-                        <strong>{approval.reviewerRole}</strong> : {approval.decision}
-                        {approval.message && ` - "${approval.message}"`}
-                        {approval.createdAt && ` (${new Date(approval.createdAt).toLocaleString()})`}
-                      </li>
-                    ))}
+                        <li key={approval.id}>
+                          <strong>{approval.reviewerRole}</strong>: {approval.decision}
+                          {approval.message && ` – "${approval.message}"`}
+                          {approval.reviewedAt && (
+                            <span style={{ color: "#888", marginLeft: "8px" }}>
+                              ({new Date(approval.reviewedAt).toLocaleString()})
+                            </span>
+                          )}
+                        </li>
+                      ))}
                   </ul>
                 )}
               </div>
-
-            {/* Action buttons based on role and current status */}
-            <div className="approval-actions">
-              {/* MA: Send for Recommendation */}
-              {canSendForRecommendation && (
-                <div className="action-group">
-                  <h4>Send for SAR Recommendation:</h4>
-                  <textarea
-                    value={approvalMessage}
-                    onChange={(e) => setApprovalMessage(e.target.value)}
-                    placeholder="Message for SAR (optional)"
-                    rows={3}
-                  />
-                  <button 
-                    onClick={() => handleApprovalAction("PENDING")}
-                    className="action-button primary"
-                  >
-                    Send for Recommendation
-                  </button>
-                </div>
-              )}
-
-              {/* SAR: Recommend or Not Recommend */}
-              {canRecommend && (
-                <div className="action-group">
-                  <h4>SAR Decision:</h4>
-                  <textarea
-                    value={approvalMessage}
-                    onChange={(e) => setApprovalMessage(e.target.value)}
-                    placeholder="Message for HOD (optional)"
-                    rows={3}
-                  />
-                  <div className="button-group">
-                    <button 
-                      onClick={() => handleApprovalAction("RECOMMENDED")}
-                      className="action-button success"
-                    >
-                      Recommend to HOD
-                    </button>
-                    <button 
-                      onClick={() => handleApprovalAction("NOT_RECOMMENDED")}
-                      className="action-button danger"
-                    >
-                      Not Recommend
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* HOD/Deputy: Approve or Reject */}
-              {canApprove && (
-                <div className="action-group">
-                  <h4>HOD Final Decision:</h4>
-                  <textarea
-                    value={approvalMessage}
-                    onChange={(e) => setApprovalMessage(e.target.value)}
-                    placeholder="Final approval message (optional)"
-                    rows={3}
-                  />
-                  <div className="button-group">
-                    <button 
-                      onClick={() => handleApprovalAction("APPROVED")}
-                      className="action-button success"
-                    >
-                      Approve Timetable
-                    </button>
-                    <button 
-                      onClick={() => handleApprovalAction("REJECTED")}
-                      className="action-button danger"
-                    >
-                      Reject Timetable
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* No actions available message */}
-              {!canSendForRecommendation && !canRecommend && !canApprove && (
-                <div className="no-actions">
-                  <p>No approval actions available at this time.</p>
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </main>
       </div>
 
@@ -548,6 +553,10 @@ const canRecommend = isSAR && hasPendingFromMA && (
       {/* Clash Alert */}
       {clashAlert && (
         <StyledAlert message={clashAlert} onClose={() => setClashAlert(null)} />
+      )}
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
       )}
     </div>
   );

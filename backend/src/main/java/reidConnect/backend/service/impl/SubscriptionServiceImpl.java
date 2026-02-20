@@ -12,6 +12,7 @@ import reidConnect.backend.repository.SubscriptionRepository;
 import reidConnect.backend.repository.UserRepository;
 import reidConnect.backend.service.SubscriptionService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -80,4 +81,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         return subscriptionRepository.findByUserAndClub(user, club).isPresent();
     }
+
+    public Club getClubById(Long clubId) {
+        return clubRepository.findById(clubId)
+                .orElseThrow(() -> new RuntimeException("Club not found"));
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public long countLastMonthSubscriptionsForClub(Long clubId) {
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new IllegalArgumentException("Club not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfRange = now.minusDays(28);
+
+        return subscriptionRepository.countSubscriptionsByClubAndDateRange(club, startOfRange, now);
+    }
+
+
 }

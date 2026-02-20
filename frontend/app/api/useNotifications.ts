@@ -4,10 +4,11 @@ import { Client, IMessage } from '@stomp/stompjs';
 // @ts-ignore - types may not be bundled
 import SockJS from 'sockjs-client';
 import axiosInstance from './axiosInstance';
+import { BASE_URL } from '@/constants/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // STOMP over SockJS endpoint (Spring typically exposes /ws-notifications)
-const SOCKJS_ENDPOINT = `http://localhost:8080/ws-notifications`;
+const SOCKJS_ENDPOINT = `${BASE_URL}/ws-notifications`;
 
 export interface NotificationRecipientDto {
   id: string;

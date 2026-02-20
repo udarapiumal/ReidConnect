@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Header() {
+export default function Header({ onProfileClick }) {
   return (
     <header className="header">
       <div className="header-left">
@@ -8,12 +8,11 @@ export default function Header() {
           ReidConnect <span className="academic-text">AcademicAdmin</span>
         </h1>
       </div>
-      <div className="header-right">
+      <div className="header-right" onClick={onProfileClick} style={{ cursor: 'pointer' }}>
         <div className="header-icons">
-          <i className="fas fa-bell icon"></i>
           <i className="fas fa-user icon"></i>
         </div>
-        <span className="admin-text">Admin</span>
+        <span className="admin-text">Profile</span>
       </div>
     </header>
   );

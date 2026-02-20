@@ -47,7 +47,6 @@ export default function Login() {
             }
 
             localStorage.setItem("token", token);
-            alert("Login successful!");
 
             if (decoded.role === "union") {
                 navigate("/union/dashboard");

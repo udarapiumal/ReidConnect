@@ -1,30 +1,38 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BASE_URL } from '../../../constants/config';
+import { TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useClub } from "../../context/ClubContext";
+import { useNavigation } from '@react-navigation/native';
 
-const { width: screenWidth } = Dimensions.get('window');
-const imageSize = (screenWidth - 4) / 3; // 3 columns with 2px gaps
-const router = useRouter();
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const GRID_SPACING = 12;
+const imageSize = (screenWidth - 40 - (GRID_SPACING * 2)) / 3;
+const imageHeight = imageSize * (4/3);
 
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const createdAt = new Date(timestamp);
+  
   const diffMs = now - createdAt;
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const totalHours = Math.floor(totalMinutes / 60);
@@ -38,7 +46,11 @@ const formatTimeAgo = (timestamp) => {
   return result.trim() + ' ago';
 };
 
+
+
+
 export default function ClubProfileScreen() {
+  const router = useRouter();
   const { token, clubDetails } = useClub();
   const [selectedTab, setSelectedTab] = useState('posts');
   const [posts, setPosts] = useState([]);
@@ -49,7 +61,27 @@ export default function ClubProfileScreen() {
   const [eventCount, setEventCount] = useState(0);
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [postStats, setPostStats] = useState({}); // Store like/comment counts for posts
+  const [postStats, setPostStats] = useState({});
+  const [showComments, setShowComments] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [likedPosts, setLikedPosts] = useState({});
+  const navigation = useNavigation();
+  
+const handleLogout = async () => {
+    // Remove stored JWT / user info
+    await AsyncStorage.removeItem('token'); 
+    await AsyncStorage.removeItem('userId'); // if you store user info
+
+    // Navigate to login screen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   const fetchSubCount = async () => {
     try {
@@ -58,7 +90,6 @@ export default function ClubProfileScreen() {
           headers: { Authorization: `Bearer ${token}` }
         }),
       ]);
-      console.log(subCountResponse.data);
       setSubCount(subCountResponse.data || 0);
     } catch (error) {
       console.error(`Error fetching subCount:`, error);
@@ -72,7 +103,6 @@ export default function ClubProfileScreen() {
         axios.get(`${BASE_URL}/api/posts/${postId}/likes/count`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
- 
         axios.get(`${BASE_URL}/api/comments/post/${postId}/count`, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -104,6 +134,79 @@ export default function ClubProfileScreen() {
     }
   };
 
+  const fetchComments = async (postId) => {
+    setLoadingComments(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/comments/post/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setComments(res.data || []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+
+    try {
+      const commentData = {
+        postId: selectedPostId,
+        content: commentText.trim(),
+        parentCommentId: replyingTo?.id || null,
+        userId: clubDetails.userId
+      };
+
+      await axios.post(`${BASE_URL}/api/comments`, commentData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setCommentText('');
+      setReplyingTo(null);
+      await fetchComments(selectedPostId);
+      
+      // Update comment count
+      const updatedStats = await fetchPostStats(selectedPostId);
+      setPostStats(prev => ({
+        ...prev,
+        [selectedPostId]: updatedStats
+      }));
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const handleCommentPress = (postId) => {
+    setSelectedPostId(postId);
+    setShowComments(true);
+    fetchComments(postId);
+  };
+
+  const handleLikeToggle = async (postId) => {
+  const isLiked = likedPosts[postId];
+  try {
+    if (isLiked) {
+      await axios.delete(`${BASE_URL}/api/posts/${postId}/like`, {
+        params: { userId: clubDetails.userId },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } else {
+      await axios.post(`${BASE_URL}/api/posts/${postId}/like`, null, {
+        params: { userId: clubDetails.userId },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }
+    setLikedPosts(prev => ({ ...prev, [postId]: !isLiked }));
+    const updatedStats = await fetchPostStats(postId);
+    setPostStats(prev => ({ ...prev, [postId]: updatedStats }));
+  } catch (err) {
+    console.error('Error toggling like:', err);
+  }
+};
+
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
@@ -113,7 +216,6 @@ export default function ClubProfileScreen() {
       const postsData = res.data || [];
       setPosts(postsData);
       
-      // Fetch stats for all posts
       if (postsData.length > 0) {
         await fetchAllPostStats(postsData);
       }
@@ -157,7 +259,7 @@ export default function ClubProfileScreen() {
 
   useEffect(() => {
     if (selectedTab === 'posts') fetchPosts();
-    else fetchEvents();
+    else if (selectedTab === 'events') fetchEvents();
   }, [selectedTab]);
 
   useEffect(() => {
@@ -166,6 +268,24 @@ export default function ClubProfileScreen() {
       fetchSubCount();
     }
   }, [clubDetails]);
+  useEffect(() => {
+  const fetchLikedPosts = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/posts/likedByUser/${clubDetails.userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const likedIds = res.data;
+      const likedMap = {};
+      likedIds.forEach(id => likedMap[id] = true);
+      setLikedPosts(likedMap);
+    } catch (err) {
+      console.error('Error fetching liked posts:', err);
+    }
+  };
+
+  if (clubDetails?.userId) fetchLikedPosts();
+}, [clubDetails]);
+
 
   const currentData = selectedTab === 'posts' ? posts : events;
 
@@ -174,25 +294,140 @@ export default function ClubProfileScreen() {
     setShowDetailView(true);
   };
 
+  const renderComment = ({ item, depth = 0 }) => (
+    <View style={[styles.commentItem, { marginLeft: depth * 32 }]}>
+      <Image
+        source={{ uri: `${BASE_URL}${item.profilePictureUrl}` }}
+        style={styles.commentAvatar}
+      />
+      <View style={styles.commentContent}>
+        <Text style={styles.commentUsername}>{item.userName || 'User'}</Text>
+        <Text style={styles.commentText}>{item.content}</Text>
+        <View style={styles.commentActions}>
+          <Text style={styles.commentTime}>{formatTimeAgo(item.createdAt)}</Text>
+          <TouchableOpacity onPress={() => setReplyingTo(item)}>
+            <Text style={styles.replyButton}>Reply</Text>
+          </TouchableOpacity>
+        </View>
+        {item.replies && item.replies.length > 0 && (
+          <FlatList
+            data={item.replies}
+            renderItem={({ item: reply }) => renderComment({ item: reply, depth: depth + 1 })}
+            keyExtractor={(reply) => reply.id.toString()}
+          />
+        )}
+      </View>
+    </View>
+  );
+
+  const CommentsModal = () => (
+    <Modal
+      visible={showComments}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => {
+        setShowComments(false);
+        setReplyingTo(null);
+        setCommentText('');
+      }}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.commentsModalContainer}
+      >
+        <View style={styles.commentsModalBackdrop} />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.commentsModalContent}>
+          <View style={styles.commentsHeader}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.commentsTitle}>Comments</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowComments(false);
+                setReplyingTo(null);
+                setCommentText('');
+              }}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {loadingComments ? (
+            <View style={styles.commentsLoading}>
+              <ActivityIndicator size="large" color="#00d4ff" />
+            </View>
+          ) : comments.length === 0 ? (
+            <View style={styles.noComments}>
+              <Ionicons name="chatbubble-outline" size={48} color="#666" />
+              <Text style={styles.noCommentsText}>No comments yet</Text>
+              <Text style={styles.noCommentsSubtext}>Be the first to comment!</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={comments}
+              renderItem={renderComment}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.commentsList}
+            />
+          )}
+
+          <View style={styles.commentInputContainer}>
+            {replyingTo && (
+              <View style={styles.replyingToContainer}>
+                <Text style={styles.replyingToText}>
+                  Replying to {replyingTo.userName}
+                </Text>
+                <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                  <Ionicons name="close-circle" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Add a comment..."
+                placeholderTextColor="#666"
+                value={commentText}
+                onChangeText={setCommentText}
+                multiline
+              />
+              <TouchableOpacity
+                onPress={handleAddComment}
+                disabled={!commentText.trim()}
+                style={[
+                  styles.sendButton,
+                  !commentText.trim() && styles.sendButtonDisabled
+                ]}
+              >
+                <Ionicons
+                  name="send"
+                  size={20}
+                  color={commentText.trim() ? '#00d4ff' : '#666'}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+
   const renderGridItem = ({ item, index }) => {
-    // Handle different image path structures for posts vs events
     const imageUri = selectedTab === 'posts' 
       ? (item.mediaPaths?.[0] ? `${BASE_URL}/${item.mediaPaths[0]}` : null)
       : (item.imagePath ? `${BASE_URL}/${item.imagePath}` : null);
     
+    const itemHeight = selectedTab === 'events' ? imageHeight : imageSize;
+    
     return (
       <TouchableOpacity 
-        style={styles.gridItem} 
+        style={[styles.gridItem, { height: itemHeight }]} 
         onPress={() => handleItemPress(index)}
       >
         {imageUri ? (
-          <Image
-            source={{ uri: imageUri }}
-            style={styles.gridImage}
-            onError={(error) => {
-              console.log('Image load error:', error.nativeEvent.error);
-            }}
-          />
+          <Image source={{ uri: imageUri }} style={styles.gridImage} />
         ) : (
           <View style={styles.placeholderContainer}>
             <Ionicons 
@@ -202,7 +437,6 @@ export default function ClubProfileScreen() {
             />
           </View>
         )}
-        {/* Multiple images indicator - only for posts */}
         {selectedTab === 'posts' && item.mediaPaths && item.mediaPaths.length > 1 && (
           <View style={styles.multipleImagesIndicator}>
             <Ionicons name="copy-outline" size={16} color="#fff" />
@@ -212,20 +446,16 @@ export default function ClubProfileScreen() {
     );
   };
 
-  const renderDetailItem = ({ item, index }) => {
+  const renderDetailItem = ({ item }) => {
     const isEvent = selectedTab === 'events';
     const images = isEvent ? (item.imagePath ? [item.imagePath] : []) : (item.mediaPaths || []);
-    
-    // Get post stats for this item (only for posts)
     const stats = !isEvent ? postStats[item.id] || { likeCount: 0, commentCount: 0 } : null;
     
-    // Format target years and faculties for events
     const formatTargets = (targets) => {
       if (!targets || targets.length === 0) return '';
       return targets.map(target => target.replace('_', ' ')).join(', ');
     };
 
-    // Format date for events
     const formatEventDate = (dateString) => {
       if (!dateString) return '';
       const date = new Date(dateString);
@@ -240,11 +470,12 @@ export default function ClubProfileScreen() {
     return (
       <View style={styles.detailCard}>
         <View style={styles.detailHeader}>
+          
           <Image
             source={{ 
-                uri: clubDetails.imagePath?.startsWith('uploads/') 
-                ? `${BASE_URL}/${clubDetails.imagePath}` 
-                : `${BASE_URL}/uploads/${clubDetails.imagePath}` 
+                uri: clubDetails.profilePicture?.startsWith('/uploads/') 
+                ? `${BASE_URL}${clubDetails.profilePicture}` 
+                : `${BASE_URL}/uploads/${clubDetails.profilePicture}` 
             }}
             style={styles.detailAvatar}
           />
@@ -254,10 +485,9 @@ export default function ClubProfileScreen() {
           </View>
         </View>
         
-        {/* Event venue header - only for events */}
         {isEvent && (
           <View style={styles.eventVenue}>
-            <Ionicons name="location-outline" size={16} color="#0095f6" />
+            <Ionicons name="location-outline" size={16} color="#00d4ff" />
             <Text style={styles.venueText}>
               {item.venueName || item.venue || 'Venue TBA'}
             </Text>
@@ -276,9 +506,6 @@ export default function ClubProfileScreen() {
                 key={idx}
                 source={{ uri: `${BASE_URL}/${path}` }}
                 style={styles.detailImage}
-                onError={(error) => {
-                  console.log('Detail image load error:', error.nativeEvent.error);
-                }}
               />
             ))
           ) : (
@@ -288,9 +515,6 @@ export default function ClubProfileScreen() {
                 size={64} 
                 color="#666" 
               />
-              <Text style={styles.placeholderText}>
-                {isEvent ? 'Event image' : 'No image available'}
-              </Text>
             </View>
           )}
         </ScrollView>
@@ -303,14 +527,24 @@ export default function ClubProfileScreen() {
           </View>
         )}
 
-        {/* Post Actions and Stats - only for posts */}
         {!isEvent && (
           <View style={styles.postActions}>
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="heart-outline" size={24} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
+              <TouchableOpacity 
+  style={styles.actionButton}
+  onPress={() => handleLikeToggle(item.id)}
+>
+  <Ionicons 
+    name={likedPosts[item.id] ? "heart" : "heart-outline"} 
+    size={26} 
+    color={likedPosts[item.id] ? "#ff4444" : "#fff"} 
+  />
+</TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleCommentPress(item.id)}
+              >
                 <Ionicons name="chatbubble-outline" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton}>
@@ -320,18 +554,17 @@ export default function ClubProfileScreen() {
           </View>
         )}
 
-        {/* Like and Comment Count - only for posts */}
         {!isEvent && stats && (
           <View style={styles.postStats}>
             {stats.likeCount > 0 && (
               <Text style={styles.likesText}>
-                {stats.likeCount === 1 ? '1 like' : `${stats.likeCount} likes`}
+                {stats.likeCount.toLocaleString()} {stats.likeCount === 1 ? 'like' : 'likes'}
               </Text>
             )}
             {stats.commentCount > 0 && (
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => handleCommentPress(item.id)}>
                 <Text style={styles.commentsText}>
-                  View {stats.commentCount === 1 ? '1 comment' : `all ${stats.commentCount} comments`}
+                  View all {stats.commentCount.toLocaleString()} {stats.commentCount === 1 ? 'comment' : 'comments'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -339,28 +572,27 @@ export default function ClubProfileScreen() {
         )}
         
         <View style={styles.detailContent}>
-          {/* Event name - highlighted for events */}
           {isEvent && (
             <Text style={styles.eventName}>{item.name}</Text>
           )}
           
           <Text style={styles.detailDescription}>
+            <Text style={styles.descriptionUsername}>{clubDetails?.clubName || "Club"} </Text>
             {item.description || 'No description'}
           </Text>
           
-          {/* Event specific details */}
           {isEvent && (
             <View style={styles.eventDetails}>
               {item.date && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="calendar" size={16} color="#0095f6" />
+                  <Ionicons name="calendar" size={16} color="#00d4ff" />
                   <Text style={styles.eventDetailText}>{formatEventDate(item.date)}</Text>
                 </View>
               )}
               
               {item.targetYears && item.targetYears.length > 0 && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="school" size={16} color="#0095f6" />
+                  <Ionicons name="school" size={16} color="#00d4ff" />
                   <Text style={styles.eventDetailText}>
                     Target Years: {formatTargets(item.targetYears)}
                   </Text>
@@ -369,7 +601,7 @@ export default function ClubProfileScreen() {
               
               {item.targetFaculties && item.targetFaculties.length > 0 && (
                 <View style={styles.eventDetailRow}>
-                  <Ionicons name="business" size={16} color="#0095f6" />
+                  <Ionicons name="business" size={16} color="#00d4ff" />
                   <Text style={styles.eventDetailText}>
                     Faculties: {formatTargets(item.targetFaculties)}
                   </Text>
@@ -382,121 +614,228 @@ export default function ClubProfileScreen() {
     );
   };
 
+  const renderSettingsContent = () => (
+    <View style={styles.settingsContent}>
+      <TouchableOpacity 
+        style={styles.menuItem}
+        onPress={() => router.push('/club/profile/profileEdit')}
+      >
+        <View style={styles.menuIconContainer}>
+          <Ionicons name="create-outline" size={22} color="#00d4ff" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={styles.menuTitle}>Edit Profile</Text>
+          <Text style={styles.menuSubtitle}>Customize your club information</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.menuItem}>
+        <View style={styles.menuIconContainer}>
+          <Ionicons name="notifications-outline" size={22} color="#00d4ff" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={styles.menuTitle}>Notifications</Text>
+          <Text style={styles.menuSubtitle}>Manage notification preferences</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.menuItem}>
+        <View style={styles.menuIconContainer}>
+          <Ionicons name="help-circle-outline" size={22} color="#00d4ff" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={styles.menuTitle}>Help & Support</Text>
+          <Text style={styles.menuSubtitle}>Get assistance and FAQs</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleLogout} style={[styles.menuItem, styles.logoutItem]}>
+        <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
+          <Ionicons name="log-out-outline" size={22} color="#ff4444" />
+        </View>
+        <View style={styles.menuTextContainer}>
+          <Text style={[styles.menuTitle, styles.logoutText]}>Logout</Text>
+          <Text style={styles.menuSubtitle}>Sign out of your account</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderContent = () => {
+    if (selectedTab === 'settings') {
+      return renderSettingsContent();
+    }
+
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00d4ff" />
+        </View>
+      );
+    }
+
+    if (currentData.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconContainer}>
+            <Ionicons 
+              name={selectedTab === 'posts' ? "images-outline" : "calendar-outline"} 
+              size={48} 
+              color="#00d4ff" 
+            />
+          </View>
+          <Text style={styles.emptyText}>No {selectedTab} yet</Text>
+          <Text style={styles.emptySubtext}>
+            {selectedTab === 'posts' 
+              ? 'Share your first post with subscribers' 
+              : 'Create your first event'}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={currentData}
+        renderItem={renderGridItem}
+        numColumns={3}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.gridContainer}
+        scrollEnabled={false}
+        ItemSeparatorComponent={() => <View style={{ height: 3 }} />}
+        columnWrapperStyle={styles.columnWrapper}
+      />
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                   <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-                
-                  <Text style={styles.title}>Profile</Text>
-                
-                <View style={styles.headerActions}>
-                </View>
-              </View>
-      {/* Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.profileTopRow}>
-          {clubDetails?.profilePicture ? (
-              <Image
-          source={{
-              uri: `${BASE_URL}${clubDetails.profilePicture}`
-          }}
-          style={styles.avatar}
-          />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Club Profile</Text>
+        <View style={styles.headerActions} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.coverSection}>
+          {clubDetails?.coverPicture ? (
+            <Image
+              source={{ uri: `${BASE_URL}${clubDetails.coverPicture}` }}
+              style={styles.coverImage}
+            />
           ) : (
-              <Image
-              source={require('../../../assets/images/default-profile.png')} // fallback image
-              style={styles.avatar}
-              />
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="image-outline" size={48} color="#666" />
+            </View>
           )}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{postCount}</Text>
-              <Text style={styles.statLabel}>posts</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{eventCount}</Text>
-              <Text style={styles.statLabel}>events</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{subCount || 0}</Text>
-              <Text style={styles.statLabel}>subscribers</Text>
+          
+          <View style={styles.floatingAvatarContainer}>
+            <View style={styles.avatarGlow}>
+              {clubDetails?.profilePicture ? (
+                <Image
+                  source={{ uri: `${BASE_URL}${clubDetails.profilePicture}` }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <Image
+                  source={require('../../../assets/images/default-profile.png')}
+                  style={styles.avatar}
+                />
+              )}
             </View>
           </View>
         </View>
-        
-        <View style={styles.profileInfo}>
+
+        <View style={styles.infoSection}>
           <Text style={styles.clubName}>{clubDetails?.clubName || "Club Name"}</Text>
           <Text style={styles.clubBio}>
-            {clubDetails?.bio || "Club Name"}
+            {clubDetails?.bio || "Welcome to our club"}
           </Text>
-        </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.followButton}>
-            <Text style={styles.followButtonText} onPress={() => router.push('/club/profile/profileEdit')}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.messageButton}>
-            <Text style={styles.messageButtonText}>Share</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Tab Switcher */}
-      <View style={styles.tabSwitcher}>
-        <TouchableOpacity
-          onPress={() => setSelectedTab('posts')}
-          style={[styles.tabButton, selectedTab === 'posts' && styles.activeTab]}
-        >
-          <Ionicons 
-            name="grid-outline" 
-            size={24} 
-            color={selectedTab === 'posts' ? '#fff' : '#666'} 
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setSelectedTab('events')}
-          style={[styles.tabButton, selectedTab === 'events' && styles.activeTab]}
-        >
-          <Ionicons 
-            name="calendar-outline" 
-            size={24} 
-            color={selectedTab === 'events' ? '#fff' : '#666'} 
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Grid Content */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : (
-        <FlatList
-          data={currentData}
-          renderItem={renderGridItem}
-          numColumns={3}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.gridContainer}
-          ItemSeparatorComponent={() => <View style={{ height: 2 }} />}
-          columnWrapperStyle={{ justifyContent: 'space-between' }}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Feather 
-                name={selectedTab === 'posts' ? "image" : "calendar"} 
-                size={48} 
-                color="#666" 
-              />
-              <Text style={styles.emptyText}>
-                No {selectedTab} yet
-              </Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="images-outline" size={20} color="#00d4ff" />
+              </View>
+              <Text style={styles.statNumber}>{postCount}</Text>
+              <Text style={styles.statLabel}>Posts</Text>
             </View>
-          )}
-        />
-      )}
+            
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="calendar-outline" size={20} color="#00d4ff" />
+              </View>
+              <Text style={styles.statNumber}>{eventCount}</Text>
+              <Text style={styles.statLabel}>Events</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="people-outline" size={20} color="#00d4ff" />
+              </View>
+              <Text style={styles.statNumber}>{subCount || 0}</Text>
+              <Text style={styles.statLabel}>Subscribers</Text>
+            </View>
+          </View>
+        </View>
 
-      {/* Detail View Modal */}
+        <View style={styles.tabContainer}>
+          <View style={styles.tabSwitcher}>
+            <TouchableOpacity
+              onPress={() => setSelectedTab('posts')}
+              style={[styles.tabButton, selectedTab === 'posts' && styles.activeTab]}
+            >
+              <Ionicons 
+                name="grid-outline" 
+                size={20} 
+                color={selectedTab === 'posts' ? '#00d4ff' : '#666'} 
+              />
+              <Text style={[styles.tabText, selectedTab === 'posts' && styles.activeTabText]}>
+                Posts
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => setSelectedTab('events')}
+              style={[styles.tabButton, selectedTab === 'events' && styles.activeTab]}
+            >
+              <Ionicons 
+                name="calendar-outline" 
+                size={20} 
+                color={selectedTab === 'events' ? '#00d4ff' : '#666'} 
+              />
+              <Text style={[styles.tabText, selectedTab === 'events' && styles.activeTabText]}>
+                Events
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setSelectedTab('settings')}
+              style={[styles.tabButton, selectedTab === 'settings' && styles.activeTab]}
+            >
+              <Ionicons 
+                name="settings-outline" 
+                size={20} 
+                color={selectedTab === 'settings' ? '#00d4ff' : '#666'} 
+              />
+              <Text style={[styles.tabText, selectedTab === 'settings' && styles.activeTabText]}>
+                Settings
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.contentWrapper}>
+          {renderContent()}
+        </View>
+      </ScrollView>
+
       <Modal
         visible={showDetailView}
         animationType="slide"
@@ -522,14 +861,17 @@ export default function ClubProfileScreen() {
             keyExtractor={(item) => item.id.toString()}
             initialScrollIndex={selectedIndex}
             getItemLayout={(data, index) => ({
-              length: screenWidth + 200, // Approximate item height
-              offset: (screenWidth + 200) * index,
+              length: screenHeight * 0.9,
+              offset: screenHeight * 0.9 * index,
               index,
             })}
             showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#1a1d1f' }} />}
           />
         </SafeAreaView>
       </Modal>
+
+      <CommentsModal />
     </SafeAreaView>
   );
 }
@@ -537,7 +879,7 @@ export default function ClubProfileScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#151718' 
+    backgroundColor: '#0a0b0c' 
   },
   header: {
     flexDirection: 'row',
@@ -545,156 +887,207 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1F1F1F',
     backgroundColor: '#151718',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
   },
   title: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  searchContainer: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  searchInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: 'white',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+  backButton: {
+    padding: 4,
   },
   headerActions: {
-    flexDirection: 'row',
-    gap: 12,
+    width: 28,
   },
-  addButton: {
-    width: 44,
-    height: 24,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-  },
-  searchButton: {
-    width: 44,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchButtonActive: {
-    backgroundColor: '#007aff',
-    borderColor: '#007aff',
-  },
-  
-  // Profile Header
-  profileHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  coverSection: {
+    position: 'relative',
+    height: 200,
     backgroundColor: '#151718',
   },
-  profileTopRow: {
-    flexDirection: 'row',
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1a1d1f',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  floatingAvatarContainer: {
+    position: 'absolute',
+    bottom: -50,
+    left: 20,
+    zIndex: 10,
+  },
+  avatarGlow: {
+    padding: 4,
+    borderRadius: 60,
+    backgroundColor: '#0a0b0c',
+    borderWidth: 4,
+    borderColor: '#00d4ff',
+    shadowColor: '#00d4ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 15,
   },
   avatar: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    marginRight: 24,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
-  statsContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    color: '#fff',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  profileInfo: {
-    marginBottom: 16,
+  infoSection: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#151718',
   },
   clubName: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   clubBio: {
-    color: '#fff',
+    color: '#aaa',
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
+    marginBottom: 24,
   },
-  actionButtons: {
+  statsGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
-  followButton: {
+  statCard: {
     flex: 1,
-    backgroundColor: '#0095f6',
-    paddingVertical: 8,
-    borderRadius: 4,
+    backgroundColor: '#1a1d1f',
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#252829',
   },
-  followButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  messageButton: {
-    flex: 1,
-    backgroundColor: '#262626',
-    paddingVertical: 8,
-    borderRadius: 4,
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  messageButtonText: {
+  statNumber: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 2,
   },
-
-  // Tab Switcher
+  statLabel: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tabContainer: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: '#151718',
+  },
   tabSwitcher: {
     flexDirection: 'row',
-    borderTopWidth: 0.5,
-    borderTopColor: '#262626',
+    backgroundColor: '#1a1d1f',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
   },
   tabButton: {
     flex: 1,
+    flexDirection: 'row',
     paddingVertical: 12,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
+    borderRadius: 10,
+    gap: 6,
   },
   activeTab: {
-    borderBottomColor: '#fff',
+    backgroundColor: 'rgba(0, 212, 255, 0.15)',
   },
-
-  // Grid
+  tabText: {
+    color: '#666',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#00d4ff',
+  },
+  contentWrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  settingsContent: {
+    gap: 12,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1d1f',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#252829',
+  },
+  menuIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  menuTextContainer: {
+    flex: 1,
+  },
+  menuTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  menuSubtitle: {
+    color: '#888',
+    fontSize: 13,
+  },
+  logoutItem: {
+    borderColor: 'rgba(255, 68, 68, 0.2)',
+  },
+  logoutIconContainer: {
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+  },
+  logoutText: {
+    color: '#ff4444',
+  },
   gridContainer: {
-    paddingTop: 2,
+    paddingBottom: 20,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    gap: GRID_SPACING,
   },
   gridItem: {
     width: imageSize,
-    height: imageSize,
     position: 'relative',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1a1d1f',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   gridImage: {
     width: '100%',
@@ -703,7 +1096,7 @@ const styles = StyleSheet.create({
   placeholderContainer: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1a1d1f',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -711,28 +1104,43 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 6,
+    padding: 4,
   },
   loadingContainer: {
-    flex: 1,
+    paddingVertical: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyContainer: {
-    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 60,
+    marginBottom: 16,
   },
   emptyText: {
-    color: '#666',
+    color: '#fff',
     fontSize: 18,
-    marginTop: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
-
-  // Detail View
+  emptySubtext: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
   detailContainer: {
     flex: 1,
-    backgroundColor: '#151718',
+    backgroundColor: '#0a0b0c',
   },
   detailTopBar: {
     flexDirection: 'row',
@@ -740,11 +1148,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#262626',
-  },
-  backButton: {
-    padding: 4,
+    backgroundColor: '#151718',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
   },
   detailTitle: {
     color: '#fff',
@@ -752,32 +1158,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   detailCard: {
-    marginBottom: 24,
+    backgroundColor: '#0a0b0c',
+    paddingBottom: 24,
   },
   detailHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   detailAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#00d4ff',
   },
   detailHeaderText: {
     flex: 1,
   },
   detailClubName: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   detailTime: {
     color: '#999',
     fontSize: 12,
-    marginTop: 1,
+    marginTop: 2,
   },
   imageContainer: {
     height: screenWidth,
@@ -789,7 +1198,7 @@ const styles = StyleSheet.create({
   detailPlaceholder: {
     width: screenWidth,
     height: screenWidth,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1a1d1f',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -801,75 +1210,76 @@ const styles = StyleSheet.create({
   imageIndicators: {
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
     gap: 6,
   },
   indicator: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#0095f6',
+    backgroundColor: '#00d4ff',
   },
-  
-  // Post Actions and Stats (new styles)
   postActions: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 18,
   },
   actionButton: {
     padding: 4,
   },
   postStats: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
+    gap: 6,
   },
   likesText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: 4,
   },
   commentsText: {
     color: '#999',
     fontSize: 14,
   },
-  
   detailContent: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
   },
   eventName: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   detailDescription: {
     color: '#fff',
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
+  },
+  descriptionUsername: {
+    fontWeight: '600',
+    color: '#fff',
   },
   eventVenue: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#111',
-    marginBottom: 2,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    marginBottom: 0,
   },
   venueText: {
-    color: '#0095f6',
+    color: '#00d4ff',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 6,
   },
   eventDetails: {
-    marginTop: 12,
-    gap: 8,
+    marginTop: 16,
+    gap: 10,
   },
   eventDetailRow: {
     flexDirection: 'row',
@@ -880,5 +1290,161 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 8,
     flex: 1,
+  },
+  
+  // Comments Modal Styles
+  commentsModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  commentsModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  commentsModalContent: {
+    backgroundColor: '#151718',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: screenHeight * 0.85,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
+  },
+  commentsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
+  },
+  modalHandle: {
+    position: 'absolute',
+    top: 8,
+    left: '50%',
+    marginLeft: -20,
+    width: 40,
+    height: 4,
+    backgroundColor: '#666',
+    borderRadius: 2,
+  },
+  commentsTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  commentsLoading: {
+    paddingVertical: 80,
+    alignItems: 'center',
+  },
+  noComments: {
+    paddingVertical: 80,
+    alignItems: 'center',
+  },
+  noCommentsText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  noCommentsSubtext: {
+    color: '#888',
+    fontSize: 14,
+  },
+  commentsList: {
+    paddingVertical: 16,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  commentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+    backgroundColor: '#1a1d1f',
+  },
+  commentContent: {
+    flex: 1,
+  },
+  commentUsername: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  commentText: {
+    color: '#ddd',
+    fontSize: 14,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  commentTime: {
+    color: '#888',
+    fontSize: 12,
+  },
+  replyButton: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  commentInputContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#1a1d1f',
+    backgroundColor: '#151718',
+  },
+  replyingToContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1d1f',
+  },
+  replyingToText: {
+    color: '#00d4ff',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: '#1a1d1f',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 14,
+    maxHeight: 100,
+  },
+  sendButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
 });

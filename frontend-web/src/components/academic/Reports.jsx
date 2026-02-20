@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import AcademicSidebar from './AcademicSidebar'; 
+import AcademicSidebar from './AcademicSidebar';
 import Header from './components/Header';
 import UserProfile from './UserProfile';
 
@@ -102,30 +102,27 @@ export default function Reports() {
 
   // Notifications data (same as Dashboard)
   const notifications = [
-    { 
-      id: 1, 
-      title: "New Report Generated", 
-      message: "Monthly performance report has been generated successfully", 
-      time: "5 min ago", 
+    {
+      id: 1,
+      title: "New Report Generated",
+      message: "Monthly performance report has been generated successfully",
+      time: "5 min ago",
       type: "report",
-      unread: true 
+      unread: true
     },
-    { 
-      id: 2, 
-      title: "Document Approval", 
-      message: "Budget report requires your approval", 
-      time: "30 min ago", 
+    {
+      id: 2,
+      title: "Document Approval",
+      message: "Budget report requires your approval",
+      time: "30 min ago",
       type: "approval",
-      unread: true 
+      unread: true
     }
   ];
 
   return (
     <div className={`dashboard-container ${showNotifications ? 'blur-background' : ''} ${showProfile ? 'blur-background' : ''}`}>
-      <Header 
-        onNotificationToggle={handleNotificationToggle}
-        onProfileToggle={handleProfileToggle}
-      />
+      <Header onProfileClick={() => setShowProfile(true)} />
 
       {showNotifications && (
         <>
@@ -141,11 +138,10 @@ export default function Reports() {
               {notifications.map((notification) => (
                 <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
                   <div className="notification-icon">
-                    <i className={`fa ${
-                      notification.type === 'report' ? 'fa-file' :
-                      notification.type === 'approval' ? 'fa-check-circle' :
-                      'fa-cog'
-                    }`}></i>
+                    <i className={`fa ${notification.type === 'report' ? 'fa-file' :
+                        notification.type === 'approval' ? 'fa-check-circle' :
+                          'fa-cog'
+                      }`}></i>
                   </div>
                   <div className="notification-content">
                     <h4>{notification.title}</h4>
@@ -169,9 +165,9 @@ export default function Reports() {
       )}
 
       <div className="dashboard-content">
-        <AcademicSidebar 
-          activeItem={activeNavItem} 
-          onNavigate={handleNavigation} 
+        <AcademicSidebar
+          activeItem={activeNavItem}
+          onNavigate={handleNavigation}
           isDarkMode={true}
         />
 
@@ -211,7 +207,7 @@ export default function Reports() {
                 Upload
               </button>
             </div>
-            
+
             <div className="documents-table">
               <div className="table-header">
                 <div className="table-cell table-cell-docname">Document Name</div>

@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import reidConnect.backend.dto.PagedPostResponseDto;
 import reidConnect.backend.dto.PostCreateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.PostUpdateDto;
@@ -14,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Set;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
@@ -98,6 +100,23 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
+    //Get active posts
+    @GetMapping("/active")
+    public ResponseEntity<?> getActivePosts(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit) {
+        
+        // If pagination parameters are provided, use paginated endpoint
+        if (page != null && limit != null) {
+            PagedPostResponseDto pagedPosts = postService.getActivePostsPaginated(page, limit);
+            return ResponseEntity.ok(pagedPosts);
+        }
+        
+        // Otherwise, return all active posts (backward compatibility)
+        List<PostResponseDto> posts = postService.getActivePosts();
+        return ResponseEntity.ok(posts);
+    }
+
     //Get a post by ID
     @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/{id}")
@@ -173,6 +192,13 @@ public class PostController {
         postService.unlikePost(postId, userId);
         return ResponseEntity.ok("Post unliked successfully.");
     }
+
+    @GetMapping("/likedByUser/{userId}")
+    public ResponseEntity<Set<Long>> getLikedPostIds(@PathVariable Long userId) {
+        Set<Long> likedPostIds = postService.getLikedPostIdsByUser(userId);
+        return ResponseEntity.ok(likedPostIds);
+    }
+
 
     // Get total like count for a post
     @GetMapping("/{postId}/likes/count")

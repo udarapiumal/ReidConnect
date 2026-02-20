@@ -16,6 +16,7 @@ import reidConnect.backend.entity.*;
 import reidConnect.backend.enums.BookingStatus;
 import reidConnect.backend.mapper.VenueBookingMapper;
 import reidConnect.backend.repository.*;
+import reidConnect.backend.service.NotificationService;
 import reidConnect.backend.service.VenueBookingService;
 import reidConnect.backend.util.KeyUtil;
 
@@ -33,6 +34,7 @@ public class VenueBookingServiceImpl implements VenueBookingService {
     private final UserRepository userRepository;
     private final KeyStoreRepository keyStoreRepository;
     private final VenueBookingMapper bookingMapper;
+    private final NotificationService notificationService;
 
     // Inject Spring's pre-configured ObjectMapper
     private final ObjectMapper objectMapper;
@@ -88,6 +90,23 @@ public class VenueBookingServiceImpl implements VenueBookingService {
             booking.setStatus(BookingStatus.PENDING);
 
             VenueBooking savedBooking = bookingRepository.save(booking);
+
+            // Send club notification (confirmation)
+            notificationService.createIndividual(
+                    String.valueOf(clubUserId),
+                    "Venue Booking Submitted",
+                    "Your booking request for " + booking.getVenue().getName() + " on " + dto.getDate() + " has been submitted for approval.",
+                    "BOOKING_CREATED"
+            );
+
+            // Optionally notify SAR or relevant role
+            notificationService.createForRole(
+                    "SAR",
+                    null,
+                    "New Venue Booking Awaiting Approval",
+                    "A booking from " + dto.getClubName() + " is awaiting your review.",
+                    "BOOKING_PENDING"
+            );
 
             // Map to DTO
             return bookingMapper.toDto(savedBooking);
@@ -152,6 +171,26 @@ public class VenueBookingServiceImpl implements VenueBookingService {
             booking.setStatus(BookingStatus.SAR_SIGNED);
 
             VenueBooking savedBooking = bookingRepository.save(booking);
+
+            // ✅ Notify the club user (booking recommended)
+            String clubUserId = String.valueOf(booking.getClub().getId()); // since club is a User
+            notificationService.createIndividual(
+                    clubUserId,
+                    "Booking Recommended",
+                    "Your booking for " + booking.getVenue().getName() + " on " + booking.getDate()
+                            + " has been recommended by S.A.R.",
+                    "BOOKING_RECOMMENDED"
+            );
+
+            // ✅ Notify next role (Union / Final Approver)
+            notificationService.createForRole(
+                    "DEPUTY_DIRECTOR",
+                    null,
+                    "Booking Awaiting Final Approval",
+                    "A booking from user ID " + clubUserId + " is ready for final approval.",
+                    "BOOKING_AWAITING_FINAL"
+            );
+
 
             return bookingMapper.toDto(savedBooking);
 
@@ -236,6 +275,25 @@ public class VenueBookingServiceImpl implements VenueBookingService {
             booking.setStatus(BookingStatus.APPROVED);
 
             VenueBooking savedBooking = bookingRepository.save(booking);
+
+            // ✅ Notify club user (final approval)
+            String clubUserId = String.valueOf(booking.getClub().getId());
+            notificationService.createIndividual(
+                    clubUserId,
+                    "Booking Approved",
+                    "Your booking for " + booking.getVenue().getName() + " on " + booking.getDate()
+                            + " has been fully approved.",
+                    "BOOKING_APPROVED"
+            );
+
+            // ✅ Optional: notify SAR for audit
+            notificationService.createForRole(
+                    "UNION",
+                    null,
+                    "Booking Finalized",
+                    "The booking for " + booking.getVenue().getName() + " (User ID: " + clubUserId + ") has been approved.",
+                    "BOOKING_FINALIZED"
+            );
 
             return bookingMapper.toDto(savedBooking);
 

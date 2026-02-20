@@ -2,9 +2,7 @@ package reidConnect.backend.dto.timetable;
 
 import lombok.Getter;
 import lombok.Setter;
-import reidConnect.backend.enums.Academic_Admin_Rank;
 import reidConnect.backend.enums.TimeTableApprovalDecision;
-import reidConnect.backend.enums.TimeTableType;
 
 import java.time.LocalDateTime;
 
@@ -12,7 +10,8 @@ import java.time.LocalDateTime;
 @Setter
 public class TimeTableApprovalResponseDto {
     private Long id;
-    private TimeTableType type;
+    private Long academicCalendarId;
+    private String academicCalendarTitle;
     private Long reviewerId;
     private String reviewerName;
     private String reviewerRole;

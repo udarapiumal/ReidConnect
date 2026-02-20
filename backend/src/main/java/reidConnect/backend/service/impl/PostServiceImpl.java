@@ -1,8 +1,13 @@
 package reidConnect.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reidConnect.backend.dto.PagedPostResponseDto;
 import reidConnect.backend.dto.PostCreateDto;
 import reidConnect.backend.dto.PostResponseDto;
 import reidConnect.backend.dto.PostUpdateDto;
@@ -12,6 +17,8 @@ import reidConnect.backend.repository.*;
 import reidConnect.backend.service.PostService;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +62,19 @@ public class PostServiceImpl implements PostService {
                 })
                 .toList();
     }
+
+    //get post that is active
+    @Override
+    public List<PostResponseDto> getActivePosts() {
+        List<Post> posts = postRepository.findAllByActiveTrue();
+        return posts.stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+    }
+
     @Override
     @Transactional
     public void deactivatePost(Long postId) {
@@ -140,6 +160,15 @@ public class PostServiceImpl implements PostService {
         return PostLikeRepository.countByPost(post);
     }
 
+    @Override
+    public Set<Long> getLikedPostIdsByUser(Long userId) {
+        User user = UserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return PostLikeRepository.findAllByUser(user).stream()
+                .map(like -> like.getPost().getId())
+                .collect(Collectors.toSet());
+    }
 
 
     @Override
@@ -207,6 +236,32 @@ public class PostServiceImpl implements PostService {
     public long getRecentPostCountByClubId(Long clubId, int days) {
         java.time.LocalDateTime fromDate = java.time.LocalDateTime.now().minusDays(days);
         return postRepository.countByClub_IdAndCreatedAtAfter(clubId, fromDate);
+    }
+
+    @Override
+    public PagedPostResponseDto getActivePostsPaginated(int page, int limit) {
+        // Create pageable with sorting by createdAt descending
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        // Fetch paginated posts
+        Page<Post> postPage = postRepository.findAllByActiveTrue(pageable);
+        
+        // Map to response DTOs
+        List<PostResponseDto> postResponseDtos = postPage.getContent().stream()
+                .map(post -> {
+                    List<Post_Media> mediaList = postMediaRepository.findAllByPost_Id(post.getId());
+                    return PostMapper.mapToPostResponseDto(post, mediaList);
+                })
+                .toList();
+        
+        // Build paginated response
+        return new PagedPostResponseDto(
+                postResponseDtos,
+                postPage.getNumber() + 1, // Convert 0-based to 1-based
+                postPage.getTotalPages(),
+                postPage.getTotalElements(),
+                postPage.getSize()
+        );
     }
 
 

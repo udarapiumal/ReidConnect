@@ -38,34 +38,34 @@ const HallBookings = () => {
   }, []);
 
   useEffect(() => {
-  setPage(0);
-  fetchBookings(0, false);
-}, [statusFilter]);
+    setPage(0);
+    fetchBookings(0, false);
+  }, [statusFilter]);
 
 
 
   const fetchBookings = async (pageNum = 0, append = false) => {
-  try {
-    let url = `/api/bookings/paged?page=${pageNum}&size=${pageSize}`;
-    if (statusFilter !== 'ALL') {
-      url = `/api/bookings/paged/filter?status=${statusFilter}&page=${pageNum}&size=${pageSize}`;
+    try {
+      let url = `/api/bookings/paged?page=${pageNum}&size=${pageSize}`;
+      if (statusFilter !== 'ALL') {
+        url = `/api/bookings/paged/filter?status=${statusFilter}&page=${pageNum}&size=${pageSize}`;
+      }
+
+      const res = await axios.get(url);
+      const { content, last } = res.data;
+
+      if (append) {
+        setBookings((prev) => [...prev, ...content]);
+      } else {
+        setBookings(content);
+      }
+
+      setHasMore(!last);
+      setPage(pageNum);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
     }
-
-    const res = await axios.get(url);
-    const { content, last } = res.data;
-
-    if (append) {
-      setBookings((prev) => [...prev, ...content]);
-    } else {
-      setBookings(content);
-    }
-
-    setHasMore(!last);
-    setPage(pageNum);
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-  }
-};
+  };
 
 
 
@@ -123,10 +123,10 @@ const HallBookings = () => {
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    
+
     const printContent = printRef.current.innerHTML;
     const printWindow = window.open('', '', 'width=900,height=700');
-    
+
     printWindow.document.write(`
       <html>
         <head>
@@ -362,11 +362,10 @@ const HallBookings = () => {
               <tr style="height: 60px;">
                 <td>${selectedItem.venueName}</td>
                 <td>${selectedItem.date}</td>
-                <td>${
-  selectedItem.slotIds && selectedItem.slotIds.length > 0 
-    ? `${selectedItem.slotIds[0].startTime.slice(0,5)} - ${selectedItem.slotIds[selectedItem.slotIds.length - 1].endTime.slice(0,5)}` 
-    : ''
-}</td>
+                <td>${selectedItem.slotIds && selectedItem.slotIds.length > 0
+        ? `${selectedItem.slotIds[0].startTime.slice(0, 5)} - ${selectedItem.slotIds[selectedItem.slotIds.length - 1].endTime.slice(0, 5)}`
+        : ''
+      }</td>
 
                 <td>${selectedItem.reason}</td>
                 <td style="border-right: none; width: 25%;">YES</td>
@@ -391,9 +390,9 @@ const HallBookings = () => {
               <div class="applicant-right">
                 <div>Signature of the Applicant: 
                   <span class="signature-line">
-                    ${selectedItem.clubSignatureImage ? 
-                      `<img src="data:image/png;base64,${selectedItem.clubSignatureImage}" alt="Club Signature" class="signature-inline">` : 
-                      ''}
+                    ${selectedItem.clubSignatureImage ?
+        `<img src="data:image/png;base64,${selectedItem.clubSignatureImage}" alt="Club Signature" class="signature-inline">` :
+        ''}
                   </span>
                 </div>
                 <div style="margin-top: 30px;">Date: <span class="signature-line">${new Date().toLocaleDateString()}</span></div>
@@ -410,9 +409,9 @@ const HallBookings = () => {
                       <strong>1. I recommend the above request</strong>
                       <div style="margin-top: 20px;">
                         <span class="signature-line" style="width: 200px;">
-                          ${selectedItem.sarSignatureImage ? 
-                            `<img src="data:image/png;base64,${selectedItem.sarSignatureImage}" alt="SAR Signature" class="signature-inline">` : 
-                            ''}
+                          ${selectedItem.sarSignatureImage ?
+        `<img src="data:image/png;base64,${selectedItem.sarSignatureImage}" alt="SAR Signature" class="signature-inline">` :
+        ''}
                         </span><br>
                         <small>AR SA / Coordinator Advisor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: .................</small>
                       </div>
@@ -436,9 +435,9 @@ const HallBookings = () => {
                     <div><strong>2. Approval is granted</strong></div>
                     <div style="margin-top: 15px;">
                       <span class="signature-line" style="width: 200px;">
-                        ${selectedItem.finalSignatureImage ? 
-                          `<img src="data:image/png;base64,${selectedItem.finalSignatureImage}" alt="Final Signature" class="signature-inline">` : 
-                          ''}
+                        ${selectedItem.finalSignatureImage ?
+        `<img src="data:image/png;base64,${selectedItem.finalSignatureImage}" alt="Final Signature" class="signature-inline">` :
+        ''}
                       </span><br>
                       <small>Director/Deputy Director/Head &nbsp;&nbsp; Date: .................</small>
                     </div>
@@ -463,7 +462,8 @@ const HallBookings = () => {
         </body>
       </html>
     `);
-    printWindow.document.close();};
+    printWindow.document.close();
+  };
 
   const handleNavigation = (itemId) => {
     setActiveNavItem(itemId);
@@ -500,9 +500,9 @@ const HallBookings = () => {
       <div className="card-body">
         <p><strong>Hall: </strong> {booking.venueName}</p>
         <p><strong>Date: </strong> {booking.date}</p>
-        <p><strong>Time: </strong> 
-          {booking.slotIds && booking.slotIds.length > 0 && 
-            `${booking.slotIds[0].startTime.slice(0,5)} - ${booking.slotIds[booking.slotIds.length - 1].endTime.slice(0,5)}`
+        <p><strong>Time: </strong>
+          {booking.slotIds && booking.slotIds.length > 0 &&
+            `${booking.slotIds[0].startTime.slice(0, 5)} - ${booking.slotIds[booking.slotIds.length - 1].endTime.slice(0, 5)}`
           }
         </p>
 
@@ -548,69 +548,66 @@ const HallBookings = () => {
 
   return (
     <div className={`dashboard-container`}>
-      <Header 
-        onNotificationToggle={handleNotificationToggle}
-        onProfileToggle={handleProfileToggle}
-      />
+      <Header onProfileClick={() => setShowProfile(true)} />
       <div className="dashboard-content">
-        <AcademicSidebar 
-          activeItem={activeNavItem} 
-          onNavigate={handleNavigation} 
+        <AcademicSidebar
+          activeItem={activeNavItem}
+          onNavigate={handleNavigation}
           isDarkMode={true}
         />
         <main className="dashboard-main">
           <h2 className="page-title">Hall Bookings</h2>
 
           <div className="controls">
-  <div className="search-bar">
-    <i className="fas fa-search"></i>
-    <input
-      type="text"
-      placeholder="Search bookings..."
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-    />
-  </div>
+            <div className="search-bar">
+              <i className="fas fa-search"></i>
+              <input
+                type="text"
+                placeholder="Search bookings..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-  <div className="filter-dropdown">
-    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-      <option value="ALL">All</option>
-      <option value="PENDING">Pending</option>
-      <option value="SAR_SIGNED">SAR Signed</option>
-      <option value="APPROVED">Approved</option>
-      <option value="REJECTED">Rejected</option>
-    </select>
-  </div>
-</div>
+            <div className="filter-dropdown">
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="ALL">All</option>
+                <option value="PENDING">Pending</option>
+                <option value="SAR_SIGNED">SAR Signed</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+          </div>
 
 
           <div className="cards-container">
-          {filteredBookings.map(renderBookingCard)}
+            {filteredBookings.map(renderBookingCard)}
 
-          {hasMore && (
-            <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            </div>
-          )}
-        </div>
-        <div className="pagination-controls">
-  <button
-    disabled={page === 0}
-    onClick={() => fetchBookings(page - 1, false)}
-    className={`pagination-btn ${page === 0 ? 'disabled' : ''}`}
-  >
-    ← Previous
-  </button>
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              </div>
+            )}
+          </div>
+          <div className="pagination-controls">
+            <button
+              disabled={page === 0}
+              onClick={() => fetchBookings(page - 1, false)}
+              className={`pagination-btn ${page === 0 ? 'disabled' : ''}`}
+            >
+              ← Previous
+            </button>
 
-  <span className="page-indicator">Page {page + 1}</span>
+            <span className="page-indicator">Page {page + 1}</span>
 
-  <button
-    disabled={!hasMore}
-    onClick={() => fetchBookings(page + 1, false)}
-    className={`pagination-btn ${!hasMore ? 'disabled' : ''}`}
-  >
-    Next →
-  </button>
-</div>
+            <button
+              disabled={!hasMore}
+              onClick={() => fetchBookings(page + 1, false)}
+              className={`pagination-btn ${!hasMore ? 'disabled' : ''}`}
+            >
+              Next →
+            </button>
+          </div>
 
 
 
@@ -633,9 +630,9 @@ const HallBookings = () => {
                 <p><strong>Booking ID:</strong> #{selectedItem.bookingId}</p>
                 <p><strong>Hall:</strong> {selectedItem.venueId}</p>
                 <p><strong>Date:</strong> {selectedItem.date}</p>
-                <p><strong>Time: </strong> 
-                  {selectedItem.slotIds && selectedItem.slotIds.length > 0 && 
-                    `${selectedItem.slotIds[0].startTime.slice(0,5)} - ${selectedItem.slotIds[selectedItem.slotIds.length - 1].endTime.slice(0,5)}`
+                <p><strong>Time: </strong>
+                  {selectedItem.slotIds && selectedItem.slotIds.length > 0 &&
+                    `${selectedItem.slotIds[0].startTime.slice(0, 5)} - ${selectedItem.slotIds[selectedItem.slotIds.length - 1].endTime.slice(0, 5)}`
                   }
                 </p>
                 <p><strong>Booked by:</strong> {selectedItem.clubName}</p>
@@ -1469,6 +1466,10 @@ const HallBookings = () => {
           }
         }
       `}</style>
+
+      {showProfile && (
+        <UserProfile onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 };

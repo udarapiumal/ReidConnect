@@ -15,10 +15,11 @@ const CURRENT_PERIOD_URL = 'http://localhost:8080/api/academic-calendar/current'
 export default function Dashboard() {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
-    const [currentMonth, setCurrentMonth] = useState("July 2025");
+    const [currentMonth, setCurrentMonth] = useState("");
     const [activeNavItem, setActiveNavItem] = useState("Dashboard");
     const [showProfile, setShowProfile] = useState(false);
-    
+
+
     const [currentPeriod, setCurrentPeriod] = useState(null);
     const [lectureCount, setLectureCount] = useState(0);
     const [bookingCount, setBookingCount] = useState(0);
@@ -26,19 +27,32 @@ export default function Dashboard() {
 
     const fetchCountsAndPeriod = async () => {
         try {
-        const [timetableRes, bookingRes, eventRes, periodRes] = await Promise.all([
-            axios.get(TIMETABLE_COUNT_URL),
-            axios.get(BOOKING_COUNT_URL),
-            axios.get(EVENT_COUNT_URL),
-            axios.get(CURRENT_PERIOD_URL),
-        ]);
+            // Fetch period first to get the ID
+            const periodRes = await axios.get(CURRENT_PERIOD_URL);
+            const currentPeriodData = periodRes.data;
+            setCurrentPeriod(currentPeriodData);
 
-        setLectureCount(timetableRes.data || 0);
-        setBookingCount(bookingRes.data || 0);
-        setEventCount(eventRes.data || 0);
-        setCurrentPeriod(periodRes.data);
+            // Prepare promises for other counts
+            const promises = [
+                axios.get(BOOKING_COUNT_URL),
+                axios.get(EVENT_COUNT_URL)
+            ];
+
+            // Only fetch timetable count if we have a valid period ID
+            if (currentPeriodData && currentPeriodData.id) {
+                promises.push(axios.get(`${TIMETABLE_COUNT_URL}?academicCalendarId=${currentPeriodData.id}`));
+            } else {
+                promises.push(Promise.resolve({ data: 0 })); // Default to 0 if no period
+            }
+
+            const [bookingRes, eventRes, timetableRes] = await Promise.all(promises);
+
+            setBookingCount(bookingRes.data || 0);
+            setEventCount(eventRes.data || 0);
+            setLectureCount(timetableRes.data || 0);
+
         } catch (error) {
-        console.error("Failed to fetch counts:", error);
+            console.error("Failed to fetch counts:", error);
         }
     };
 
@@ -52,12 +66,12 @@ export default function Dashboard() {
 
     return (
         <div className={`dashboard-container`}>
-            <Header />
+            <Header onProfileClick={() => setShowProfile(true)} />
 
             <div className="dashboard-content">
-                <AcademicSidebar 
-                    activeItem={activeNavItem} 
-                    onNavigate={handleNavigation} 
+                <AcademicSidebar
+                    activeItem={activeNavItem}
+                    onNavigate={handleNavigation}
                     isDarkMode={true}
                 />
 
@@ -67,7 +81,7 @@ export default function Dashboard() {
                     <div className="dashboard-stats">
                         <div className="stat-card">
                             <i className="fas fa-graduation-cap"></i>
-                            <h3>{lectureCount}+</h3>
+                            <h3>{lectureCount}</h3>
                             <p>Sessions Today</p>
                         </div>
                         <div className="stat-card">
@@ -99,6 +113,10 @@ export default function Dashboard() {
                     </div>
                 </main>
             </div>
+
+            {showProfile && (
+                <UserProfile onClose={() => setShowProfile(false)} />
+            )}
 
             {/* Embedded CSS */}
             <style>{`

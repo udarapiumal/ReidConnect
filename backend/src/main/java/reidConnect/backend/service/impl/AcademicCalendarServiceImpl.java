@@ -1,11 +1,13 @@
 package reidConnect.backend.service.impl;
 
 import reidConnect.backend.enums.PeriodType;
+import reidConnect.backend.enums.TimetableStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reidConnect.backend.dto.AcademicCalendarDto;
 import reidConnect.backend.entity.AcademicCalendar;
-import reidConnect.backend.repository.AcademicCalendarRepository;
+import reidConnect.backend.repository.*;
 import reidConnect.backend.service.AcademicCalendarService;
 
 import java.time.LocalDate;
@@ -17,6 +19,10 @@ import java.util.stream.Collectors;
 public class AcademicCalendarServiceImpl implements AcademicCalendarService {
 
     private final AcademicCalendarRepository repository;
+    private final OccupiedStaffRepository occupiedStaffRepository;
+    private final OccupiedVenueRepository occupiedVenueRepository;
+    private final TimeTableApprovalRepository timeTableApprovalRepository;
+    private final TimeTableRepository timeTableRepository;
 
     private AcademicCalendarDto mapToDto(AcademicCalendar p) {
         return AcademicCalendarDto.builder()
@@ -64,6 +70,32 @@ public class AcademicCalendarServiceImpl implements AcademicCalendarService {
     @Override
     public void deletePeriod(Long id) {
         repository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteEntireTimetable(Long academicCalendarId) {
+        AcademicCalendar calendar = repository.findById(academicCalendarId)
+                .orElseThrow(() -> new RuntimeException("Academic Calendar not found"));
+
+        // 1. Delete occupied staff records (references both academic_calendar and
+        // time_table)
+        occupiedStaffRepository.deleteByAcademicCalendar_Id(academicCalendarId);
+
+        // 2. Delete occupied venue records (references both academic_calendar and
+        // time_table)
+        occupiedVenueRepository.deleteByAcademicCalendar_Id(academicCalendarId);
+
+        // 3. Delete approval history
+        timeTableApprovalRepository.deleteByAcademicCalendar_Id(academicCalendarId);
+
+        // 4. Delete timetable entries (cascades to time_table_slots via
+        // CascadeType.ALL)
+        timeTableRepository.deleteByAcademicCalendar_Id(academicCalendarId);
+
+        // 5. Reset status back to DRAFT
+        calendar.setTimetableStatus(TimetableStatus.DRAFT);
+        repository.save(calendar);
     }
 
     @Override

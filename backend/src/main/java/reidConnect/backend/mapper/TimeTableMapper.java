@@ -35,8 +35,7 @@ public class TimeTableMapper {
                 entity.getSlots().stream()
                         .map(timeTableSlot -> timeTableSlot.getSlot().getId())
                         .sorted()
-                        .collect(Collectors.toList())
-        );
+                        .collect(Collectors.toList()));
 
         // Lecturer information
         String lecturerCodes = course.getLecturers().stream()
@@ -51,6 +50,12 @@ public class TimeTableMapper {
 
         // Venue based on course type
         dto.setVenue(getVenueForCourseType(course, entity.getCourseType()));
+
+        // Academic Calendar
+        if (entity.getAcademicCalendar() != null) {
+            dto.setAcademicCalendarId(entity.getAcademicCalendar().getId());
+            dto.setAcademicCalendarTitle(entity.getAcademicCalendar().getTitle());
+        }
 
         return dto;
     }

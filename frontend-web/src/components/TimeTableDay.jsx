@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, MapPin, User, BookOpen, Monitor } from 'lucide-react';
 import reidConnectLogo from "../images/ucsc-logo.png";
+import axiosInstance from '../api/axiosInstance';
 
 // Time slot configuration
 const timeSlotConfig = {
@@ -32,11 +33,11 @@ const timeSlotConfig = {
 
   convertSlotsToTime(slotIds) {
     if (!slotIds || slotIds.length === 0) return null;
-    
+
     const sortedSlots = [...slotIds].sort((a, b) => a - b);
     const startTime = this.slotToTime[sortedSlots[0]]?.start;
     const endTime = this.slotToTime[sortedSlots[sortedSlots.length - 1]]?.end;
-    
+
     return { startTime, endTime };
   }
 };
@@ -57,46 +58,63 @@ export default function TimetableView() {
   useEffect(() => {
     const fetchLectures = async () => {
       try {
-        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-        const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}`);
-        if (!response.ok) throw new Error('Failed to fetch lectures');
-        const data = await response.json();
-        setLectures(data);
+        // 1. Fetch current academic calendar first
+        const calendarRes = await axiosInstance.get('/api/academic-calendar/current');
+        const period = calendarRes.data;
+
+        // 2. Only fetch timetable if we have a valid semester
+        if (period && period.periodType === 'SEMESTER') {
+          // 3. Check if timetable is APPROVED before showing to public
+          const statusRes = await axiosInstance.get(`/api/timetable-approvals/status/${period.id}`);
+          const statusData = statusRes.data;
+
+          if (statusData.status === 'APPROVED') {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            const response = await axiosInstance.get(`/api/timetable/byDay?day=${today}&academicCalendarId=${period.id}`);
+            setLectures(response.data);
+          } else {
+            console.log("Timetable not yet approved, skipping public fetch.");
+            setLectures([]);
+          }
+        } else {
+          console.log("No active semester, skipping timetable fetch.");
+          setLectures([]);
+        }
       } catch (err) {
         console.error(err);
       }
     };
-    
+
     fetchLectures();
   }, []);
-  
+
   useEffect(() => {
-  const topScrollbar = document.querySelector(".top-scrollbar");
-  const bottomScrollbar = document.querySelector(".time-table-day-main-content");
-  const tableWrapper = document.querySelector(".time-table-day-timetable-wrapper");
-  const scrollbarContent = document.querySelector(".scrollbar-content");
+    const topScrollbar = document.querySelector(".top-scrollbar");
+    const bottomScrollbar = document.querySelector(".time-table-day-main-content");
+    const tableWrapper = document.querySelector(".time-table-day-timetable-wrapper");
+    const scrollbarContent = document.querySelector(".scrollbar-content");
 
-  if (topScrollbar && bottomScrollbar && tableWrapper && scrollbarContent) {
-    // Match width
-    scrollbarContent.style.width = tableWrapper.scrollWidth + "px";
+    if (topScrollbar && bottomScrollbar && tableWrapper && scrollbarContent) {
+      // Match width
+      scrollbarContent.style.width = tableWrapper.scrollWidth + "px";
 
-    // Show top scrollbar only if horizontal scroll exists
-    if (tableWrapper.scrollWidth > bottomScrollbar.clientWidth) {
-      topScrollbar.style.display = "block";
-    } else {
-      topScrollbar.style.display = "none";
+      // Show top scrollbar only if horizontal scroll exists
+      if (tableWrapper.scrollWidth > bottomScrollbar.clientWidth) {
+        topScrollbar.style.display = "block";
+      } else {
+        topScrollbar.style.display = "none";
+      }
+
+      // Sync scrolls
+      const syncScroll = (source, target) => {
+        source.addEventListener("scroll", () => {
+          target.scrollLeft = source.scrollLeft;
+        });
+      };
+      syncScroll(topScrollbar, bottomScrollbar);
+      syncScroll(bottomScrollbar, topScrollbar);
     }
-
-    // Sync scrolls
-    const syncScroll = (source, target) => {
-      source.addEventListener("scroll", () => {
-        target.scrollLeft = source.scrollLeft;
-      });
-    };
-    syncScroll(topScrollbar, bottomScrollbar);
-    syncScroll(bottomScrollbar, topScrollbar);
-  }
-}, []);
+  }, []);
 
 
   // Generate time slots from 8:00 AM to 7:00 PM
@@ -121,10 +139,10 @@ export default function TimetableView() {
   const getLectureStatus = (slotIds) => {
     const now = new Date();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-    
+
     const timeRange = timeSlotConfig.convertSlotsToTime(slotIds);
     if (!timeRange) return 'upcoming';
-    
+
     if (currentTimeStr >= timeRange.startTime && currentTimeStr <= timeRange.endTime) {
       return 'active';
     } else if (currentTimeStr > timeRange.endTime) {
@@ -137,7 +155,7 @@ export default function TimetableView() {
   const getCurrentTimeSlot = () => {
     const now = new Date();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-    
+
     for (let i = 1; i <= 22; i++) {
       const slot = timeSlotConfig.slotToTime[i];
       if (slot && currentTimeStr >= slot.start && currentTimeStr < slot.end) {
@@ -151,9 +169,9 @@ export default function TimetableView() {
 
   // Get lectures for a specific time slot, year, and degree
   const getLecturesForCell = (slotId, year, degree) => {
-    return lectures.filter(lecture => 
-      lecture.slotIds.includes(slotId) && 
-      lecture.year === year && 
+    return lectures.filter(lecture =>
+      lecture.slotIds.includes(slotId) &&
+      lecture.year === year &&
       lecture.degree === degree
     );
   };
@@ -163,7 +181,7 @@ export default function TimetableView() {
     const sortedSlots = [...lecture.slotIds].sort((a, b) => a - b);
     const startSlot = sortedSlots[0];
     const endSlot = sortedSlots[sortedSlots.length - 1];
-    
+
     if (currentSlotId === startSlot) {
       return endSlot - startSlot + 1;
     }
@@ -195,26 +213,26 @@ export default function TimetableView() {
             {lecture.courseCode}
           </div>
           <div className={`time-table-day-course-type-badge time-table-day-${lecture.courseType.toLowerCase()}`}>
-            <TypeIcon size={10} />
+            <TypeIcon size={12} />
             {lecture.courseType.substring(0, 3)}
           </div>
         </div>
-        
+
         <div className="time-table-day-course-name">
           {lecture.courseName}
         </div>
-        
+
         <div className="time-table-day-lecture-details">
           <div className="time-table-day-detail-item">
-            <Clock size={10} />
+            <Clock size={12} />
             <span>{formatTimeRange(lecture.slotIds)}</span>
           </div>
           <div className="time-table-day-detail-item">
-            <User size={10} />
+            <User size={12} />
             <span>{lecture.lecturerNames}</span>
           </div>
           <div className="time-table-day-detail-item">
-            <MapPin size={10} />
+            <MapPin size={12} />
             <span>{lecture.venue}</span>
           </div>
         </div>
@@ -252,10 +270,10 @@ export default function TimetableView() {
 
         /* Timetable Header - adjusted for dashboard */
         .time-table-day-timetable-header {
-          padding: 20px 0;
+          padding: 24px 0;
           background: transparent;
           backdrop-filter: none;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -263,6 +281,7 @@ export default function TimetableView() {
           z-index: 5;
           height: auto;
           flex-shrink: 0;
+          margin-bottom: 16px;
         }
 
         .time-table-day-timetable-header::before {
@@ -270,7 +289,7 @@ export default function TimetableView() {
         }
 
         .time-table-day-timetable-title {
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 700;
           color: #ffffff;
           margin: 0;
@@ -316,17 +335,16 @@ export default function TimetableView() {
         .time-table-day-main-content::-webkit-scrollbar-track {
           background: #222;
         }
-        ckground: #222;
-        }
 
         .time-table-day-session-count {
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.7);
+          font-size: 15px;
+          color: rgba(255, 255, 255, 0.85);
           font-weight: 600;
-          padding: 8px 16px;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 10px 20px;
+          background: rgba(255, 255, 255, 0.06);
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          letter-spacing: 0.02em;
         }
 
         /* Main Content - adjusted for dashboard */
@@ -342,7 +360,7 @@ export default function TimetableView() {
                 }
 
                 .time-table-day-timetable-wrapper {
-                  width: max-content; /* ✅ expand to fit entire table */
+                  width: max-content;
           min-width: 100%;
           margin: 0;
           background: linear-gradient(145deg, rgba(42, 42, 42, 0.8), rgba(37, 37, 37, 0.9));
@@ -351,6 +369,7 @@ export default function TimetableView() {
             0 1px 0 rgba(255, 255, 255, 0.05) inset;
           overflow: visible;
           backdrop-filter: blur(8px);
+          border-radius: 12px;
                 }
 
                 /* Table Styles */
@@ -364,39 +383,44 @@ export default function TimetableView() {
 
         /* Table Headers */
         .time-table-day-time-header {
-          background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.9));
+          background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.95));
           color: #ffffff;
-          padding: 16px 8px;
+          padding: 18px 12px;
           text-align: center;
           font-weight: 700;
-          font-size: 14px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          width: 100px;
-          min-width: 100px;
+          font-size: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          width: 110px;
+          min-width: 110px;
           vertical-align: middle;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         .time-table-day-year-header {
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
           color: #ffffff;
-          padding: 16px 12px;
+          padding: 18px 16px;
           text-align: center;
-          font-weight: 700;
-          font-size: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          width: 300px;
-          min-width: 300px;
+          font-weight: 800;
+          font-size: 17px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          width: 400px;
+          min-width: 400px;
+          letter-spacing: -0.01em;
         }
 
         .time-table-day-degree-header {
-          padding: 12px 8px;
+          padding: 14px 10px;
           text-align: center;
           font-weight: 700;
-          font-size: 12px;
+          font-size: 14px;
           color: #ffffff;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          width: 150px;
-          min-width: 150px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          width: 200px;
+          min-width: 200px;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
         }
 
         .time-table-day-degree-header.time-table-day-cs {
@@ -409,8 +433,8 @@ export default function TimetableView() {
 
         /* Table Body */
         .time-table-day-time-row {
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          height: 80px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          height: 100px;
         }
 
         .time-table-day-time-row:hover {
@@ -421,28 +445,28 @@ export default function TimetableView() {
         .time-table-day-time-slothome2 {
           background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(71, 85, 105, 0.8));
           border: 1px solid rgba(255, 255, 255, 0.15);
-          padding: 20px;
+          padding: 12px;
           text-align: center;
-          width: 100px;
-          min-width: 100px;
+          width: 110px;
+          min-width: 110px;
           position: relative;
           vertical-align: middle;
-          height: 80px;
+          height: 110px;
         }
 
         .time-table-day-time-display {
           font-weight: 700;
-          font-size: 14px;
+          font-size: 16px;
           color: #ffffff;
-          line-height: 1.2;
-          margin-bottom: 2px;
+          line-height: 1.3;
+          margin-bottom: 4px;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .time-table-day-time-end {
-          font-size: 10px;
-          color: rgba(255, 255, 255, 0.8);
-          opacity: 1;
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.7);
+          font-weight: 500;
           text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
         }
 
@@ -457,13 +481,13 @@ export default function TimetableView() {
         /* Lecture Slots */
         .time-table-day-lecture-slot {
           background: linear-gradient(135deg, rgba(35, 35, 35, 0.6), rgba(45, 45, 45, 0.4));
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          padding: 4px;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          padding: 6px;
           vertical-align: top;
-          width: 150px;
-          min-width: 150px;
+          width: 200px;
+          min-width: 200px;
           position: relative;
-          height: 80px;
+          height: 110px;
         }
 
         .time-table-day-lecture-slot:hover {
@@ -474,42 +498,41 @@ export default function TimetableView() {
         .time-table-day-lecture-cell {
           width: 100%;
           height: 100%;
-          padding: 8px;
-          border-radius: 8px;
-          transition: all 0.3s ease;
+          padding: 10px 12px;
+          border-radius: 10px;
+          transition: all 0.2s ease;
           cursor: pointer;
           display: flex;
           flex-direction: column;
           gap: 4px;
-          background: linear-gradient(145deg, rgba(45, 45, 45, 0.9), rgba(55, 55, 55, 0.8));
+          background: linear-gradient(145deg, rgba(50, 50, 55, 0.95), rgba(60, 60, 65, 0.9));
           border: 2px solid transparent;
           position: relative;
           box-sizing: border-box;
         }
 
         .time-table-day-lecture-cell.time-table-day-active {
-          background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(34, 197, 94, 0.15));
-          border-color: rgba(16, 185, 129, 0.6);
+          background: linear-gradient(145deg, rgba(16, 185, 129, 0.25), rgba(34, 197, 94, 0.2));
+          border-color: rgba(16, 185, 129, 0.7);
           box-shadow: 
             0 0 0 1px rgba(16, 185, 129, 0.3),
-            0 4px 16px rgba(16, 185, 129, 0.2);
-          animation: time-table-day-pulse 2s infinite;
+            0 4px 20px rgba(16, 185, 129, 0.25);
+          animation: time-table-day-pulse 2.5s infinite;
         }
 
         .time-table-day-lecture-cell.time-table-day-upcoming {
-          background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.15));
-          border-color: rgba(245, 158, 11, 0.5);
+          background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.15));
+          border-color: rgba(59, 130, 246, 0.5);
         }
 
         .time-table-day-lecture-cell.time-table-day-completed {
-          background: linear-gradient(145deg, rgba(100, 116, 139, 0.15), rgba(148, 163, 184, 0.1));
-          border-color: rgba(100, 116, 139, 0.3);
-          opacity: 0.7;
+          background: linear-gradient(145deg, rgba(50, 50, 55, 0.95), rgba(60, 60, 65, 0.9));
+          border-color: rgba(100, 116, 139, 0.4);
         }
 
         .time-table-day-lecture-cell:hover {
-          transform: translateY(-1px) scale(1.02);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+          filter: brightness(1.15);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         }
 
         /* Lecture Cell Content */
@@ -517,12 +540,12 @@ export default function TimetableView() {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 4px;
-          gap: 4px;
+          margin-bottom: 3px;
+          gap: 6px;
         }
 
         .time-table-day-course-code {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 800;
           color: #ffffff;
           letter-spacing: -0.2px;
@@ -534,15 +557,15 @@ export default function TimetableView() {
         }
 
         .time-table-day-course-type-badge {
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 8px;
+          padding: 3px 8px;
+          border-radius: 5px;
+          font-size: 10px;
           font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 2px;
+          gap: 3px;
           text-transform: uppercase;
-          letter-spacing: 0.2px;
+          letter-spacing: 0.3px;
           flex-shrink: 0;
         }
 
@@ -562,11 +585,11 @@ export default function TimetableView() {
         }
 
         .time-table-day-course-name {
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 10px;
+          color: rgba(255, 255, 255, 0.85);
+          font-size: 12px;
           font-weight: 500;
-          line-height: 1.2;
-          margin-bottom: 6px;
+          line-height: 1.3;
+          margin-bottom: 4px;
           overflow: hidden;
           text-overflow: ellipsis;
           display: -webkit-box;
@@ -578,44 +601,42 @@ export default function TimetableView() {
         .time-table-day-lecture-details {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 3px;
           margin-top: auto;
         }
 
         .time-table-day-detail-item {
           display: flex;
           align-items: center;
-          gap: 3px;
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 8px;
+          gap: 5px;
+          color: rgba(255, 255, 255, 0.75);
+          font-size: 11px;
           font-weight: 500;
         }
 
         .time-table-day-detail-item svg {
-          width: 8px;
-          height: 8px;
+          width: 12px;
+          height: 12px;
           flex-shrink: 0;
-          opacity: 0.8;
-          color: rgba(255, 255, 255, 0.8);
+          opacity: 0.9;
+          color: rgba(255, 255, 255, 0.85);
         }
 
         .time-table-day-detail-item span {
-          line-height: 1.1;
+          line-height: 1.2;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          color: rgba(255, 255, 255, 0.7);
+          color: rgba(255, 255, 255, 0.8);
         }
 
         /* Animations */
         @keyframes time-table-day-pulse {
           0%, 100% {
             opacity: 1;
-            transform: scale(1);
           }
           50% {
-            opacity: 0.9;
-            transform: scale(1.02);
+            opacity: 0.85;
           }
         }
 
@@ -629,7 +650,7 @@ export default function TimetableView() {
       {/* Timetable Header */}
       <div className="time-table-day-timetable-header">
         <h2 className="time-table-day-timetable-title">
-          Daily Timetable - {currentTime.toLocaleDateString('en-US', { 
+          Daily Timetable - {currentTime.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
