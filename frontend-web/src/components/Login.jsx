@@ -132,6 +132,9 @@ export default function Login() {
                             <p style={styles.redirectText}>
                                 Need access? <a href="/contact" style={styles.link}>Contact IT Support</a>
                             </p>
+                            <p style={styles.redirectText}>
+                               <a href="/forgetPassword" style={styles.link}> Forgot Password? </a>
+                            </p>
                         </div>
                     </div>
                     

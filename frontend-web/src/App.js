@@ -22,6 +22,8 @@ import ClubGallery from './components/union/ClubGallery';
 import ClubDetail from './components/union/ClubDetail';
 import EventsPage from './components/union/EventsPage';
 import AcademicCalendar from './components/academic/AcademicCalendar';
+import ForgetPassword from './components/ForgetPassword';
+import ResetPassword from './components/ResetPassword';
 
 const ELEMENTS = {
   TimeTable,
@@ -50,6 +52,8 @@ function AppWrapper() {
         {/* Login + Home */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path='/forgetPassword' element={<ForgetPassword/>}/>
+        <Route path="/reset-password" element={<ResetPassword/>} />
 
         {/* Academic */}
         {role?.startsWith("ACADEMIC") && (
