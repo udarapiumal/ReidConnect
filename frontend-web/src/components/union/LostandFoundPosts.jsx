@@ -9,55 +9,6 @@ function LostItemsGallery() {
   const [lostItems, setLostItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const styles = {
-    contentWrapper: {
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      marginLeft: '220px',
-      transition: 'margin-left 0.2s',
-    },
-    headerBar: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      width: '100%',
-      height: '70px',
-      backdropFilter: 'blur(20px)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '0 24px',
-      zIndex: 1200,
-      background: 'rgba(20, 20, 20, 0.95)',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-    },
-    headerLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0px',
-    },
-    reidConnect: {
-      fontWeight: 700,
-      fontSize: '22px',
-      color: 'white',
-      letterSpacing: '-0.02em',
-    },
-    highlight: {
-      fontWeight: 700,
-      fontSize: '22px',
-      color: '#FF0033',
-      background: 'linear-gradient(135deg, #FF0033 0%, #ea580c 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
-      marginLeft: '0px',
-    },
-  };
-
   const categories = [
     "All",
     "electronics",
@@ -78,7 +29,7 @@ function LostItemsGallery() {
         const response = await axios.get("http://localhost:8080/lost/lost-items", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         setLostItems(response.data);
         console.log(response.data);
       } catch (error) {
@@ -114,38 +65,39 @@ function LostItemsGallery() {
     navigate("/union/LostandFoundForm");
   };
   const handleDelete = async (id) => {
-  try {
-    const token = localStorage.getItem("token");
-    await axios.delete(`http://localhost:8080/lost/lost-items/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setLostItems(prevItems => prevItems.filter(item => item.id !== id));
-  } catch (error) {
-    console.error("Error deleting item:", error);
-    alert("Failed to delete the post");
-  }
-};
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:8080/lost/lost-items/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLostItems(prevItems => prevItems.filter(item => item.id !== id));
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Failed to delete the post");
+    }
+  };
 
-console.log(filteredItems)
   return (
     <div className="app-container">
-      <header style={styles.headerBar}>
-        <div style={styles.headerLeft}>
-          <span style={styles.reidConnect}>ReidConnect</span>
-          <span style={styles.highlight}>UnionAdmin</span>
+      <header className="lf-header-bar">
+        <div className="lf-header-left">
+          <span className="lf-title">ReidConnect</span>
+          <span className="lf-title lf-highlight">UnionAdmin</span>
         </div>
       </header>
       {/* Main Content */}
       <main className="main-content" style={{ marginTop: '70px' }}>
+        <h2 className="page-title">Lost & Found</h2>
+
         <header className="gallery-header">
           <div className="header-text">
-            <h1>Active Lost Item Posts</h1>
+            <h3 className="gallery-subtitle">Active Lost Item Posts</h3>
             <p>Browse through recent lost items reported by the community</p>
           </div>
 
           <div className="controls">
             <div className="search-bar">
-              <Search className="search-icon" size={20} />
+              <Search className="search-icon" size={18} />
               <input
                 type="text"
                 placeholder="Search lost items..."
@@ -183,7 +135,7 @@ console.log(filteredItems)
         ) : (
           <div className="gallery-grid">
             {filteredItems.map((item) => (
-              
+
               <div
                 key={item.id}
                 className="gallery-card"
@@ -200,28 +152,28 @@ console.log(filteredItems)
                 />
                 <div className="gallery-info">
                   <div className="gallery-actions">
-  <button
-    className="edit-btn"
-    onClick={(e) => {
-      e.stopPropagation(); // Prevent modal opening
-      navigate(`/union/LostandFoundForm?id=${item.id}`);
-    }}
-  >
-    Edit
-  </button>
+                    <button
+                      className="edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent modal opening
+                        navigate(`/union/LostandFoundForm?id=${item.id}`);
+                      }}
+                    >
+                      Edit
+                    </button>
 
-  <button
-    className="delete-btn"
-    onClick={(e) => {
-      e.stopPropagation();
-      if (window.confirm("Are you sure you want to delete this item?")) {
-        handleDelete(item.id);
-      }
-    }}
-  >
-    Delete
-  </button>
-</div>
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm("Are you sure you want to delete this item?")) {
+                          handleDelete(item.id);
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
 
                   <h3>{item.itemName}</h3>
                   <p className="gallery-category">{item.category}</p>
@@ -300,79 +252,136 @@ console.log(filteredItems)
         )}
       </main>
 
-      <style jsx>{`
-        /* Main content - Dark Theme */
+      <style>{`
+        /* Main content - Academic Dark Theme */
         .main-content {
           margin-left: 200px;
-          padding: 2rem;
+          padding: 40px;
           min-height: 100vh;
-          background-color: #1a1c1e;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-            Oxygen, Ubuntu, Cantarell, sans-serif;
+          background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           color: #ffffff;
+        }
+
+        .lf-header-bar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: 70px;
+          backdrop-filter: blur(20px);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 24px;
+          z-index: 1200;
+          background: rgba(20, 20, 20, 0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .lf-header-left {
+          display: flex;
+          align-items: center;
+          gap: 0;
+        }
+
+        .lf-title {
+          font-weight: 700;
+          font-size: 22px;
+          color: white;
+          letter-spacing: -0.02em;
+        }
+
+        .lf-highlight {
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .page-title {
+          font-size: 32px;
+          font-weight: 800;
+          margin-bottom: 32px;
+          letter-spacing: -0.03em;
+          background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         /* Gallery header */
         .gallery-header {
-          background: #151718;
-          border-radius: 8px;
-          padding: 2rem;
-          margin-bottom: 2rem;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          border: 1px solid #333;
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border-radius: 16px;
+          padding: 28px;
+          margin-bottom: 28px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .header-text h1 {
-          font-size: 2rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
+        .gallery-subtitle {
+          font-size: 18px;
+          font-weight: 700;
+          margin-bottom: 6px;
           color: #ffffff;
+          letter-spacing: -0.02em;
         }
 
         .header-text p {
-          color: #a1a1a1;
-          margin-bottom: 2rem;
+          color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 20px;
+          font-size: 14px;
         }
 
         .controls {
           display: flex;
-          gap: 1rem;
+          gap: 12px;
           align-items: center;
           flex-wrap: wrap;
         }
-          .gallery-actions {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 1rem 1rem;
-  gap: 0.5rem;
-}
 
-.edit-btn, .delete-btn {
-  flex: 1;
-  padding: 0.4rem;
-  border: none;
-  border-radius: 5px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
+        .gallery-actions {
+          display: flex;
+          justify-content: space-between;
+          padding: 0 0 10px 0;
+          gap: 8px;
+        }
 
-.edit-btn {
-  background-color: #3b82f6;
-  color: white;
-}
+        .edit-btn, .delete-btn {
+          flex: 1;
+          padding: 6px 12px;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
 
-.edit-btn:hover {
-  background-color: #2563eb;
-}
+        .edit-btn {
+          background: rgba(59, 130, 246, 0.15);
+          color: #60a5fa;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+        }
 
-.delete-btn {
-  background-color: #ef4444;
-  color: white;
-}
+        .edit-btn:hover {
+          background: rgba(59, 130, 246, 0.25);
+          transform: translateY(-1px);
+        }
 
-.delete-btn:hover {
-  background-color: #dc2626;
-}
+        .delete-btn {
+          background: rgba(239, 68, 68, 0.15);
+          color: #f87171;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .delete-btn:hover {
+          background: rgba(239, 68, 68, 0.25);
+          transform: translateY(-1px);
+        }
 
         .search-bar {
           position: relative;
@@ -382,100 +391,118 @@ console.log(filteredItems)
 
         .search-icon {
           position: absolute;
-          left: 1rem;
+          left: 16px;
           top: 50%;
           transform: translateY(-50%);
-          color: #a1a1a1;
+          color: rgba(255, 255, 255, 0.4);
           z-index: 2;
         }
 
         .search-input {
           width: 100%;
-          padding: 0.75rem 1rem 0.75rem 3rem;
-          border: 1px solid #333;
-          border-radius: 8px;
-          font-size: 0.95rem;
-          transition: border-color 0.2s ease;
-          background-color: #2a2a2a;
+          padding: 12px 16px 12px 44px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 400;
+          transition: all 0.3s ease;
+          background: rgba(255, 255, 255, 0.03);
           color: #ffffff;
+          outline: none;
+          backdrop-filter: blur(10px);
+          box-sizing: border-box;
+        }
+
+        .search-input::placeholder {
+          color: rgba(255, 255, 255, 0.4);
         }
 
         .search-input:focus {
-          outline: none;
-          border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(249, 115, 22, 0.3);
+          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
         }
 
         .category-filter {
-          padding: 0.75rem 1rem;
-          border: 1px solid #333;
-          border-radius: 8px;
-          background: #2a2a2a;
+          padding: 12px 16px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.03);
           color: #ffffff;
-          font-size: 0.95rem;
+          font-size: 15px;
           cursor: pointer;
-          transition: border-color 0.2s ease;
+          transition: all 0.3s ease;
+          outline: none;
+          backdrop-filter: blur(10px);
+        }
+
+        .category-filter option {
+          background: #1a1a1a;
+          color: #ffffff;
         }
 
         .category-filter:focus {
-          outline: none;
-          border-color: #ef4444;
+          border-color: rgba(249, 115, 22, 0.3);
+          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
         }
 
         .create-post-btn {
-          background: #ef4444;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
           color: white;
           border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 8px;
-          font-weight: 500;
+          padding: 12px 20px;
+          border-radius: 12px;
+          font-weight: 600;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          transition: all 0.2s ease;
+          gap: 8px;
+          transition: all 0.3s ease;
           white-space: nowrap;
-          font-size: 14px;
+          font-size: 15px;
+          box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
         }
 
         .create-post-btn:hover {
-          background: #dc2626;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
         }
 
         /* No results message */
         .no-results {
           text-align: center;
-          padding: 4rem 2rem;
-          background: #151718;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          border: 1px solid #333;
+          padding: 80px 20px;
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .no-results h3 {
-          font-size: 1.5rem;
-          margin-bottom: 0.5rem;
+          font-size: 20px;
+          font-weight: 700;
+          margin-bottom: 8px;
           color: #ffffff;
         }
 
         .no-results p {
-          color: #a1a1a1;
+          color: rgba(255, 255, 255, 0.5);
         }
 
         /* Gallery grid */
         .gallery-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-          gap: 1.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          gap: 20px;
         }
 
         .gallery-card {
-          background-color: #151718;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgb(0 0 0 / 0.25);
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border-radius: 16px;
+          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
           cursor: pointer;
-          transition: transform 0.2s ease;
-          border: 1px solid #333;
+          transition: all 0.3s ease;
+          border: 1px solid rgba(255, 255, 255, 0.08);
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -483,19 +510,20 @@ console.log(filteredItems)
 
         .gallery-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 6px 12px rgb(239 68 68 / 0.5);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+          border-color: rgba(255, 255, 255, 0.12);
         }
 
         .gallery-image {
           width: 100%;
-          height: 150px;
+          height: 160px;
           object-fit: cover;
-          border-bottom: 1px solid #333;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           flex-shrink: 0;
         }
 
         .gallery-info {
-          padding: 1rem;
+          padding: 16px;
           flex-grow: 1;
           display: flex;
           flex-direction: column;
@@ -504,17 +532,19 @@ console.log(filteredItems)
 
         .gallery-info h3 {
           color: #ffffff;
-          margin: 0 0 0.25rem;
-          font-size: 1.1rem;
+          margin: 0 0 8px;
+          font-size: 16px;
+          font-weight: 600;
+          letter-spacing: -0.01em;
         }
 
         .gallery-category {
-          background-color: #ef4444;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
           color: white;
-          padding: 0.25rem 0.75rem;
+          padding: 4px 12px;
           border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 500;
+          font-size: 12px;
+          font-weight: 600;
           width: fit-content;
           text-transform: capitalize;
         }
@@ -527,42 +557,69 @@ console.log(filteredItems)
           right: 0;
           bottom: 0;
           background-color: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(4px);
           display: flex;
           justify-content: center;
           align-items: center;
-          z-index: 1000;
+          z-index: 1300;
         }
 
         .modal-content {
-          background-color: #151718;
-          border-radius: 8px;
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border-radius: 16px;
           width: 90%;
           max-width: 800px;
           max-height: 90vh;
           overflow-y: auto;
           display: flex;
           flex-direction: column;
-          border: 1px solid #333;
+          border: 1px solid rgba(255, 255, 255, 0.1);
           position: relative;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
 
         .modal-close {
           position: absolute;
-          top: 1rem;
-          right: 1rem;
-          background: none;
-          border: none;
-          font-size: 1.5rem;
-          color: #a1a1a1;
+          top: 12px;
+          right: 12px;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-size: 20px;
+          color: rgba(255, 255, 255, 0.8);
           cursor: pointer;
           z-index: 10;
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(10px);
+        }
+
+        .modal-close:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
         }
 
         .modal-image {
           width: 100%;
           height: 300px;
           overflow: hidden;
-          background-color: #2a2a2a;
+          background-color: #1a1a1a;
         }
 
         .modal-image img {
@@ -572,67 +629,79 @@ console.log(filteredItems)
         }
 
         .modal-details {
-          padding: 1.5rem;
+          padding: 24px;
         }
 
         .modal-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 1rem;
+          margin-bottom: 16px;
         }
 
         .modal-header h2 {
           color: #ffffff;
-          font-size: 1.5rem;
+          font-size: 22px;
+          font-weight: 700;
           margin: 0;
+          letter-spacing: -0.02em;
         }
 
         .modal-category {
-          background-color: #ef4444;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
           color: white;
-          padding: 0.25rem 0.75rem;
+          padding: 4px 14px;
           border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 500;
+          font-size: 13px;
+          font-weight: 600;
           text-transform: capitalize;
         }
 
         .modal-description {
-          color: #e5e5e5;
-          margin-bottom: 1.5rem;
+          color: rgba(255, 255, 255, 0.7);
+          margin-bottom: 24px;
           line-height: 1.6;
+          font-size: 15px;
         }
 
         .modal-info {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
+          gap: 20px;
+          margin-bottom: 24px;
         }
 
         .info-item {
           display: flex;
-          gap: 0.75rem;
+          gap: 12px;
           align-items: flex-start;
+          padding: 14px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .info-item svg {
-          color: #ef4444;
+          color: #FF453A;
           flex-shrink: 0;
-          margin-top: 0.25rem;
+          margin-top: 2px;
         }
 
         .info-item strong {
-          color: #ffffff;
+          color: rgba(255, 255, 255, 0.6);
           font-weight: 500;
           display: block;
-          margin-bottom: 0.25rem;
+          margin-bottom: 4px;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .info-item p {
-          color: #a1a1a1;
+          color: #ffffff;
           margin: 0;
+          font-size: 15px;
+          font-weight: 500;
         }
 
         .modal-actions {
@@ -641,27 +710,38 @@ console.log(filteredItems)
         }
 
         .contact-btn {
-          background-color: #ef4444;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
           color: white;
           border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 8px;
-          font-weight: 500;
+          padding: 12px 24px;
+          border-radius: 12px;
+          font-weight: 600;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          transition: background-color 0.2s ease;
+          gap: 8px;
+          transition: all 0.3s ease;
+          font-size: 15px;
+          box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
         }
 
         .contact-btn:hover {
-          background-color: #dc2626;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
         }
 
         @media (max-width: 768px) {
           .main-content {
             margin-left: 0;
-            padding: 1rem;
+            padding: 20px 12px;
+          }
+
+          .page-title {
+            font-size: 24px;
+          }
+
+          .gallery-header {
+            padding: 20px;
           }
 
           .controls {

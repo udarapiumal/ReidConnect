@@ -24,7 +24,7 @@ function LostItemForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     const {
       itemName,
       category,
@@ -35,7 +35,7 @@ function LostItemForm() {
       posterName,
       contactNumber,
     } = formData;
-  
+
     // Validation (image is NOT required)
     if (
       !itemName.trim() ||
@@ -49,12 +49,12 @@ function LostItemForm() {
       alert("Please fill in all required fields.");
       return;
     }
-  
+
     if (!/^\d{10}$/.test(contactNumber)) {
       alert("Please enter a valid 10-digit contact number.");
       return;
     }
-  
+
     try {
       const formPayload = new FormData();
       formPayload.append("itemName", itemName);
@@ -62,15 +62,15 @@ function LostItemForm() {
       formPayload.append("description", description);
       formPayload.append("location", location);
       formPayload.append("dateLost", dateLost);
-  
+
       // Only append image if it exists
       if (image) {
         formPayload.append("image", image);
       }
-  
+
       formPayload.append("posterName", posterName);
       formPayload.append("contactNumber", contactNumber);
-  
+
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:8080/lost/lost-items",
@@ -82,10 +82,10 @@ function LostItemForm() {
           },
         }
       );
-  
+
       alert("Lost item post submitted successfully!");
       console.log(response.data);
-  
+
       // Reset form
       setFormData({
         itemName: "",
@@ -117,12 +117,10 @@ function LostItemForm() {
 
   return (
     <div className="app-container">
-      <header className="header">
-        <div className="title">ReidConnect <span className="highlight">LostFound</span></div>
-        <div className="user-info">
-          <i className="fa fa-bell" />
-          <i className="fa fa-user" />
-          <span>User</span>
+      <header className="lf-form-header-bar">
+        <div className="lf-form-header-left">
+          <span className="lf-form-title">ReidConnect</span>
+          <span className="lf-form-title lf-form-highlight">UnionAdmin</span>
         </div>
       </header>
 
@@ -268,121 +266,151 @@ function LostItemForm() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .app-container {
-          background-color: #1a1a1a;
+          background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
           min-height: 100vh;
           color: white;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           flex-direction: column;
         }
 
-        .header {
+        .lf-form-header-bar {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          height: 64px;
-          background-color: #2a2a2a;
-          border-bottom: 1px solid #333;
+          height: 70px;
+          backdrop-filter: blur(20px);
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0 16px;
+          padding: 0 24px;
           z-index: 1001;
+          background: rgba(20, 20, 20, 0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        .title {
-          font-weight: bold;
-          font-size: 20px;
-          color: white;
-        }
-
-        .title .highlight {
-          color: #ef4444;
-        }
-
-        .user-info {
+        .lf-form-header-left {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 0;
         }
 
-        .user-info i {
-          font-size: 20px;
-          cursor: pointer;
+        .lf-form-title {
+          font-weight: 700;
+          font-size: 22px;
           color: white;
-          transition: color 0.3s;
+          letter-spacing: -0.02em;
         }
 
-        .user-info i:hover {
-          color: #ef4444;
+        .lf-form-highlight {
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .main-content {
-          padding-top: 96px;
-          padding: 2rem;
+          padding-top: 100px;
+          padding-left: 2rem;
+          padding-right: 2rem;
+          padding-bottom: 2rem;
           flex: 1;
+          display: flex;
+          justify-content: center;
         }
 
         .form-container {
           max-width: 800px;
-          margin: 0 auto;
-          background: #2a2a2a;
-          border: 1px solid #333;
-          border-radius: 12px;
-          padding: 2rem;
+          width: 100%;
+          background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 32px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(8px);
         }
 
         .form-header h1 {
           font-size: 24px;
-          font-weight: 700;
-          margin-bottom: 0.5rem;
+          font-weight: 800;
+          margin-bottom: 8px;
+          letter-spacing: -0.03em;
+          background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .form-header p {
           font-size: 14px;
-          color: #d1d5db;
-          margin-bottom: 1.5rem;
+          color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 28px;
         }
 
         .form-group {
-          margin-bottom: 1.5rem;
+          margin-bottom: 20px;
+          flex: 1;
         }
 
         .form-row {
           display: flex;
-          gap: 2rem;
+          gap: 20px;
           flex-wrap: wrap;
+        }
+
+        .form-row .form-group {
+          flex: 1;
+          min-width: 200px;
         }
 
         .form-group label {
           display: block;
-          font-weight: 500;
-          margin-bottom: 0.5rem;
+          font-weight: 600;
+          margin-bottom: 8px;
           font-size: 14px;
-          color: #d1d5db;
+          color: rgba(255, 255, 255, 0.8);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .form-input,
         .form-textarea,
         .form-select {
           width: 100%;
-          padding: 0.75rem;
-          border: 1px solid #444;
-          background-color: #1f1f1f;
+          padding: 16px 20px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.03);
           color: white;
-          border-radius: 8px;
-          font-size: 14px;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 400;
+          transition: all 0.3s ease;
+          outline: none;
+          backdrop-filter: blur(10px);
+          box-sizing: border-box;
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+          color: rgba(255, 255, 255, 0.4);
+          font-weight: 400;
         }
 
         .form-input:focus,
         .form-textarea:focus,
         .form-select:focus {
-          outline: none;
-          border-color: #ef4444;
-          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(249, 115, 22, 0.3);
+          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .form-select option {
+          background: #1a1a1a;
+          color: #ffffff;
         }
 
         .form-textarea {
@@ -404,68 +432,95 @@ function LostItemForm() {
         }
 
         .file-upload-display {
-          padding: 1rem;
-          border: 1px dashed #555;
-          background-color: #1f1f1f;
-          border-radius: 8px;
+          padding: 20px;
+          border: 1px dashed rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 12px;
           text-align: center;
           font-size: 14px;
-          color: #9ca3af;
+          color: rgba(255, 255, 255, 0.5);
+          transition: all 0.3s ease;
+        }
+
+        .file-upload-display:hover {
+          border-color: rgba(249, 115, 22, 0.3);
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .upload-icon {
+          margin-right: 8px;
+          font-size: 18px;
         }
 
         .form-actions {
           display: flex;
           justify-content: space-between;
-          gap: 1rem;
-          margin-top: 2rem;
+          gap: 16px;
+          margin-top: 28px;
+          padding-top: 24px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .btn-primary,
         .btn-secondary {
-          padding: 0.75rem 1.5rem;
-          border-radius: 8px;
+          padding: 14px 28px;
+          border-radius: 12px;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 15px;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           border: none;
-          transition: background-color 0.3s ease;
+          transition: all 0.3s ease;
+          min-width: 120px;
         }
 
         .btn-primary {
-          background-color: #ef4444;
+          background: linear-gradient(135deg, #FF453A 0%, #ea580c 100%);
           color: white;
+          box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
         }
 
         .btn-primary:hover {
-          background-color: #dc2626;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
         }
 
         .btn-secondary {
-          background-color: #444;
-          color: white;
-          border: 1px solid #555;
+          background: rgba(255, 255, 255, 0.05);
+          color: rgba(255, 255, 255, 0.8);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .btn-secondary:hover {
-          background-color: #555;
+          background: rgba(255, 255, 255, 0.08);
+          color: white;
+          transform: translateY(-1px);
         }
 
         @media (max-width: 768px) {
+          .main-content {
+            padding: 80px 12px 20px;
+          }
+
+          .form-container {
+            padding: 20px;
+          }
+
           .form-row {
             flex-direction: column;
           }
 
           .form-actions {
             flex-direction: column;
-            gap: 1rem;
+            gap: 12px;
           }
 
           .btn-primary,
           .btn-secondary {
             width: 100%;
+            justify-content: center;
           }
         }
       `}</style>

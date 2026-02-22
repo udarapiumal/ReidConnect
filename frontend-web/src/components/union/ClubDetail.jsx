@@ -278,7 +278,13 @@ const ClubDetail = () => {
 
   return (
     <div className="club-detail-container">
-      {/* Navigation Tabs */}
+      {/* Header */}
+      <header className="cd-header-bar">
+        <div className="cd-header-left">
+          <span className="cd-title-text">ReidConnect</span>
+          <span className="cd-title-text cd-highlight">UnionAdmin</span>
+        </div>
+      </header>
       <div className="club-detail-nav">
         <button
           className={`nav-tab ${activeTab === 'posts' ? 'active' : ''}`}

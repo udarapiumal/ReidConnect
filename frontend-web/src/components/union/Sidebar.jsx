@@ -10,41 +10,37 @@ const Sidebar = () => {
     { label: 'Lost and Found', path: '/union/LostandFound', icon: 'fa-solid fa-box-open' },
     { label: 'Profile Management', path: '/union/Profilemanagement', icon: 'fa-solid fa-user-gear' },
     { label: 'Club Management', path: '/union/Clubmanagement', icon: 'fa-solid fa-people-group' },
-    { label: 'Events', path: '/union/events', icon: 'fa-solid fa-calendar-days' },  // Added Events here
+    { label: 'Events', path: '/union/events', icon: 'fa-solid fa-calendar-days' },
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Clear auth token
-    navigate('/'); // Redirect to login page (adjust if your login route is different)
+    localStorage.removeItem('token');
+    navigate('/');
   };
 
   return (
     <div style={styles.sidebar}>
       <div style={styles.topSection}>
-        <h2 style={styles.sidebarLogo}>Reid Connect</h2>
-        <ul style={styles.sidebarNav}>
-          {links.map((link) => (
-            <li key={link.label} style={styles.navListItem}>
-              <Link
-                to={link.path}
-                style={{
-                  ...styles.sidebarLink,
-                  ...(location.pathname === link.path ? styles.sidebarLinkActive : {})
-                }}
-              >
-                <i className={link.icon} style={styles.navIcon}></i>
-                <span
-                  style={{
-                    ...styles.navText,
-                    ...(location.pathname === link.path ? styles.navTextActive : {})
-                  }}
-                >
-                  {link.label}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {links.map((link) => (
+          <Link
+            key={link.label}
+            to={link.path}
+            style={{
+              ...styles.navItem,
+              ...(location.pathname === link.path ? styles.navItemActive : {})
+            }}
+          >
+            <i className={link.icon} style={styles.navIcon}></i>
+            <span
+              style={{
+                ...styles.navText,
+                ...(location.pathname === link.path ? styles.navTextActive : {})
+              }}
+            >
+              {link.label}
+            </span>
+          </Link>
+        ))}
       </div>
       <div style={styles.bottomSection}>
         <button
@@ -65,57 +61,51 @@ const Sidebar = () => {
 const styles = {
   sidebar: {
     width: '200px',
-    backgroundColor: '#151718',
-    padding: '24px 16px',
-    height: '100vh',
+    backgroundColor: '#1e1e1e',
+    padding: '20px 0',
+    height: 'calc(100vh - 70px)',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     borderRight: '1px solid #333',
     position: 'fixed',
-    top: '0',
+    top: '70px',
     left: 0,
-    zIndex: 1000,
+    zIndex: 999,
+    boxShadow: '2px 0 8px rgba(0, 0, 0, 0.3)',
+    transition: 'all 0.3s ease',
   },
   topSection: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '2px',
+    paddingTop: '20px',
+    paddingLeft: '16px',
+    paddingRight: '16px',
   },
-  sidebarLogo: {
-    color: '#FF0033',
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: '24px',
-    margin: '0 0 24px 0',
-  },
-  sidebarNav: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  navListItem: {
-    listStyle: 'none',
-  },
-  sidebarLink: {
+  navItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    width: '100%',
     height: '48px',
     borderRadius: '8px',
-    paddingLeft: '12px',
-    color: 'white',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '400',
-    transition: 'background 0.3s ease',
     backgroundColor: 'transparent',
+    border: 'none',
+    color: '#ffffff',
+    gap: '16px',
+    paddingLeft: '16px',
+    paddingRight: '16px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    textAlign: 'left',
+    textDecoration: 'none',
+    transition: 'all 0.2s ease',
+    marginBottom: '2px',
   },
-  sidebarLinkActive: {
+  navItemActive: {
     backgroundColor: '#2a2a2a',
+    borderLeft: '3px solid #3b82f6',
+    color: '#ffffff',
   },
   navIcon: {
     fontSize: '16px',
