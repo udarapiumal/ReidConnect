@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import PostCard from './PostCard';
 import EventCard from './EventCard';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 import '../../css/ClubDetail.css';
 
 const ClubDetail = () => {
@@ -28,7 +29,7 @@ const ClubDetail = () => {
     const fetchPosts = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/api/posts/club/${clubId}`,
+          `${API_BASE_URL}/api/posts/club/${clubId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -47,7 +48,7 @@ const ClubDetail = () => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/api/events/club/${clubId}`,
+          `${API_BASE_URL}/api/events/club/${clubId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

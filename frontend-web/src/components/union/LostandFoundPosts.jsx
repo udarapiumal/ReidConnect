@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Calendar, MapPin, Phone, User, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from '../../config';
 
 function LostItemsGallery() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,7 +27,7 @@ function LostItemsGallery() {
     const fetchLostItems = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:8080/lost/lost-items", {
+        const response = await axios.get(`${API_BASE_URL}/lost/lost-items`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -67,7 +68,7 @@ function LostItemsGallery() {
   const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:8080/lost/lost-items/${id}`, {
+      await axios.delete(`${API_BASE_URL}/lost/lost-items/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setLostItems(prevItems => prevItems.filter(item => item.id !== id));

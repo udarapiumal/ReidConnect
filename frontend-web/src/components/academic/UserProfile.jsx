@@ -558,11 +558,9 @@ const UserProfile = ({ onClose }) => {
 
         .info-header {
           display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 24px;
-          flex-wrap: wrap;
+          flex-direction: column;
           gap: 16px;
+          margin-bottom: 24px;
         }
 
         .name-row {
@@ -593,21 +591,24 @@ const UserProfile = ({ onClose }) => {
 
         .action-buttons {
           display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
+          gap: 12px;
+          width: 100%;
         }
 
         .edit-btn, .delete-btn {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 14px;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 16px;
           border: none;
           border-radius: 8px;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
+          flex: 1;
+          white-space: nowrap;
         }
 
         .edit-btn {
@@ -636,15 +637,15 @@ const UserProfile = ({ onClose }) => {
         /* Info Grid */
         .info-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
+          grid-template-columns: 1fr;
+          gap: 10px;
         }
 
         .info-item {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 14px;
+          padding: 14px 16px;
           background: rgba(255, 255, 255, 0.03);
           border-radius: 10px;
           border: 1px solid rgba(255, 255, 255, 0.04);
@@ -672,6 +673,7 @@ const UserProfile = ({ onClose }) => {
           display: flex;
           flex-direction: column;
           gap: 2px;
+          flex: 1;
           min-width: 0;
         }
 
@@ -687,9 +689,7 @@ const UserProfile = ({ onClose }) => {
           font-size: 14px;
           color: rgba(255, 255, 255, 0.9);
           font-weight: 500;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          word-break: break-word;
         }
 
         /* Modal Styles */
@@ -927,21 +927,12 @@ const UserProfile = ({ onClose }) => {
             max-height: 95vh;
           }
 
-          .info-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .info-header {
+          .action-buttons {
             flex-direction: column;
           }
 
-          .action-buttons {
-            width: 100%;
-          }
-
           .edit-btn, .delete-btn {
-            flex: 1;
-            justify-content: center;
+            width: 100%;
           }
         }
       `}</style>

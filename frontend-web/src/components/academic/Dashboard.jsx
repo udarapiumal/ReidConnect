@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import AcademicSidebar from './AcademicSidebar';
 import UserProfile from './UserProfile';
 import axios from '../../api/axiosInstance';
+import { API_BASE_URL } from '../../config';
 import Header from './components/Header';
 import Home from '../TimeTableDay';
 
-const TIMETABLE_COUNT_URL = 'http://localhost:8080/api/timetable/count/today';
-const BOOKING_COUNT_URL = 'http://localhost:8080/api/bookings/count/pending';
-const EVENT_COUNT_URL = 'http://localhost:8080/api/events/count/recent';
-const CURRENT_PERIOD_URL = 'http://localhost:8080/api/academic-calendar/current';
+const TIMETABLE_COUNT_URL = `${API_BASE_URL}/api/timetable/count/today`;
+const BOOKING_COUNT_URL = `${API_BASE_URL}/api/bookings/count/pending`;
+const EVENT_COUNT_URL = `${API_BASE_URL}/api/events/count/recent`;
+const CURRENT_PERIOD_URL = `${API_BASE_URL}/api/academic-calendar/current`;
 
 
 export default function Dashboard() {

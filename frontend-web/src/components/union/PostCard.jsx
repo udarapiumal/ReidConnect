@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import '../../css/PostCard.css';
+import { API_BASE_URL } from '../../config';
 
 const PostCard = ({ post, onPostStatusChange }) => {
   const { id, description, mediaPaths, created_at, title, active } = post;
-  const baseUrl = 'http://localhost:8080/';
+  const baseUrl = `${API_BASE_URL}/`;
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formatDate = (timestamp) => {

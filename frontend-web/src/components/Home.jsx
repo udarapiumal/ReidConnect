@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 import { Clock, MapPin, User, BookOpen, Monitor, CalendarMinus, Cpu, MemoryStick } from 'lucide-react';
 import reidConnectLogo from "../images/ucsc-logo.png";
 import styles from '../css/Home1.module.css';
@@ -48,7 +49,7 @@ export default function LectureDashboard() {
   useEffect(() => {
     const fetchCurrentPeriod = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/academic-calendar/current');
+        const res = await fetch(`${API_BASE_URL}/api/academic-calendar/current`);
         if (!res.ok) throw new Error('Failed to fetch period');
         const period = await res.json();
         setCurrentPeriod(period);
@@ -63,7 +64,7 @@ export default function LectureDashboard() {
       if (!periodId) return;
       try {
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-        const response = await fetch(`http://localhost:8080/api/timetable/byDay?day=${today}&academicCalendarId=${periodId}`);
+        const response = await fetch(`${API_BASE_URL}/api/timetable/byDay?day=${today}&academicCalendarId=${periodId}`);
         if (!response.ok) throw new Error('Failed to fetch lectures');
         const data = await response.json();
         setLectures(data);
@@ -77,7 +78,7 @@ export default function LectureDashboard() {
       if (period && period.periodType === 'SEMESTER') {
         // Only show timetable on public page if APPROVED
         try {
-          const statusRes = await fetch(`http://localhost:8080/api/timetable-approvals/status/${period.id}`);
+          const statusRes = await fetch(`${API_BASE_URL}/api/timetable-approvals/status/${period.id}`);
           if (statusRes.ok) {
             const statusData = await statusRes.json();
             if (statusData.status === 'APPROVED') {

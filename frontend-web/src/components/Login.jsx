@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE_URL } from '../config';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import reidConnectLogo from "../images/ucsc-logo.png";
@@ -9,9 +10,9 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [displayText, setDisplayText] = useState("");
     const navigate = useNavigate();
-    
+
     const fullText = "Welcome to ReidConnect Admin Portal";
-    
+
     useEffect(() => {
         let index = 0;
         const timer = setInterval(() => {
@@ -22,7 +23,7 @@ export default function Login() {
                 clearInterval(timer);
             }
         }, 100);
-        
+
         return () => clearInterval(timer);
     }, []);
 
@@ -33,7 +34,7 @@ export default function Login() {
         }
 
         try {
-            const res = await axios.post("http://localhost:8080/auth/login", {
+            const res = await axios.post(`${API_BASE_URL}/auth/login`, {
                 email,
                 password,
             });
@@ -82,21 +83,21 @@ export default function Login() {
                         </p>
                     </div>
                 </div>
-                
+
                 <div style={styles.rightSection}>
                     <div style={styles.loginCard}>
                         <div style={styles.logoContainer}>
                             <img src={reidConnectLogo} alt="ReidConnect" style={styles.logo} />
                         </div>
                         <div style={styles.headerContainer}>
-                                <h1 style={styles.mainTitle}>
-                                    <span style={styles.reidText}>Reid</span>
-                                    <span style={styles.connectText}>Connect</span>
-                                </h1> 
-                                <h2 style={styles.subtitle}>Admin Portal</h2>
+                            <h1 style={styles.mainTitle}>
+                                <span style={styles.reidText}>Reid</span>
+                                <span style={styles.connectText}>Connect</span>
+                            </h1>
+                            <h2 style={styles.subtitle}>Admin Portal</h2>
                             <p style={styles.description}>Secure access to administration dashboard</p>
                         </div>
-                        
+
                         <div style={styles.formContainer}>
                             <div style={styles.inputGroup}>
                                 <i className="fas fa-envelope" style={styles.inputIcon}></i>
@@ -108,7 +109,7 @@ export default function Login() {
                                     style={styles.input}
                                 />
                             </div>
-                            
+
                             <div style={styles.inputGroup}>
                                 <i className="fas fa-lock" style={styles.inputIcon}></i>
                                 <input
@@ -119,25 +120,25 @@ export default function Login() {
                                     style={styles.input}
                                 />
                             </div>
-                            
+
                             <button onClick={handleLogin} style={styles.button}>
                                 <i className="fas fa-sign-in-alt" style={styles.buttonIcon}></i>
                                 Sign In to Dashboard
                             </button>
-                            
+
                             <div style={styles.divider}>
                                 <span style={styles.dividerText}>Admin Access Only</span>
                             </div>
-                            
+
                             <p style={styles.redirectText}>
                                 Need access? <a href="/contact" style={styles.link}>Contact IT Support</a>
                             </p>
                             <p style={styles.redirectText}>
-                               <a href="/forgetPassword" style={styles.link}> Forgot Password? </a>
+                                <a href="/forgetPassword" style={styles.link}> Forgot Password? </a>
                             </p>
                         </div>
                     </div>
-                    
+
                     <footer style={styles.footer}>
                         <p style={styles.footerText}>© 2025 ReidConnect Admin Portal. All rights reserved.</p>
                     </footer>

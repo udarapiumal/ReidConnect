@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
 function LostItemForm() {
   const [formData, setFormData] = useState({
@@ -73,7 +74,7 @@ function LostItemForm() {
 
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:8080/lost/lost-items",
+        `${API_BASE_URL}/lost/lost-items`,
         formPayload,
         {
           headers: {

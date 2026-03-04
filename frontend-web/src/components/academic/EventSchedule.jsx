@@ -4,6 +4,7 @@ import Header from './components/Header';
 import UserProfile from './UserProfile';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
+import { API_BASE_URL } from '../../config';
 import { getCurrentUserRole, getCurrentUserId } from '../../utils/auth';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -631,7 +632,7 @@ const EventSchedule = () => {
                           <div className="event-image">
                             <h5>Event Image</h5>
                             <img
-                              src={`http://localhost:8080/${event.imageUrl}`}
+                              src={`${API_BASE_URL}/${event.imageUrl}`}
                               alt={event.name}
                               loading="lazy"
                             />

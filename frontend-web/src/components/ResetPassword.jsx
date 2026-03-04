@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE_URL } from '../config';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import reidConnectLogo from "../images/ucsc-logo.png";
 
@@ -23,7 +24,7 @@ export default function ResetPassword() {
             return;
         }
 
-        axios.get(`http://localhost:8080/auth/validate-reset-token?token=${token}`)
+        axios.get(`${API_BASE_URL}/auth/validate-reset-token?token=${token}`)
             .then(() => setTokenValid(true))
             .catch(() => {
                 setTokenValid(false);
@@ -52,7 +53,7 @@ export default function ResetPassword() {
 
         setLoading(true);
         try {
-            await axios.post("http://localhost:8080/auth/reset-password", {
+            await axios.post(`${API_BASE_URL}/auth/reset-password`, {
                 token,
                 newPassword,
             });

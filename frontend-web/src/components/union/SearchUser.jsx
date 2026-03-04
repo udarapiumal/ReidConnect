@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 function SearchUser() {
   const [email, setEmail] = useState('');
@@ -18,13 +19,13 @@ function SearchUser() {
       if (!token) return;
 
       try {
-        const response = await axios.get('http://localhost:8080/student/', {
+        const response = await axios.get(`${API_BASE_URL}/student/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const studentsWithDetails = await Promise.all(
           response.data.map(async (stu) => {
-            const res = await axios.get(`http://localhost:8080/users/search`, {
+            const res = await axios.get(`${API_BASE_URL}/users/search`, {
               params: { regNumber: extractRegNumber(stu.email) },
               headers: { Authorization: `Bearer ${token}` },
             });
@@ -51,7 +52,7 @@ function SearchUser() {
     }
 
     try {
-      const response = await axios.get(`http://localhost:8080/users/search`, {
+      const response = await axios.get(`${API_BASE_URL}/users/search`, {
         params: { regNumber },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -71,7 +72,7 @@ function SearchUser() {
       <img
         src={
           stu.profilePicUrl
-            ? `http://localhost:8080${stu.profilePicUrl}`
+            ? `${API_BASE_URL}${stu.profilePicUrl}`
             : 'https://via.placeholder.com/100x100.png?text=No+Image'
         }
         alt="Profile"

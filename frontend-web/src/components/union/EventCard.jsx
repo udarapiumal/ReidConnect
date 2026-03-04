@@ -1,10 +1,11 @@
 // src/components/EventCard.jsx
 import React from 'react';
 import '../../css/EventCard.css'; // Create this file for styling
+import { API_BASE_URL } from '../../config';
 
 const EventCard = ({ event }) => {
   const { name, description, date, imagePath, venueName } = event;
-  const baseUrl = 'http://localhost:8080/';
+  const baseUrl = `${API_BASE_URL}/`;
 
   return (
     <div className="event-card">

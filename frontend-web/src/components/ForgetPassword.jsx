@@ -1,58 +1,59 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE_URL } from '../config';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import reidConnectLogo from "../images/ucsc-logo.png";
 
 
-export default function ForgetPassword(){
+export default function ForgetPassword() {
     const [email, setEmail] = useState("");
     const handleSend = async () => {
         try {
-            await axios.post("http://localhost:8080/auth/forgot-password", { email });
+            await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
             alert("Reset link sent! Check your email.");
         } catch (err) {
-           
+
         }
     };
-    return(
+    return (
         <div style={styles.rightSection}>
-        <div style={styles.loginCard}>
-            <div style={styles.logoContainer}>
-                <img src={reidConnectLogo} alt="ReidConnect" style={styles.logo} />
-            </div>
-            <div style={styles.headerContainer}>
+            <div style={styles.loginCard}>
+                <div style={styles.logoContainer}>
+                    <img src={reidConnectLogo} alt="ReidConnect" style={styles.logo} />
+                </div>
+                <div style={styles.headerContainer}>
                     <h1 style={styles.mainTitle}>
                         <span style={styles.reidText}>Reid</span>
                         <span style={styles.connectText}>Connect</span>
-                    </h1> 
+                    </h1>
                     <h2 style={styles.subtitle}>Admin Portal</h2>
-                <p style={styles.description}>Secure access to administration dashboard</p>
-            </div>
-            
-            <div style={styles.formContainer}>
-                <div style={styles.inputGroup}>
-                    <i className="fas fa-envelope" style={styles.inputIcon}></i>
-                    <input
-                        type="email"
-                        placeholder="Admin Email Address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        style={styles.input}
-                    />
+                    <p style={styles.description}>Secure access to administration dashboard</p>
                 </div>
-                <button onClick={handleSend} style={styles.button}>
-                                <i className="fas fa-sign-in-alt" style={styles.buttonIcon}></i>
-                               Send
-                            </button>
-         
+
+                <div style={styles.formContainer}>
+                    <div style={styles.inputGroup}>
+                        <i className="fas fa-envelope" style={styles.inputIcon}></i>
+                        <input
+                            type="email"
+                            placeholder="Admin Email Address"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            style={styles.input}
+                        />
+                    </div>
+                    <button onClick={handleSend} style={styles.button}>
+                        <i className="fas fa-sign-in-alt" style={styles.buttonIcon}></i>
+                        Send
+                    </button>
+
+                </div>
             </div>
+
+            <footer style={styles.footer}>
+                <p style={styles.footerText}>© 2025 ReidConnect Admin Portal. All rights reserved.</p>
+            </footer>
         </div>
-        
-        <footer style={styles.footer}>
-            <p style={styles.footerText}>© 2025 ReidConnect Admin Portal. All rights reserved.</p>
-        </footer>
-    </div>
     );
 }
 const styles = {
@@ -76,7 +77,7 @@ const styles = {
         justifyContent: "center",
         alignItems: "center",
         padding: "20px",
-        marginTop:"150px"
+        marginTop: "150px"
     },
     animatedTextContainer: {
         textAlign: "center",
@@ -198,7 +199,7 @@ const styles = {
         gap: "10px",
         boxShadow: "0 4px 15px rgba(255, 0, 51, 0.3)",
         marginTop: "10px",
-        margin:"0px 0 10px 70px"
+        margin: "0px 0 10px 70px"
     },
     buttonIcon: {
         fontSize: "16px",

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -17,7 +18,7 @@ const EventsPage = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/events');
+      const response = await fetch(`${API_BASE_URL}/api/events`);
       const data = await response.json();
       setEvents(data);
     } catch (error) {
@@ -27,7 +28,7 @@ const EventsPage = () => {
 
   const fetchFeaturedEvents = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/events/featured');
+      const response = await fetch(`${API_BASE_URL}/api/events/featured`);
       const data = await response.json();
       const ids = new Set(data.map(event => event.id));
       setFeaturedEventIds(ids);
@@ -127,7 +128,7 @@ const EventsPage = () => {
                 onClick={() => setSelectedEvent(event)}
               >
                 <img
-                  src={`http://localhost:8080/${event.imagePath}`}
+                  src={`${API_BASE_URL}/${event.imagePath}`}
                   alt={event.name}
                   className="ev-card-image"
                   loading="lazy"

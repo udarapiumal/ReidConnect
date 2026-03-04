@@ -6,8 +6,9 @@ import UserProfile from './UserProfile';
 import Select from 'react-select';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
+import { API_BASE_URL } from '../../config';
 
-const API_URL = 'http://localhost:8080/api/staff';
+const API_URL = `${API_BASE_URL}/api/staff`;
 
 const LecturerManagement = () => {
   const [activeNavItem, setActiveNavItem] = useState("Academic Staff");

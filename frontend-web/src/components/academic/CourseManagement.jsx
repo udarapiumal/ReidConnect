@@ -4,10 +4,11 @@ import Header from './components/Header';
 import UserProfile from './UserProfile';
 import axios from '../../api/axiosInstance';
 import Select from 'react-select';
+import { API_BASE_URL } from '../../config';
 
-const COURSES_API_URL = 'http://localhost:8080/api/courses';
-const LECTURERS_API_URL = 'http://localhost:8080/api/staff';
-const VENUES_API_URL = 'http://localhost:8080/api/venues';
+const COURSES_API_URL = `${API_BASE_URL}/api/courses`;
+const LECTURERS_API_URL = `${API_BASE_URL}/api/staff`;
+const VENUES_API_URL = `${API_BASE_URL}/api/venues`;
 
 const CourseManagement = () => {
   const [activeNavItem, setActiveNavItem] = useState("Courses");

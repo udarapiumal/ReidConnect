@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
+import { API_BASE_URL } from '../../config';
 
 export default function UnionDashboard() {
   const [dashboardStats, setDashboardStats] = useState({
@@ -13,7 +14,7 @@ export default function UnionDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:8080/api';
+  const API_URL = `${API_BASE_URL}/api`;
 
   useEffect(() => {
     fetchDashboardData();
@@ -32,14 +33,14 @@ export default function UnionDashboard() {
         "Authorization": `Bearer ${token}`
       };
 
-      const statsResponse = await fetch(`${API_BASE_URL}/bookings/dashboard/stats`, { headers });
+      const statsResponse = await fetch(`${API_URL}/bookings/dashboard/stats`, { headers });
       if (!statsResponse.ok) {
         throw new Error(`Failed to fetch stats: ${statsResponse.status}`);
       }
       const stats = await statsResponse.json();
       setDashboardStats(stats);
 
-      const activitiesResponse = await fetch(`${API_BASE_URL}/bookings/dashboard/approved`, { headers });
+      const activitiesResponse = await fetch(`${API_URL}/bookings/dashboard/approved`, { headers });
       if (!activitiesResponse.ok) {
         throw new Error(`Failed to fetch activities: ${activitiesResponse.status}`);
       }

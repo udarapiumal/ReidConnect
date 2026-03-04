@@ -2,8 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/Clubgallery.css";
 import axios from "axios";
+import { API_BASE_URL } from '../../config';
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = API_BASE_URL;
 
 const ClubGallery = () => {
   const navigate = useNavigate();

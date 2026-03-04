@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../css/ClubCard.css';
+import { API_BASE_URL } from '../../config';
 
-const baseUrl = 'http://localhost:8080';
+const baseUrl = API_BASE_URL;
 
 const ClubCard = ({ club, isSelected, onSelect }) => {
   const navigate = useNavigate();
