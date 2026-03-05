@@ -1,0 +1,44 @@
+# docker-compose.yml  — place in /opt/reidconnect/ (project root)
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: reidconnect
+      POSTGRES_USER: rcuser
+      POSTGRES_PASSWORD: localtest123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    depends_on: [db]
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://db:5432/reidconnect
+      DB_USERNAME: rcuser
+      DB_PASSWORD: localtest123
+      JWT_SECRET: local-test-secret-replace-in-production-64-chars!!
+      FRONTEND_URL: http://localhost
+      BACKEND_URL: http://localhost
+      CORS_ORIGINS: http://localhost,http://localhost:3000
+      UPLOAD_DIR: /uploads
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/uploads
+
+  frontend:
+    build:
+      context: ./frontend-web
+      args:
+        REACT_APP_API_BASE_URL: http://localhost
+    ports:
+      - "80:80"
+    depends_on: [backend]
+
+volumes:
+  pgdata:
+  uploads:
