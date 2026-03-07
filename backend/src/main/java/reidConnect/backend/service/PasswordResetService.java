@@ -2,6 +2,8 @@ package reidConnect.backend.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reidConnect.backend.entity.PasswordResetToken;
@@ -13,6 +15,7 @@ import reidConnect.backend.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class PasswordResetService {
 
@@ -21,10 +24,13 @@ public class PasswordResetService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
     public PasswordResetService(UserRepository userRepository,
-                                PasswordResetTokenRepository tokenRepository,
-                                EmailService emailService,
-                                PasswordEncoder passwordEncoder) {
+            PasswordResetTokenRepository tokenRepository,
+            EmailService emailService,
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.emailService = emailService;
@@ -54,7 +60,8 @@ public class PasswordResetService {
         sendResetEmail(user.getEmail(), token);
     }
 
-    // STEP 2: Frontend calls this when user lands on the reset page to check token is still valid
+    // STEP 2: Frontend calls this when user lands on the reset page to check token
+    // is still valid
     public void validateToken(String token) {
         PasswordResetToken resetToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid reset link"));
@@ -85,11 +92,12 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
     }
 
-    // Reuses your EmailService just like sendVerificationEmail() does in AuthenticationService
+    // Reuses your EmailService just like sendVerificationEmail() does in
+    // AuthenticationService
     private void sendResetEmail(String toEmail, String token) {
         // Point to your frontend reset page — it reads the token from the URL
         // and calls POST /auth/reset-password
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
 
         String subject = "Reset Your Password - ReidConnect";
         String htmlMessage = """
@@ -108,12 +116,13 @@ public class PasswordResetService {
                         Do not share this link with anyone.
                     </p>
                 </div>
-                """.formatted(resetLink);
+                """
+                .formatted(resetLink);
 
         try {
             emailService.sendVerificationEmail(toEmail, subject, htmlMessage);
         } catch (MessagingException e) {
-            e.printStackTrace();
+            log.error("Failed to send reset email to {}", toEmail, e);
             throw new RuntimeException("Failed to send reset email");
         }
     }

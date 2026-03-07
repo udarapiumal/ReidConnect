@@ -1,5 +1,6 @@
 package reidConnect.backend.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.LostandFoundDto;
@@ -17,6 +18,12 @@ import java.util.UUID;
 public class LostandFoundService {
 
     private final LostandFoundRepository lostandFoundRepository;
+
+    @Value("${app.upload-dir:./uploads}")
+    private String uploadDirPath;
+
+    @Value("${app.backend-url:http://localhost:8080}")
+    private String backendUrl;
 
     public LostandFoundService(LostandFoundRepository lostandFoundRepository) {
         this.lostandFoundRepository = lostandFoundRepository;
@@ -39,7 +46,7 @@ public class LostandFoundService {
             String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
 
             try {
-                Path uploadDir = Paths.get(System.getProperty("user.dir"), "src", "main", "resources", "static", "uploads");
+                Path uploadDir = Paths.get(uploadDirPath);
                 Files.createDirectories(uploadDir);
 
                 Path filePath = uploadDir.resolve(fileName);
@@ -62,7 +69,7 @@ public class LostandFoundService {
 
         return items.stream().map(item -> {
             String imageUrl = item.getImagePath() != null
-                    ? "http://localhost:8080/uploads/" + item.getImagePath()  // or your actual base path
+                    ? backendUrl + "/uploads/" + item.getImagePath()
                     : null;
 
             return new LostandFoundResponseDto(
@@ -74,13 +81,14 @@ public class LostandFoundService {
                     item.getDateLost(),
                     imageUrl,
                     item.getPosterName(),
-                    item.getContactNumber()
-            );
+                    item.getContactNumber());
         }).toList();
     }
+
     public void deleteLostItem(Long id) {
         lostandFoundRepository.deleteById(id);
     }
+
     public void updateLostItem(Long id, LostandFoundDto dto) {
         LostandFound item = lostandFoundRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
@@ -96,7 +104,7 @@ public class LostandFoundService {
         if (dto.getImage() != null && !dto.getImage().isEmpty()) {
             String fileName = UUID.randomUUID() + "_" + dto.getImage().getOriginalFilename();
             try {
-                Path uploadDir = Paths.get(System.getProperty("user.dir"), "src", "main", "resources", "static", "uploads");
+                Path uploadDir = Paths.get(uploadDirPath);
                 Files.createDirectories(uploadDir);
                 Path filePath = uploadDir.resolve(fileName);
                 dto.getImage().transferTo(filePath.toFile());

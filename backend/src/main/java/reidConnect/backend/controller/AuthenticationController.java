@@ -1,7 +1,7 @@
 package reidConnect.backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.Part;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import reidConnect.backend.dto.*;
@@ -17,23 +17,25 @@ import org.springframework.web.bind.annotation.*;
 import reidConnect.backend.service.PasswordResetService;
 import reidConnect.backend.util.KeyUtil;
 
-import java.io.IOException;
 import java.security.KeyPair;
-import java.util.Collection;
 
 @RestController
-@RequestMapping("/auth")  // Added a base path for all endpoints
+@RequestMapping("/auth")
 public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
     private final KeyStoreRepository keyStoreRepository;
     private final PasswordResetService passwordResetService;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, KeyStoreRepository keyStoreRepository,PasswordResetService passwordResetService) {
+    @Value("${app.upload-dir:./uploads}")
+    private String uploadDirPath;
+
+    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService,
+            KeyStoreRepository keyStoreRepository, PasswordResetService passwordResetService) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
         this.keyStoreRepository = keyStoreRepository;
-        this.passwordResetService=passwordResetService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -45,39 +47,6 @@ public class AuthenticationController {
             @RequestPart("academicYear") String academicYear,
             @RequestPart(value = "profilePic", required = false) MultipartFile profilePic,
             HttpServletRequest request) {
-
-        // Debug all received parts
-        System.out.println("=== DEBUG: Received multipart request ===");
-        System.out.println("Content-Type: " + request.getContentType());
-        System.out.println("Content-Length: " + request.getContentLength());
-
-        System.out.println("Username: " + username);
-        System.out.println("Email: " + email);
-        System.out.println("Contact: " + contactNumber);
-        System.out.println("Academic Year: " + academicYear);
-
-        if (profilePic != null) {
-            System.out.println("ProfilePic received:");
-            System.out.println("  - Original filename: " + profilePic.getOriginalFilename());
-            System.out.println("  - Size: " + profilePic.getSize() + " bytes");
-            System.out.println("  - Content type: " + profilePic.getContentType());
-            System.out.println("  - Is empty: " + profilePic.isEmpty());
-        } else {
-            System.out.println("ProfilePic: null");
-        }
-
-        // Check if there are any parts in the request
-        try {
-            Collection<Part> parts = request.getParts();
-            System.out.println("Total parts in request: " + parts.size());
-            for (Part part : parts) {
-                System.out.println("Part: " + part.getName() + " - Size: " + part.getSize());
-            }
-        } catch (Exception e) {
-            System.err.println("Error reading parts: " + e.getMessage());
-        }
-
-        System.out.println("=== END DEBUG ===");
 
         RegisterUserDto registerUserDto = new RegisterUserDto();
         registerUserDto.setUsername(username);
@@ -95,7 +64,7 @@ public class AuthenticationController {
     public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
         String jwtToken = jwtService.generateTokenFromUser(authenticatedUser);
-        long expirationTime = jwtService.getExpirationTime();  // Make sure this method exists in JwtService
+        long expirationTime = jwtService.getExpirationTime(); // Make sure this method exists in JwtService
         LoginResponse loginResponse = new LoginResponse(jwtToken, expirationTime, authenticatedUser.getRole());
         return ResponseEntity.ok(loginResponse);
     }
@@ -125,7 +94,7 @@ public class AuthenticationController {
             HttpServletRequest request) {
 
         // Upload directory
-        String uploadPath = new java.io.File("src/main/resources/static/uploads").getAbsolutePath();
+        String uploadPath = new java.io.File(uploadDirPath).getAbsolutePath();
 
         // Save profile picture
         String profilePicPath = null;
@@ -133,10 +102,12 @@ public class AuthenticationController {
             String profilePicName = java.util.UUID.randomUUID() + "_" + profilePicture.getOriginalFilename();
             java.nio.file.Path profileFilePath = java.nio.file.Paths.get(uploadPath, profilePicName);
             try {
+                java.nio.file.Files.createDirectories(java.nio.file.Paths.get(uploadPath));
                 java.nio.file.Files.write(profileFilePath, profilePicture.getBytes());
                 profilePicPath = "/uploads/" + profilePicName;
             } catch (java.io.IOException e) {
-                throw new reidConnect.backend.exception.FileUploadException("Could not save profile picture: " + e.getMessage(), e);
+                throw new reidConnect.backend.exception.FileUploadException(
+                        "Could not save profile picture: " + e.getMessage(), e);
             }
         }
 
@@ -149,7 +120,8 @@ public class AuthenticationController {
                 java.nio.file.Files.write(coverFilePath, coverPicture.getBytes());
                 coverPicPath = "/uploads/" + coverPicName;
             } catch (java.io.IOException e) {
-                throw new reidConnect.backend.exception.FileUploadException("Could not save cover picture: " + e.getMessage(), e);
+                throw new reidConnect.backend.exception.FileUploadException(
+                        "Could not save cover picture: " + e.getMessage(), e);
             }
         }
 
@@ -164,13 +136,11 @@ public class AuthenticationController {
         user.setVerificationExpiration(null);
         User savedUser = authenticationService.saveUser(user);
 
-        // ---- Generate keys and save to keystore ----
+        // Generate keys and save to keystore
         try {
             KeyPair pair = KeyUtil.generateKeyPair();
             String pubKey = KeyUtil.publicKeyToBase64(pair.getPublic());
             String privKeyEnc = KeyUtil.encryptPrivateKey(pair.getPrivate());
-            System.out.println("Public key: " + pubKey.substring(0, 50) + "...");
-            System.out.println("Encrypted private key: " + privKeyEnc.substring(0, 50) + "...");
 
             KeyStoreEntity keyStoreEntity = new KeyStoreEntity();
             keyStoreEntity.setUser(savedUser);
@@ -178,10 +148,6 @@ public class AuthenticationController {
             keyStoreEntity.setPrivateKey(privKeyEnc);
 
             keyStoreRepository.save(keyStoreEntity);
-            System.out.println("Encrypted private key: " + privKeyEnc.substring(0, 50) + "...");
-            KeyStoreEntity test = keyStoreRepository.findByUserId(savedUser.getId());
-            System.out.println("DB private key = " + test.getPrivateKey().substring(0, 50) + "...");
-
 
         } catch (Exception e) {
             throw new RuntimeException("Error generating keypair: " + e.getMessage(), e);
@@ -199,11 +165,13 @@ public class AuthenticationController {
         RegisterClubDto savedClub = authenticationService.saveClub(club);
         return ResponseEntity.ok(savedClub);
     }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordDto dto) {
         passwordResetService.processForgotPassword(dto.getEmail());
         return ResponseEntity.ok("Password reset link sent to your email.");
     }
+
     @GetMapping("/validate-reset-token")
     public ResponseEntity<String> validateResetToken(@RequestParam String token) {
         passwordResetService.validateToken(token);
@@ -215,6 +183,5 @@ public class AuthenticationController {
         passwordResetService.resetPassword(dto.getToken(), dto.getNewPassword());
         return ResponseEntity.ok("Password reset successfully!");
     }
-
 
 }

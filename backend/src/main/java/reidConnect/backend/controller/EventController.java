@@ -2,6 +2,8 @@ package reidConnect.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,17 +29,20 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class EventController {
 
     private final EventService eventService;
 
+    @Value("${app.upload-dir:./uploads}")
+    private String uploadDirPath;
+
     // CREATE EVENT
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    //@PreAuthorize("hasRole('CLUB') ")
+    // @PreAuthorize("hasRole('CLUB') ")
     public ResponseEntity<?> createEvent(
             @RequestParam("clubId") Long clubId,
             @RequestParam("name") String name,
@@ -49,29 +54,20 @@ public class EventController {
             @RequestParam("targetYears") List<Years> targetYears,
             @RequestParam("targetFaculties") List<Faculties> targetFaculties,
             @RequestParam("image") MultipartFile imageFile,
-            @RequestParam("category") EventCategory category
-    ) {
+            @RequestParam("category") EventCategory category) {
         try {
-            System.out.println("📥 Received POST request to /api/events");
-            System.out.println("📝 Club ID: " + clubId);
-            System.out.println("📝 Event Name: " + name);
-            System.out.println("📁 Slot IDs count: " + (slotIds != null ? slotIds.size() : 0));
-            System.out.println("🖼️ Image File: " + imageFile.getOriginalFilename());
-
             if (!eventService.doAllSlotsExist(slotIds)) {
-                return ResponseEntity.badRequest().body("❌ One or more slot IDs are invalid.");
+                return ResponseEntity.badRequest().body("One or more slot IDs are invalid.");
             }
 
             if (imageFile == null || imageFile.isEmpty()) {
-                return ResponseEntity.badRequest().body("❌ Image is required.");
+                return ResponseEntity.badRequest().body("Image is required.");
             }
 
-            // ✅ Save the image file to /static/uploads
             String savedFilePath = null;
-            Path uploadDir = Paths.get("src/main/resources/static/uploads");
+            Path uploadDir = Paths.get(uploadDirPath);
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
-                System.out.println("📁 Created upload directory: " + uploadDir);
             }
 
             String originalFilename = imageFile.getOriginalFilename();
@@ -80,7 +76,6 @@ public class EventController {
                 Path filePath = uploadDir.resolve(uniqueFileName);
                 Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
                 savedFilePath = "uploads/" + uniqueFileName;
-                System.out.println("💾 Saved event image: " + savedFilePath);
             } else {
                 return ResponseEntity.badRequest().body("❌ Image filename is invalid.");
             }
@@ -97,20 +92,17 @@ public class EventController {
                     slotIds,
                     targetYears,
                     targetFaculties,
-                    category
-            );
+                    category);
 
             EventResponseDto createdEvent = eventService.createEvent(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
 
         } catch (Exception e) {
-            System.err.println("❌ Error creating event: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error creating event", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ Error creating event: " + e.getMessage());
+                    .body("Error creating event: " + e.getMessage());
         }
     }
-
 
     // UPDATE EVENT
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -126,8 +118,7 @@ public class EventController {
             @RequestParam("targetYears") List<Years> targetYears,
             @RequestParam("targetFaculties") List<Faculties> targetFaculties,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
-            @RequestParam("category") EventCategory category
-    ) {
+            @RequestParam("category") EventCategory category) {
         try {
             if (!eventService.doAllSlotsExist(slotIds)) {
                 return ResponseEntity.badRequest().body("❌ One or more slot IDs are invalid.");
@@ -136,7 +127,7 @@ public class EventController {
             String savedFilePath = null;
 
             if (imageFile != null && !imageFile.isEmpty()) {
-                Path uploadDir = Paths.get("src/main/resources/static/uploads");
+                Path uploadDir = Paths.get(uploadDirPath);
                 if (!Files.exists(uploadDir)) {
                     Files.createDirectories(uploadDir);
                 }
@@ -162,8 +153,7 @@ public class EventController {
                     slotIds,
                     targetYears,
                     targetFaculties,
-                    category
-            );
+                    category);
 
             EventResponseDto updatedEvent = eventService.updateEvent(id, dto);
             return ResponseEntity.ok(updatedEvent);
@@ -173,7 +163,6 @@ public class EventController {
                     .body("❌ Error updating event: " + e.getMessage());
         }
     }
-
 
     // ✅ GET ALL EVENTS
     @GetMapping
@@ -189,21 +178,20 @@ public class EventController {
         return ResponseEntity.ok(events);
     }
 
-
     // ✅ GET EVENT BY ID
     @GetMapping("/{id}")
     public ResponseEntity<EventResponseDto> getEventById(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.getEventById(id));
     }
 
-    //get event by date
+    // get event by date
     @GetMapping("/date/{date}")
     public ResponseEntity<List<EventResponseDto>> getEventsByDate(@PathVariable LocalDate date) {
         List<EventResponseDto> events = eventService.getEventsByDate(date);
         return ResponseEntity.ok(events);
     }
 
-    //get event by date range
+    // get event by date range
     @GetMapping("/date/range")
     public ResponseEntity<List<EventResponseDto>> getEventsByDateRange(
             @RequestParam LocalDate startDate,
@@ -212,18 +200,19 @@ public class EventController {
         return ResponseEntity.ok(events);
     }
 
-    //get by year, faculty and date range for students
+    // get by year, faculty and date range for students
     @GetMapping("/year-faculty-date-range")
     public ResponseEntity<List<EventResponseDto>> getEventsByYearFacultyAndDateRange(
             @RequestParam Years year,
             @RequestParam Faculties faculty,
             @RequestParam LocalDate startDate,
             @RequestParam LocalDate endDate) {
-        List<EventResponseDto> events = eventService.getEventsByYearFacultyAndDateRange(year, faculty, startDate, endDate);
+        List<EventResponseDto> events = eventService.getEventsByYearFacultyAndDateRange(year, faculty, startDate,
+                endDate);
         return ResponseEntity.ok(events);
     }
 
-    //get event by category
+    // get event by category
     @GetMapping("/category")
     public ResponseEntity<List<EventResponseDto>> getEventsByCategory(@RequestParam String category) {
         List<EventResponseDto> events = eventService.getEventsByCategory(category);
@@ -240,8 +229,9 @@ public class EventController {
 
     // ✅ Helper method for image upload
     private String saveImage(MultipartFile image) throws Exception {
-        Path uploadDir = Paths.get("src/main/resources/static/uploads");
-        if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
+        Path uploadDir = Paths.get(uploadDirPath);
+        if (!Files.exists(uploadDir))
+            Files.createDirectories(uploadDir);
 
         String uniqueFileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
         Path filePath = uploadDir.resolve(uniqueFileName);
@@ -252,8 +242,7 @@ public class EventController {
     @GetMapping("/conflicts")
     public ResponseEntity<List<EventResponseDto>> getEventsByFacultyAndYear(
             @RequestParam List<Faculties> faculties,
-            @RequestParam List<Years> years
-    ) {
+            @RequestParam List<Years> years) {
         List<EventResponseDto> events = eventService.getEventsByFacultiesAndYears(faculties, years);
         return ResponseEntity.ok(events);
     }
@@ -330,7 +319,6 @@ public class EventController {
         return ResponseEntity.ok(count);
     }
 
-
     // Get Attendance Counts (Interested and Going)
     @GetMapping("/{eventId}/attendance/counts")
     public ResponseEntity<EventAttendanceCountDto> getEventAttendanceCounts(
@@ -370,6 +358,7 @@ public class EventController {
         List<EventResponseDto> featuredEvents = eventService.getFeaturedEventsWithinOneMonth();
         return ResponseEntity.ok(featuredEvents);
     }
+
     // ✅ CREATE EVENT via Web
     @PostMapping(value = "/web", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createEventWeb(
@@ -383,8 +372,7 @@ public class EventController {
             @RequestParam("targetYears") String targetYearsJson,
             @RequestParam("targetFaculties") String targetFacultiesJson,
             @RequestParam("image") MultipartFile imageFile,
-            @RequestParam("category") EventCategory category
-    ) {
+            @RequestParam("category") EventCategory category) {
         try {
             // Parse JSON arrays
             ObjectMapper objectMapper = new ObjectMapper();
@@ -408,19 +396,17 @@ public class EventController {
             EventRequestDto dto = new EventRequestDto(
                     clubId, name, description, venueId, venueName,
                     LocalDate.parse(date), savedFilePath,
-                    slotIds, targetYears, targetFaculties, category
-            );
+                    slotIds, targetYears, targetFaculties, category);
 
             EventResponseDto createdEvent = eventService.createEvent(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error creating event via web", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error creating event: " + e.getMessage());
         }
     }
-
 
     // UPDATE EVENT via Web
     @PutMapping(value = "/web/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -435,8 +421,7 @@ public class EventController {
             @RequestParam("targetYears") String targetYearsJson,
             @RequestParam("targetFaculties") String targetFacultiesJson,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
-            @RequestParam("category") EventCategory category
-    ) {
+            @RequestParam("category") EventCategory category) {
         try {
             // Parse JSON arrays
             ObjectMapper objectMapper = new ObjectMapper();
@@ -460,14 +445,13 @@ public class EventController {
             EventUpdateDto dto = new EventUpdateDto(
                     name, description, venueId, venueName,
                     LocalDate.parse(date), savedFilePath,
-                    slotIds, targetYears, targetFaculties, category
-            );
+                    slotIds, targetYears, targetFaculties, category);
 
             EventResponseDto updatedEvent = eventService.updateEvent(id, dto);
             return ResponseEntity.ok(updatedEvent);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error updating event via web", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating event: " + e.getMessage());
         }

@@ -37,6 +37,9 @@ public class StudentServiceImpl implements StudentService {
     private final SubscriptionRepository subscriptionRepository;
     private final EventSlotRepository eventSlotRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.upload-dir:./uploads}")
+    private String uploadDirPath;
+
     @Override
     public StudentResponseDto getStudentById(Long id) {
         Student student = studentRepository.findById(id)
@@ -62,7 +65,7 @@ public class StudentServiceImpl implements StudentService {
     public StudentResponseDto getCurrentStudentProfile(Long userId) {
         Student student = studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
-        
+
         return mapToResponseDto(student);
     }
 
@@ -76,15 +79,14 @@ public class StudentServiceImpl implements StudentService {
                 student.getUser().getId(),
                 student.getUser().getName(),
                 student.getUser().getEmail(),
-                student.getUser().getRole()
-        );
+                student.getUser().getRole());
     }
 
     @Override
     public List<EventResponseDto> getUpcomingEventsByAttendanceStatus(Long userId, String status) {
         EventAttendanceStatus attendanceStatus = EventAttendanceStatus.valueOf(status);
         LocalDate today = LocalDate.now();
-        
+
         return eventAttendanceRepository.findAll().stream()
                 .filter(ea -> ea.getUser().getId().equals(userId)
                         && ea.getStatus() == attendanceStatus
@@ -97,7 +99,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public List<EventResponseDto> getPastEventsForUser(Long userId) {
         LocalDate today = LocalDate.now();
-        
+
         return eventAttendanceRepository.findAll().stream()
                 .filter(ea -> ea.getUser().getId().equals(userId)
                         && ea.getEvent().getDate().isBefore(today))
@@ -110,7 +112,7 @@ public class StudentServiceImpl implements StudentService {
     public long countPastEventsByAttendanceStatus(Long userId, String status) {
         EventAttendanceStatus attendanceStatus = EventAttendanceStatus.valueOf(status);
         LocalDate today = LocalDate.now();
-        
+
         return eventAttendanceRepository.findAll().stream()
                 .filter(ea -> ea.getUser().getId().equals(userId)
                         && ea.getStatus() == attendanceStatus
@@ -122,7 +124,7 @@ public class StudentServiceImpl implements StudentService {
     public long countSubscribedClubs(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        
+
         return subscriptionRepository.findAllByUser(user).size();
     }
 
@@ -130,7 +132,7 @@ public class StudentServiceImpl implements StudentService {
     public List<ClubDto> getSubscribedClubs(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        
+
         return subscriptionRepository.findAllByUser(user).stream()
                 .map(subscription -> ClubMapper.mapToClubDto(subscription.getClub()))
                 .collect(Collectors.toList());
@@ -141,24 +143,27 @@ public class StudentServiceImpl implements StudentService {
         // Find the student by ID
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
-        
+
         // Update student fields only if they are not null and not empty
         if (studentUpdateRequest.getStudentName() != null && !studentUpdateRequest.getStudentName().trim().isEmpty()) {
             student.setStudentName(studentUpdateRequest.getStudentName().trim());
         }
-        
-        if (studentUpdateRequest.getContactNumber() != null && !studentUpdateRequest.getContactNumber().trim().isEmpty()) {
+
+        if (studentUpdateRequest.getContactNumber() != null
+                && !studentUpdateRequest.getContactNumber().trim().isEmpty()) {
             student.setContactNumber(studentUpdateRequest.getContactNumber().trim());
         }
-        
-        if (studentUpdateRequest.getProfilePictureUrl() != null && !studentUpdateRequest.getProfilePictureUrl().trim().isEmpty()) {
+
+        if (studentUpdateRequest.getProfilePictureUrl() != null
+                && !studentUpdateRequest.getProfilePictureUrl().trim().isEmpty()) {
             student.setProfilePictureUrl(studentUpdateRequest.getProfilePictureUrl().trim());
         }
-        
-        if (studentUpdateRequest.getAcademicYear() != null && !studentUpdateRequest.getAcademicYear().trim().isEmpty()) {
+
+        if (studentUpdateRequest.getAcademicYear() != null
+                && !studentUpdateRequest.getAcademicYear().trim().isEmpty()) {
             student.setAcademicYear(studentUpdateRequest.getAcademicYear().trim());
         }
-        
+
         // Update the associated User's username if provided
         if (studentUpdateRequest.getUsername() != null && !studentUpdateRequest.getUsername().trim().isEmpty()) {
             User user = student.getUser();
@@ -167,7 +172,7 @@ public class StudentServiceImpl implements StudentService {
                 userRepository.save(user);
             }
         }
-        
+
         // Save and return the updated student
         return studentRepository.save(student);
     }
@@ -177,42 +182,42 @@ public class StudentServiceImpl implements StudentService {
         // Get the student by user ID
         Student student = studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found for user id: " + userId));
-        
+
         // Validate file
         if (profilePicture.isEmpty()) {
             throw new ValidationException("Profile picture file is empty");
         }
-        
+
         String originalFilename = profilePicture.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
             throw new ValidationException("Profile picture filename is invalid");
         }
-        
+
         // Validate file type (only allow image files)
         String fileExtension = originalFilename.toLowerCase();
-        if (!fileExtension.endsWith(".jpg") && !fileExtension.endsWith(".jpeg") && 
-            !fileExtension.endsWith(".png") && !fileExtension.endsWith(".gif") && 
-            !fileExtension.endsWith(".webp")) {
+        if (!fileExtension.endsWith(".jpg") && !fileExtension.endsWith(".jpeg") &&
+                !fileExtension.endsWith(".png") && !fileExtension.endsWith(".gif") &&
+                !fileExtension.endsWith(".webp")) {
             throw new ValidationException("Only image files (jpg, jpeg, png, gif, webp) are allowed");
         }
 
         try {
             // Create uploads directory if it doesn't exist
-            Path uploadDir = Paths.get("src/main/resources/static/uploads");
+            Path uploadDir = Paths.get(uploadDirPath);
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
-            
+
             // Generate unique filename
             String uniqueFileName = UUID.randomUUID() + "_profile_" + originalFilename;
             Path filePath = uploadDir.resolve(uniqueFileName);
-            
+
             // Save the file
             Files.copy(profilePicture.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            
+
             // Update the student's profile picture URL
             student.setProfilePictureUrl("uploads/" + uniqueFileName);
-            
+
             // Save and return the updated student
             return studentRepository.save(student);
         } catch (Exception e) {
@@ -225,10 +230,10 @@ public class StudentServiceImpl implements StudentService {
         // Get the student by user ID
         Student student = studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found for user id: " + userId));
-        
+
         // Set profile picture URL to null
         student.setProfilePictureUrl(null);
-        
+
         // Save and return the updated student
         return studentRepository.save(student);
     }

@@ -1,6 +1,8 @@
 package reidConnect.backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,13 +25,16 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
 
     private final PostService postService;
+
+    @Value("${app.upload-dir:./uploads}")
+    private String uploadDirPath;
 
     @PostMapping
     @PreAuthorize("hasRole('CLUB')")
@@ -40,25 +45,21 @@ public class PostController {
             @RequestParam(value = "eventId", required = false) Long eventId) {
 
         try {
-            // 1. Save files to /static/uploads/ and collect their paths
             List<String> savedFileNames = new ArrayList<>();
 
             if (mediaFiles != null && !mediaFiles.isEmpty()) {
-                Path uploadDir = Paths.get("src/main/resources/static/uploads");
+                Path uploadDir = Paths.get(uploadDirPath);
                 if (!Files.exists(uploadDir)) {
                     Files.createDirectories(uploadDir);
-                    System.out.println("📁 Created upload directory: " + uploadDir);
                 }
 
                 for (MultipartFile file : mediaFiles) {
                     if (file.isEmpty()) {
-                        System.out.println("⚠️ Skipping empty file");
                         continue;
                     }
 
                     String originalFilename = file.getOriginalFilename();
                     if (originalFilename == null || originalFilename.isBlank()) {
-                        System.out.println("⚠️ Skipping file with null/blank name");
                         continue;
                     }
 
@@ -67,32 +68,27 @@ public class PostController {
                     Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
                     savedFileNames.add("uploads/" + uniqueFileName);
-                    System.out.println("💾 Saved file: " + uniqueFileName);
                 }
             }
 
-            // 2. Build DTO and send to service
             PostCreateDto dto = new PostCreateDto();
             dto.setClubId(clubId);
             dto.setDescription(description);
             dto.setMediaPaths(savedFileNames);
-            dto.setEventId(eventId); // ✅ Set eventId in DTO
+            dto.setEventId(eventId);
 
             postService.createPost(dto);
 
             return ResponseEntity.ok("Post created successfully with " + savedFileNames.size() + " media files.");
 
         } catch (Exception e) {
-            System.err.println("❌ Error creating post: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error creating post", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error creating post: " + e.getMessage());
         }
     }
 
-
-
-    //Get all posts
+    // Get all posts
     // @PreAuthorize("hasAnyRole('CLUB', 'STUDENT')")
     @GetMapping
     public ResponseEntity<List<PostResponseDto>> getAllPosts() {
@@ -100,24 +96,24 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
-    //Get active posts
+    // Get active posts
     @GetMapping("/active")
     public ResponseEntity<?> getActivePosts(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer limit) {
-        
+
         // If pagination parameters are provided, use paginated endpoint
         if (page != null && limit != null) {
             PagedPostResponseDto pagedPosts = postService.getActivePostsPaginated(page, limit);
             return ResponseEntity.ok(pagedPosts);
         }
-        
+
         // Otherwise, return all active posts (backward compatibility)
         List<PostResponseDto> posts = postService.getActivePosts();
         return ResponseEntity.ok(posts);
     }
 
-    //Get a post by ID
+    // Get a post by ID
     @PreAuthorize("hasAnyRole('CLUB', 'UNION', 'STUDENT')")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
@@ -141,32 +137,30 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
-
-    //Update a post by ID
+    // Update a post by ID
     @PreAuthorize("hasRole('CLUB')")
     @PutMapping("/{id}")
     public ResponseEntity<String> updatePost(@PathVariable Long id, @RequestBody PostUpdateDto dto) {
         postService.updatePost(id, dto);
         return ResponseEntity.ok("Post updated successfully.");
     }
+
     @PutMapping("/{id}/deactivate")
     @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     public ResponseEntity<String> deactivatePost(@PathVariable Long id) {
-        System.out.println("Deactivating post with id: " + id);
         postService.deactivatePost(id);
         return ResponseEntity.ok("Post deactivated successfully.");
     }
+
     // Activate a post by ID
     @PutMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('CLUB', 'UNION')")
     public ResponseEntity<String> activatePost(@PathVariable Long id) {
-        System.out.println("Activating post with id: " + id);
         postService.activatePost(id);
         return ResponseEntity.ok("Post activated successfully.");
     }
 
-
-    //Delete a post by ID
+    // Delete a post by ID
     @PreAuthorize("hasRole('CLUB')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePost(@PathVariable Long id) {
@@ -199,7 +193,6 @@ public class PostController {
         return ResponseEntity.ok(likedPostIds);
     }
 
-
     // Get total like count for a post
     @GetMapping("/{postId}/likes/count")
     public ResponseEntity<Long> getLikeCount(@PathVariable Long postId) {
@@ -230,16 +223,14 @@ public class PostController {
         return ResponseEntity.ok(count);
     }
 
-
     // Serve uploaded images - accessible to all users (including students)
     @GetMapping("/uploads/{filename:.+}")
     public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
         try {
-            Path file = Paths.get("src/main/resources/static/uploads").resolve(filename);
+            Path file = Paths.get(uploadDirPath).resolve(filename);
             Resource resource = new UrlResource(file.toUri());
-            
+
             if (resource.exists() || resource.isReadable()) {
-                // Determine content type based on file extension
                 String contentType = "application/octet-stream";
                 if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
                     contentType = "image/jpeg";
@@ -250,19 +241,18 @@ public class PostController {
                 } else if (filename.toLowerCase().endsWith(".webp")) {
                     contentType = "image/webp";
                 }
-                
+
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_TYPE, contentType)
-                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600") // Cache for 1 hour
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
                         .body(resource);
             } else {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            System.err.println("❌ Error serving image: " + e.getMessage());
+            log.error("Error serving image: {}", filename, e);
             return ResponseEntity.internalServerError().build();
         }
     }
 
 }
-

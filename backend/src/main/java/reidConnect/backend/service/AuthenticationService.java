@@ -29,6 +29,9 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class AuthenticationService {
     private final UserRepository userRepository;
@@ -38,13 +41,15 @@ public class AuthenticationService {
     private final StudentRepository studentRepository;
     private final ClubRepository clubRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.upload-dir:./uploads}")
+    private String uploadDirPath;
+
     public AuthenticationService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             EmailService emailService,
-            StudentRepository studentRepository, ClubRepository clubRepository
-    ) {
+            StudentRepository studentRepository, ClubRepository clubRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
@@ -73,20 +78,15 @@ public class AuthenticationService {
             String filename = UUID.randomUUID() + "_" + input.getProfilePic().getOriginalFilename();
 
             try {
-                // Use the current working directory + /uploads like the other method
-                Path uploadDir = Paths.get("C:/ReidConnect/backend/src/main/resources/static/uploads");
+                Path uploadDir = Paths.get(uploadDirPath);
                 Files.createDirectories(uploadDir);
                 Path filePath = uploadDir.resolve(filename);
                 input.getProfilePic().transferTo(filePath.toFile());
 
                 profilePictureUrl = "/uploads/" + filename;
-
-                System.out.println("Saved profile pic to: " + profilePictureUrl);
             } catch (IOException e) {
                 throw new FileUploadException("Could not save profile picture: " + e.getMessage(), e);
             }
-        } else {
-            System.out.println("No profile picture uploaded");
         }
 
         // 4. Create and save Student with profile picture
@@ -116,13 +116,11 @@ public class AuthenticationService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             input.getEmail(),
-                            input.getPassword()
-                    )
-            );
+                            input.getPassword()));
         } catch (BadCredentialsException e) {
             throw new AuthenticationException("Invalid email or password");
         }
-        
+
         return user;
     }
 
@@ -170,7 +168,7 @@ public class AuthenticationService {
         try {
             emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage); // Fixed parameters
         } catch (MessagingException e) {
-            e.printStackTrace();
+            log.error("Failed to send verification email to {}", user.getEmail(), e);
         }
     }
 
@@ -196,6 +194,5 @@ public class AuthenticationService {
         dto.setCoverPicture(saved.getCover_picture());
         return dto;
     }
-
 
 }
