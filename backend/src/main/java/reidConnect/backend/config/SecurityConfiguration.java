@@ -85,6 +85,7 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
+                "https://reidconnect-1.onrender.com", // Live production frontend
                 "http://localhost:4200",
                 "http://localhost:3000",
                 "http://localhost:3001",
@@ -102,7 +103,7 @@ public class SecurityConfiguration {
                 "http://localhost:5081/",
                 "http://localhost:11883/"
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*")); // Allow all headers
         configuration.setAllowCredentials(true); // Important for file uploads
         configuration.setMaxAge(3600L); // Cache preflight for 1 hour
