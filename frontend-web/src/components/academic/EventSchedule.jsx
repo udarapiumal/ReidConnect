@@ -629,7 +629,7 @@ const generateReport = (period) => {
                           <div className="event-image">
                             <h5>Event Image</h5>
                             <img 
-                              src={`http://localhost:8080/${event.imageUrl}`} 
+                              src={`https://reidconnect.onrender.com/${event.imageUrl}`} 
                               alt={event.name}
                               loading="lazy"
                             />

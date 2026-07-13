@@ -16,7 +16,7 @@ function LostItemsList() {
 
   const fetchLostItems = async () => {
     try {
-      const response = await fetch("http://localhost:8080/lost/lost-items");
+      const response = await fetch("https://reidconnect.onrender.com/lost/lost-items");
       const data = await response.json();
       setLostItems(data);
     } catch (error) {
@@ -142,7 +142,7 @@ function LostItemsList() {
               >
                 {item.imagePath && (
                   <img
-                    src={`http://localhost:8080/${item.imagePath}`}
+                    src={`https://reidconnect.onrender.com/${item.imagePath}`}
                     alt={item.itemName}
                     className="gallery-image"
                     loading="lazy"
@@ -203,7 +203,7 @@ function LostItemsList() {
 
             {selectedItem.imagePath && (
               <img
-                src={`http://localhost:8080/${selectedItem.imagePath}`}
+                src={`https://reidconnect.onrender.com/${selectedItem.imagePath}`}
                 alt={selectedItem.itemName}
                 className="modal-image"
               />

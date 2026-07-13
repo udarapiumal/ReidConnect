@@ -18,7 +18,7 @@ const EventsPage = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/events');
+      const response = await fetch('https://reidconnect.onrender.com/api/events');
       const data = await response.json();
       setEvents(data);
     } catch (error) {
@@ -28,7 +28,7 @@ const EventsPage = () => {
 
   const fetchFeaturedEvents = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/events/featured');
+      const response = await fetch('https://reidconnect.onrender.com/api/events/featured');
       const data = await response.json();
       const ids = new Set(data.map(event => event.id));
       setFeaturedEventIds(ids);
@@ -165,7 +165,7 @@ const EventsPage = () => {
                 onClick={() => setSelectedEvent(event)}
               >
                 <img
-                  src={`http://localhost:8080/${event.imagePath}`}
+                  src={`https://reidconnect.onrender.com/${event.imagePath}`}
                   alt={event.name}
                   className="gallery-image"
                   loading="lazy"

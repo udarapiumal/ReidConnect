@@ -3,7 +3,7 @@ import '../../css/PostCard.css';
 
 const PostCard = ({ post, onPostStatusChange }) => {
   const { id, description, mediaPaths, created_at, title, active } = post;
-  const baseUrl = 'http://localhost:8080/';
+  const baseUrl = 'https://reidconnect.onrender.com/';
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formatDate = (timestamp) => {

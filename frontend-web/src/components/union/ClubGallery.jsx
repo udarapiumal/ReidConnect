@@ -11,7 +11,7 @@ const ClubGallery = () => {
     const fetchClubs = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get('http://localhost:8080/api/club', {
+        const response = await axios.get('https://reidconnect.onrender.com/api/club', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setClubs(response.data);
