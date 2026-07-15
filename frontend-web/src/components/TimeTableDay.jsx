@@ -58,7 +58,7 @@ export default function TimetableView() {
     const fetchLectures = async () => {
       try {
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-        const response = await fetch(`https://reidconnect.onrender.com/api/timetable/byDay?day=${today}`);
+        const response = await fetch(`http://35.209.196.254:8080/api/timetable/byDay?day=${today}`);
         if (!response.ok) throw new Error('Failed to fetch lectures');
         const data = await response.json();
         setLectures(data);

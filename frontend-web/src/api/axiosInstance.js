@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create base axios instance
 const axiosInstance = axios.create({
-  baseURL: 'https://reidconnect.onrender.com/', // your backend base URL
+  baseURL: 'http://35.209.196.254:8080/', // your backend base URL
 });
 
 // Intercept each request before it is sent

@@ -6,7 +6,7 @@ import Select from 'react-select';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
-const API_URL = 'https://reidconnect.onrender.com/api/staff';
+const API_URL = 'http://35.209.196.254:8080/api/staff';
 
 const LecturerManagement = () => {
   const [activeNavItem, setActiveNavItem] = useState("Academic Staff");

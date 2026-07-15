@@ -14,7 +14,7 @@ export default function UnionDashboard() {
   const [error, setError] = useState(null);
 
   // API base URL - adjust according to your backend configuration
-  const API_BASE_URL = 'https://reidconnect.onrender.com/api'; // Change this to your actual backend URL
+  const API_BASE_URL = 'http://35.209.196.254:8080/api'; // Change this to your actual backend URL
 
   useEffect(() => {
     fetchDashboardData();

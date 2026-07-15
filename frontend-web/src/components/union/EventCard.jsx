@@ -4,7 +4,7 @@ import '../../css/EventCard.css'; // Create this file for styling
 
 const EventCard = ({ event }) => {
   const { name, description, date, imagePath, venueName } = event;
-  const baseUrl = 'https://reidconnect.onrender.com/';
+  const baseUrl = 'http://35.209.196.254:8080/';
 
   return (
     <div className="event-card">

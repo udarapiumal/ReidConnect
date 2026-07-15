@@ -28,7 +28,7 @@ const ClubDetail = () => {
     const fetchPosts = async () => {
       try {
         const response = await axios.get(
-          `https://reidconnect.onrender.com/api/posts/club/${clubId}`,
+          `http://35.209.196.254:8080/api/posts/club/${clubId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -47,7 +47,7 @@ const ClubDetail = () => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get(
-          `https://reidconnect.onrender.com/api/events/club/${clubId}`,
+          `http://35.209.196.254:8080/api/events/club/${clubId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

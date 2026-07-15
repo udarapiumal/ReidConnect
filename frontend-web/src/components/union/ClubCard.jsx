@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../css/ClubCard.css';
 
-const baseUrl = 'https://reidconnect.onrender.com';
+const baseUrl = 'http://35.209.196.254:8080';
 
 const ClubCard = ({ club, isSelected, onSelect }) => {
   const navigate = useNavigate();

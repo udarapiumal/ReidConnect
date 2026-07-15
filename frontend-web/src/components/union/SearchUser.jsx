@@ -20,13 +20,13 @@ function SearchUser() {
       if (!token) return;
 
       try {
-        const response = await axios.get('https://reidconnect.onrender.com/student/', {
+        const response = await axios.get('http://35.209.196.254:8080/student/', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const studentsWithDetails = await Promise.all(
           response.data.map(async (stu) => {
-            const res = await axios.get(`https://reidconnect.onrender.com/users/search`, {
+            const res = await axios.get(`http://35.209.196.254:8080/users/search`, {
               params: { regNumber: extractRegNumber(stu.email) },
               headers: { Authorization: `Bearer ${token}` },
             });
@@ -53,7 +53,7 @@ function SearchUser() {
     }
 
     try {
-      const response = await axios.get(`https://reidconnect.onrender.com/users/search`, {
+      const response = await axios.get(`http://35.209.196.254:8080/users/search`, {
         params: { regNumber },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -73,7 +73,7 @@ function SearchUser() {
       <img
         src={
           stu.profilePicUrl
-            ? `https://reidconnect.onrender.com${stu.profilePicUrl}`
+            ? `http://35.209.196.254:8080${stu.profilePicUrl}`
             : 'https://via.placeholder.com/100x100.png?text=No+Image'
         }
         alt="Profile"
