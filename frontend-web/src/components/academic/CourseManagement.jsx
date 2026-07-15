@@ -4,9 +4,9 @@ import Header from './components/Header';
 import axios from '../../api/axiosInstance';
 import Select from 'react-select';
 
-const COURSES_API_URL = 'http://35.209.196.254:8080/api/courses';
-const LECTURERS_API_URL = 'http://35.209.196.254:8080/api/staff';
-const VENUES_API_URL = 'http://35.209.196.254:8080/api/venues';
+const COURSES_API_URL = 'https://reidconnect-api.duckdns.org/api/courses';
+const LECTURERS_API_URL = 'https://reidconnect-api.duckdns.org/api/staff';
+const VENUES_API_URL = 'https://reidconnect-api.duckdns.org/api/venues';
 
 const CourseManagement = () => {
   const [activeNavItem, setActiveNavItem] = useState("Courses");

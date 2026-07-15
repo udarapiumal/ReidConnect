@@ -28,7 +28,7 @@ const ClubDetail = () => {
     const fetchPosts = async () => {
       try {
         const response = await axios.get(
-          `http://35.209.196.254:8080/api/posts/club/${clubId}`,
+          `https://reidconnect-api.duckdns.org/api/posts/club/${clubId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -47,7 +47,7 @@ const ClubDetail = () => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get(
-          `http://35.209.196.254:8080/api/events/club/${clubId}`,
+          `https://reidconnect-api.duckdns.org/api/events/club/${clubId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

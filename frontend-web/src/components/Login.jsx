@@ -33,7 +33,7 @@ export default function Login() {
         }
 
         try {
-            const res = await axios.post("http://35.209.196.254:8080/auth/login", {
+            const res = await axios.post("https://reidconnect-api.duckdns.org/auth/login", {
                 email,
                 password,
             });

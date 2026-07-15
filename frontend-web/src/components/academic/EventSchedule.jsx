@@ -629,7 +629,7 @@ const generateReport = (period) => {
                           <div className="event-image">
                             <h5>Event Image</h5>
                             <img 
-                              src={`http://35.209.196.254:8080/${event.imageUrl}`} 
+                              src={`https://reidconnect-api.duckdns.org/${event.imageUrl}`} 
                               alt={event.name}
                               loading="lazy"
                             />

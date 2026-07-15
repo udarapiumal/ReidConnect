@@ -3,7 +3,7 @@ import '../../css/PostCard.css';
 
 const PostCard = ({ post, onPostStatusChange }) => {
   const { id, description, mediaPaths, created_at, title, active } = post;
-  const baseUrl = 'http://35.209.196.254:8080/';
+  const baseUrl = 'https://reidconnect-api.duckdns.org/';
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formatDate = (timestamp) => {

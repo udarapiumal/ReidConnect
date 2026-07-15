@@ -16,7 +16,7 @@ function LostItemsList() {
 
   const fetchLostItems = async () => {
     try {
-      const response = await fetch("http://35.209.196.254:8080/lost/lost-items");
+      const response = await fetch("https://reidconnect-api.duckdns.org/lost/lost-items");
       const data = await response.json();
       setLostItems(data);
     } catch (error) {
@@ -142,7 +142,7 @@ function LostItemsList() {
               >
                 {item.imagePath && (
                   <img
-                    src={`http://35.209.196.254:8080/${item.imagePath}`}
+                    src={`https://reidconnect-api.duckdns.org/${item.imagePath}`}
                     alt={item.itemName}
                     className="gallery-image"
                     loading="lazy"
@@ -203,7 +203,7 @@ function LostItemsList() {
 
             {selectedItem.imagePath && (
               <img
-                src={`http://35.209.196.254:8080/${selectedItem.imagePath}`}
+                src={`https://reidconnect-api.duckdns.org/${selectedItem.imagePath}`}
                 alt={selectedItem.itemName}
                 className="modal-image"
               />

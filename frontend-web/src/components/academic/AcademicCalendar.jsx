@@ -3,7 +3,7 @@ import axios from "../../api/axiosInstance";
 import AcademicSidebar from "./AcademicSidebar";
 import Header from "./components/Header";
 
-const API_URL = "http://35.209.196.254:8080/api/academic-calendar";
+const API_URL = "https://reidconnect-api.duckdns.org/api/academic-calendar";
 
 export default function AcademicCalendar() {
   const [periods, setPeriods] = useState([]);

@@ -6,10 +6,10 @@ import axios from '../../api/axiosInstance';
 import Header from './components/Header';
 import Home from '../TimeTableDay';
 
-const TIMETABLE_COUNT_URL = 'http://35.209.196.254:8080/api/timetable/count/today';
-const BOOKING_COUNT_URL = 'http://35.209.196.254:8080/api/bookings/count/pending';
-const EVENT_COUNT_URL = 'http://35.209.196.254:8080/api/events/count/recent';
-const CURRENT_PERIOD_URL = 'http://35.209.196.254:8080/api/academic-calendar/current';
+const TIMETABLE_COUNT_URL = 'https://reidconnect-api.duckdns.org/api/timetable/count/today';
+const BOOKING_COUNT_URL = 'https://reidconnect-api.duckdns.org/api/bookings/count/pending';
+const EVENT_COUNT_URL = 'https://reidconnect-api.duckdns.org/api/events/count/recent';
+const CURRENT_PERIOD_URL = 'https://reidconnect-api.duckdns.org/api/academic-calendar/current';
 
 
 export default function Dashboard() {
